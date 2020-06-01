@@ -57,13 +57,10 @@ android {
 }
 
 repositories {
-    mavenLocal()
-    maven {
-        url = "https://netfoundry.jfrog.io/netfoundry/ziti-maven"
-    }
+    jcenter()
 }
 
-def zitiVer = "update-api-0.12.+"
+def zitiVer = "0.13+"
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
