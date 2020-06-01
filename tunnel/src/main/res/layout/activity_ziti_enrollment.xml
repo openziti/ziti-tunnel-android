@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (c) 2020 NetFoundry. All rights reserved.
+  -->
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:background="@drawable/background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ZitiEnrollmentActivity">
+
+    <ImageView
+        android:id="@+id/GlobeImage"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:background="@drawable/globe"
+        android:adjustViewBounds="true"
+        android:scaleType="centerCrop"  />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/constraintLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:animateLayoutChanges="true">
+
+        <ImageButton
+            android:id="@+id/CloseIdentityButton"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginEnd="24dp"
+            android:background="@drawable/close"
+            android:clickable="true"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.302" />
+
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:fontFamily="@font/russo_one"
+            android:paddingLeft="18dp"
+            android:gravity="center"
+            android:textAlignment="gravity"
+            android:text="@string/addidentity"
+            android:textColor="@color/title"
+            android:textSize="26dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.246"
+            tools:layout_editor_absoluteX="25dp"></TextView>
+
+        <TextView
+            android:layout_width="58dp"
+            android:layout_height="43dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="50dp"
+            android:layout_marginEnd="3dp"
+            android:fontFamily="@font/open_sans"
+            android:gravity="right"
+            android:lineHeight="13sp"
+            android:text="@string/esc"
+            android:textAlignment="gravity"
+            android:textAllCaps="true"
+            android:textColor="@color/colorTitle"
+            android:textSize="13sp"
+            android:typeface="normal"
+            app:layout_anchorGravity="end"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.933"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <LinearLayout
+        android:id="@+id/MainSelectorLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:weightSum="2"
+        android:layout_marginTop="70dp">
+
+            <LinearLayout
+                android:id="@+id/JWTButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_margin="10dp"
+                android:background="@drawable/cardskin"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="20dp"
+                android:weightSum="10"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                tools:layout_editor_absoluteY="30dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="60dp"
+                    android:gravity="center"
+                    android:layout_weight="2"
+                    android:text="@string/keytitle"
+                    android:textAlignment="gravity"
+                    android:textColor="@color/label"
+                    android:textSize="20dp"
+                    android:textStyle="bold"></TextView>
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="115dp"
+                    android:layout_weight="4"
+                    android:contentDescription="@string/keyimage"
+                    android:gravity="center"
+                    android:src="@drawable/jwt" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="60dp"
+                    android:gravity="center"
+                    android:layout_weight="2"
+                    android:text="@string/keysubtitle"
+                    android:textAlignment="gravity"
+                    android:textColor="@color/label"
+                    android:textSize="20dp"
+                    android:textStyle="bold"></TextView>
+
+                <Button
+                    android:id="@+id/IdButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="45dp"
+                    android:layout_weight="2"
+                    android:background="@drawable/buttonskin"
+                    android:paddingLeft="60dp"
+                    android:paddingRight="60dp"
+                    android:text="@string/keyaction"
+                    android:textColor="#FFFFFF"></Button>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/QRButtonArea"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/cardskin"
+                android:gravity="center"
+                android:weightSum="10"
+                android:layout_margin="10dp"
+                android:orientation="vertical"
+                android:padding="20dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="60dp"
+                    android:gravity="center"
+                    android:text="@string/qrtitle"
+                    android:textAlignment="gravity"
+                    android:layout_weight="2"
+                    android:textColor="@color/label"
+                    android:textSize="20dp"
+                    android:textStyle="bold"></TextView>
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="115dp"
+                    android:contentDescription="@string/qrimage"
+                    android:layout_weight="4"
+                    android:gravity="center"
+                    android:src="@drawable/qr" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="60dp"
+                    android:layout_weight="2"
+                    android:gravity="center"
+                    android:text="@string/qrsubtitle"
+                    android:textAlignment="gravity"
+                    android:textColor="@color/label"
+                    android:textSize="20dp"
+                    android:textStyle="bold"></TextView>
+
+                <Button
+                    android:id="@+id/QRButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="45dp"
+                    android:layout_weight="2"
+                    android:background="@drawable/buttonskin"
+                    android:paddingLeft="60dp"
+                    android:paddingRight="60dp"
+                    android:text="@string/qraction"
+                    android:textColor="#FFFFFF"></Button>
+            </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

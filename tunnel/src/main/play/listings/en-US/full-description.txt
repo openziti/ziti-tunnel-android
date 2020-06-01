@@ -1,0 +1,2 @@
+The NetFoundry Tunnel app allows you to assign applications on your device to use the NetFoundry
+Ziti tunnel to access secured Networks and Resources only available on a private NetFoundry network.

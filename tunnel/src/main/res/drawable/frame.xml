@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (c) 2020 NetFoundry. All rights reserved.
+  -->
+
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+<item>
+    <shape android:shape="rectangle">
+        <solid android:color="#00ffffff" />
+        <padding android:left="3dp"
+            android:top="3dp"
+            android:right="3dp"
+            android:bottom="3dp" />
+        <corners android:radius="0dp" />
+        <stroke android:width="12dp" android:color="@color/background" />
+    </shape>
+</item>
+
+<item>
+    <shape android:shape="rectangle">
+        <solid android:color="#00ffffff" />
+        <padding android:left="12dp"
+            android:top="12dp"
+            android:right="12dp"
+            android:bottom="12dp" />
+        <corners android:radius="24dp" />
+        <stroke android:width="12dp" android:color="@color/background" />
+    </shape>
+</item>
+
+</layer-list>

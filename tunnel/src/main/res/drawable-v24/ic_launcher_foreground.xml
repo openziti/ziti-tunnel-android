@@ -1,0 +1,15 @@
+<!--
+  ~ Copyright (c) 2020 NetFoundry. All rights reserved.
+  -->
+
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportHeight="108"
+    android:viewportWidth="108">
+    <path
+        android:pathData="M54.77,12.67,28.66,52.39l14.84,9.7L46,58.35l7.73,36.92,25.71-40L65,45.88l-2.46,3.79ZM66.49,52.53l6.32,4.27L55.92,82.71l-7.75-37-6.3,9.63-6.22-4.07,17-26L60.31,62Z"
+        android:strokeColor="#FFFFFF"
+        android:fillColor="#FFFFFF"
+        />
+</vector>

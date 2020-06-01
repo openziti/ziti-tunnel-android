@@ -1,0 +1,80 @@
+<!--
+  ~ Copyright (c) 2020 NetFoundry. All rights reserved.
+  -->
+
+<resources>
+    <!-- Dashboard -->
+    <string name="mainmenu">Main Menu</string>
+    <string name="identity">Add Identity</string>
+    <string name="download">Download Speed</string>
+    <string name="upload">Upload Speed</string>
+    <string name="speed">Mbps</string>
+    <string name="yours">Your Identities</string>
+    <string name="details">Details</string>
+    <string name="enrollment">Enrollment</string>
+    <string name="name">Ziti Tunneler</string>
+    <string name="platform">For Android</string>
+    <string name="stop">Stop</string>
+
+    <!-- Menus & Generic Navigation -->
+    <string name="dashboard">Dashboard</string>
+    <string name="advanced">Advanced</string>
+    <string name="about">About</string>
+    <string name="feedback">Feedback</string>
+    <string name="support">Support</string>
+    <string name="back">Back</string>
+    <string name="save">Save</string>
+    <string name="copy">Copy</string>
+
+    <!-- About Area -->
+    <string name="privacy">Privacy Policy</string>
+    <string name="terms">Terms of Service</string>
+    <string name="thirdparty">Third Party Licenses</string>
+
+    <!-- Advanced Area -->
+    <string name="tunnel">Tunnel Configuration</string>
+    <string name="ip">IP Address</string>
+    <string name="subnet">Subnet Mask</string>
+    <string name="mtu">MTU</string>
+    <string name="dns">DNS Server</string>
+    <string name="advancedoptions">Advanced Options</string>
+    <string name="logs">Logs</string>
+    <string name="tunnelsub">Advanced tunnel settings that will impact tunnel availability and performance.</string>
+    <string name="logssub">Diagnostic logs that help us debug if you are having problems.</string>
+    <string name="logspacket">Packet Tunnel</string>
+    <string name="logspacketsub">Log messages for the packet tunneling extension</string>
+    <string name="logsapplication">Application</string>
+    <string name="logsapplicationsub">Log Messages for this application</string>
+
+    <!-- Cards -->
+    <string name="cardname">Name</string>
+    <string name="network">Network</string>
+    <string name="status">Status</string>
+    <string name="services">Services</string>
+    <string name="enrollmentstatus">Enrollment Status</string>
+    <string name="forget">Forget This Identity</string>
+
+
+    <!-- Remove the following once Reskinned -->
+    <string name="app_name">Ziti Tunnel</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="main_title">Tap To Connect</string>
+    <string name="logo_desc">Ziti Logo</string>
+    <string name="defults">0.0</string>
+    <string name="start">Start Tunnel</string>
+    <string name="defaultTime">00:00:00</string>
+    <string name="identities">Identities</string>
+
+    <string name="esc">ESC</string>
+    <string name="keytitle">Select Key File</string>
+    <string name="keysubtitle">On Your Phone</string>
+    <string name="keyimage">Select JWT Button</string>
+    <string name="keyaction">Select File</string>
+    <string name="qrtitle">Scan the QR Code</string>
+    <string name="qrsubtitle">With Camera or QR App</string>
+    <string name="qrimage">Scan Code</string>
+    <string name="qraction">Scan Code</string>
+    <string name="addidentity">Add Identity</string>
+
+</resources>

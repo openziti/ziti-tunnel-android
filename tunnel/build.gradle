@@ -1,0 +1,100 @@
+
+/*
+ * Copyright (c) 2020 NetFoundry. All rights reserved.
+ */
+
+plugins {
+    id('com.android.application')
+    id('kotlin-android')
+    id('kotlin-kapt')
+    id('kotlin-android-extensions')
+}
+
+android {
+    signingConfigs {
+        config {
+            keyAlias 'ziti'
+            keyPassword 'XXXXXX'
+            storeFile file("$projectDir/nf-ziti.jks")
+            storePassword 'XXXXXXXX'
+        }
+    }
+    compileSdkVersion 29
+    buildToolsVersion "28.0.3"
+    defaultConfig {
+        applicationId "org.openziti.tunnel"
+        minSdkVersion 26
+        targetSdkVersion 29
+        versionCode 4
+        versionName "${project.version}"
+
+        buildConfigField "String", "GIT_COMMIT", "\"${semver.info.shortCommit}\""
+        buildConfigField "String", "GIT_BRANCH", "\"${semver.info.branch.id}\""
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.config
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    lintOptions {
+        // Or, if you prefer, you can continue to check for errors in release builds,
+        // but continue the build even when errors are found:
+        abortOnError false
+    }
+
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
+}
+
+repositories {
+    mavenLocal()
+    maven {
+        url = "https://netfoundry.jfrog.io/netfoundry/ziti-maven"
+    }
+}
+
+def zitiVer = "update-api-0.12.+"
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+
+    implementation("org.openziti:ziti-android:${zitiVer}@aar") {
+        transitive = true
+    }
+
+    implementation("org.slf4j:slf4j-android:1.7.30")
+
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.7'
+
+    implementation 'com.google.android.material:material:1.2.0-alpha06'
+    implementation 'androidx.constraintlayout:constraintlayout:2.0.0-beta6'
+
+    implementation 'com.journeyapps:zxing-android-embedded:3.6.0'
+
+    implementation('org.pcap4j:pcap4j-core:1.8.2'){
+        transitive = false
+        exclude(group: 'net.java.dev.jna', module: 'jna')
+    }
+    implementation('org.pcap4j:pcap4j-packetfactory-static:1.8.2') {
+        exclude(group: 'net.java.dev.jna', module: 'jna')
+    }
+
+    implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
+
+    testImplementation 'org.hamcrest:hamcrest-core:2.2'
+    testImplementation 'junit:junit:4.13'
+    androidTestImplementation 'androidx.test:runner:1.2.0'
+    androidTestImplementation 'androidx.test:rules:1.2.0'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+}

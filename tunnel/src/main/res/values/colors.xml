@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (c) 2020 NetFoundry. All rights reserved.
+  -->
+
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+    <color name="colorTitle">#FFFFFF</color>
+    <color name="colorText">#646C71</color>
+
+    <color name="download">#0068F9</color>
+    <color name="upload">#F4044D</color>
+    <color name="subTitle">#638190</color>
+    <color name="title">#FFFFFF</color>
+    <color name="areaTitle">#262A41</color>
+    <color name="label">#0F0F23</color>
+    <color name="background">#0F0F23</color>
+    <color name="link">#3c69b3</color>
+    <color name="border">#EFF2F4</color>
+    <color name="black">#000000</color>
+    <color name="green">#4CD964</color>
+</resources>

@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (c) 2020 NetFoundry. All rights reserved.
+  -->
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/background">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/BackButton"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:background="@color/background">
+
+        <ImageView
+            android:layout_width="12dp"
+            android:layout_height="20dp"
+            android:layout_marginStart="16dp"
+            android:background="@drawable/back"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="20dp"
+            android:lineHeight="20dp"
+            android:paddingStart="36dp"
+            android:text="@string/back"
+            android:textColor="@color/link"
+            android:textSize="16sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+        </TextView>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:background="@color/background">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:paddingLeft="18dp"
+            android:text="@string/about"
+            android:textColor="@color/title"
+            android:textSize="26dp"
+            android:fontFamily="@font/russo_one"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="40dp"
+        android:orientation="vertical">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/PrivacyButton"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:background="@color/background">
+
+            <ImageView
+                android:layout_width="12dp"
+                android:layout_height="20dp"
+                android:layout_marginEnd="16dp"
+                android:background="@drawable/next"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="22dp"
+                android:lineHeight="22dp"
+                android:paddingLeft="18dp"
+                android:text="@string/privacy"
+                android:textColor="@color/title"
+                android:textSize="18dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:layout_editor_absoluteX="0dp">
+
+            </TextView>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/TermsButton"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:background="@color/background">
+
+            <ImageView
+                android:layout_width="12dp"
+                android:layout_height="20dp"
+                android:layout_marginEnd="16dp"
+                android:background="@drawable/next"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="22dp"
+                android:lineHeight="22dp"
+                android:paddingLeft="18dp"
+                android:text="@string/terms"
+                android:textColor="@color/title"
+                android:textSize="18dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:layout_editor_absoluteX="0dp">
+
+            </TextView>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/ThirdButton"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:background="@color/background">
+
+            <ImageView
+                android:layout_width="12dp"
+                android:layout_height="20dp"
+                android:layout_marginEnd="16dp"
+                android:background="@drawable/next"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="22dp"
+                android:lineHeight="22dp"
+                android:paddingLeft="18dp"
+                android:text="@string/thirdparty"
+                android:textColor="@color/title"
+                android:textSize="18dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:layout_editor_absoluteX="0dp">
+
+            </TextView>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingLeft="50dp"
+            android:paddingRight="50dp">
+
+
+            <ImageView
+                android:id="@+id/WebButton"
+                android:layout_width="match_parent"
+                android:layout_height="152dp"
+                android:clickable="true"
+                android:src="@drawable/logo"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+            <TextView
+                android:id="@+id/Version"
+                android:layout_width="match_parent"
+                android:layout_height="22dp"
+                android:layout_marginBottom="24dp"
+                android:textColor="@color/subTitle"
+                android:textSize="14dp"
+                android:gravity="center"
+                android:textAlignment="gravity"
+                app:layout_constraintBottom_toBottomOf="parent"
+                tools:layout_editor_absoluteX="50dp"/>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
+</LinearLayout>

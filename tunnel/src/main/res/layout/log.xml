@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (c) 2020 NetFoundry. All rights reserved.
+  -->
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/background">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:background="@color/background">
+
+        <ImageView
+            android:id="@+id/BackToLogsButton"
+            android:layout_width="12dp"
+            android:layout_height="20dp"
+            android:layout_marginStart="16dp"
+            android:background="@drawable/back"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            android:clickable="true"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/BackToLogsButton2"
+            android:layout_width="150dp"
+            android:layout_height="20dp"
+            android:clickable="true"
+            android:lineHeight="20dp"
+            android:paddingStart="36dp"
+            android:text="@string/back"
+            android:textColor="@color/link"
+            android:textSize="16sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+        </TextView>
+
+        <TextView
+            android:id="@+id/CopyLogButton"
+            android:layout_width="104dp"
+            android:layout_height="19dp"
+            android:layout_marginEnd="24dp"
+            android:gravity="right"
+            android:clickable="true"
+            android:lineHeight="20dp"
+            android:paddingLeft="36dp"
+            android:text="@string/copy"
+            android:textAlignment="gravity"
+            android:textColor="@color/link"
+            android:textSize="16sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.512">
+
+        </TextView>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:background="@color/background">
+
+        <TextView
+            android:id="@+id/LogTypeTitle"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:paddingStart="18dp"
+            android:text="@string/logs"
+            android:textColor="@color/title"
+            android:textSize="26sp"
+            android:fontFamily="@font/russo_one"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="10dp"
+        android:orientation="vertical">
+        <TextView
+            android:id="@+id/LogDetails"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="18dp"
+            android:textSize="8pt"
+            android:scrollbars="vertical"
+            android:scrollHorizontally="true"
+            android:textColor="@color/subTitle"/>
+    </LinearLayout>
+</LinearLayout>

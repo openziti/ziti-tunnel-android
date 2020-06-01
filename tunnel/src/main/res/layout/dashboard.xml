@@ -1,0 +1,557 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (c) 2020 NetFoundry. All rights reserved.
+  -->
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:background="@color/background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ZitiVPNActivity">
+
+    <LinearLayout
+        android:id="@+id/MainMenu"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingTop="24dp"
+        android:paddingLeft="24dp">
+
+        <ImageView
+            android:id="@+id/MainLogo"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_marginTop="0dp"
+            android:layout_marginStart="0dp"
+            android:background="@drawable/appicon"
+            />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="30dp"
+            android:text="@string/name"
+            android:fontFamily="@font/russo_one"
+            android:textColor="@color/title"
+            android:textSize="22sp"></TextView>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="20dp"
+            android:layout_marginTop="-10dp"
+            android:text="@string/platform"
+            android:textColor="@color/subTitle"
+            android:textSize="16sp"></TextView>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingTop="30dp"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:id="@+id/DashboardButton"
+                android:layout_width="match_parent"
+                android:layout_height="31dp"
+                android:orientation="horizontal"
+                android:clickable="true">
+                <ImageView
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:background="@drawable/dashboard"></ImageView>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:paddingLeft="20dp"
+                    android:text="@string/dashboard"
+                    android:textColor="@color/title"
+                    android:textSize="22dp"></TextView>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/IdentityButton"
+                android:layout_width="match_parent"
+                android:layout_height="31dp"
+                android:orientation="horizontal"
+                android:clickable="true"
+                android:layout_marginTop="20dp">
+                <ImageView
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:background="@drawable/identity"></ImageView>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:paddingLeft="20dp"
+                    android:text="@string/identities"
+                    android:textColor="@color/title"
+                    android:textSize="22dp"></TextView>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/AdvancedButton"
+                android:layout_width="match_parent"
+                android:layout_height="31dp"
+                android:orientation="horizontal"
+                android:clickable="true"
+                android:layout_marginTop="20dp">
+                <ImageView
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:background="@drawable/advanced"></ImageView>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:paddingLeft="20dp"
+                    android:text="@string/advanced"
+                    android:textColor="@color/title"
+                    android:textSize="22dp"></TextView>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/AboutButton"
+                android:layout_width="match_parent"
+                android:layout_height="31dp"
+                android:orientation="horizontal"
+                android:clickable="true"
+                android:layout_marginTop="20dp">
+                <ImageView
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:background="@drawable/about"></ImageView>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:paddingLeft="20dp"
+                    android:text="@string/about"
+                    android:textColor="@color/title"
+                    android:textSize="22dp"></TextView>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/FeedbackButton"
+                android:layout_width="match_parent"
+                android:layout_height="31dp"
+                android:orientation="horizontal"
+                android:clickable="true"
+                android:layout_marginTop="20dp">
+                <ImageView
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:background="@drawable/feedback"></ImageView>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:paddingLeft="20dp"
+                    android:text="@string/feedback"
+                    android:textColor="@color/title"
+                    android:textSize="22dp"></TextView>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/SupportButton"
+                android:layout_width="match_parent"
+                android:layout_height="31dp"
+                android:orientation="horizontal"
+                android:clickable="true"
+                android:layout_marginTop="20dp">
+                <ImageView
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:background="@drawable/support"></ImageView>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:paddingLeft="20dp"
+                    android:text="@string/support"
+                    android:textColor="@color/title"
+                    android:textSize="22dp"></TextView>
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/MainArea"
+        android:background="@drawable/background"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <ImageView
+            android:id="@+id/GlobeImage"
+            android:layout_width="match_parent"
+            android:layout_height="300dp"
+            android:adjustViewBounds="true"
+            android:background="@drawable/globe"
+            android:scaleType="centerCrop"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/constraintLayout"
+            android:layout_width="0dp"
+            android:layout_height="120dp"
+            android:animateLayoutChanges="true"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+            <ImageButton
+                android:id="@+id/HamburgerButton"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginStart="24dp"
+                android:background="@drawable/hamburger"
+                android:clickable="true"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="0.302" />
+            <ImageButton
+                android:id="@+id/AddIdentityButton"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginEnd="24dp"
+                android:background="@drawable/identity"
+                android:clickable="true"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="0.302" />
+            <ImageView
+                android:layout_width="40dp"
+                android:layout_height="53dp"
+                android:layout_marginStart="172dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="172dp"
+                android:layout_marginBottom="8dp"
+                android:background="@drawable/z"
+                android:contentDescription="@string/logo_desc"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.481"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="0.156" />
+
+            <TextView
+                android:id="@+id/HamburgerLabel"
+                android:layout_width="58dp"
+                android:layout_height="43dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="62dp"
+                android:fontFamily="@font/open_sans"
+                android:gravity="start"
+                android:lineHeight="13sp"
+                android:text="@string/mainmenu"
+                android:textAlignment="gravity"
+                android:textAllCaps="true"
+                android:textColor="@color/colorTitle"
+                android:textSize="13sp"
+                android:typeface="normal"
+                app:layout_anchorGravity="end"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.046"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/AddIdentityLabel"
+                android:layout_width="58dp"
+                android:layout_height="43dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="62dp"
+                android:fontFamily="@font/open_sans"
+                android:gravity="end"
+                android:lineHeight="13sp"
+                android:text="@string/identity"
+                android:textAlignment="gravity"
+                android:textAllCaps="true"
+                android:textColor="@color/colorTitle"
+                android:textSize="13sp"
+                android:typeface="normal"
+                app:layout_anchorGravity="end"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.933"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/MainAreaLayout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="65dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:weightSum="1.6"
+                android:orientation="vertical"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <TextView
+                    android:id="@+id/MainTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight=".18"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="12dp"
+                    android:layout_marginEnd="8dp"
+                    android:fontFamily="@font/russo_one"
+                    android:gravity="center"
+                    android:text="@string/main_title"
+                    android:textAlignment="center"
+                    android:textColor="@color/colorTitle"
+                    android:textSize="22sp"
+                    android:typeface="normal" />
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/OnButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight=".7"
+                    android:visibility="gone">
+
+                    <ImageView
+                        android:id="@+id/imageView"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginStart="8dp"
+                        android:layout_marginEnd="8dp"
+                        android:contentDescription="@string/stop"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/connected"
+                        app:layout_anchorGravity="center"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintHorizontal_bias="0.496"
+                        app:layout_constraintStart_toStartOf="parent" />
+                    <TextView
+                        android:id="@+id/StopLabel"
+                        android:layout_width="0dp"
+                        android:layout_height="20dp"
+                        android:layout_marginBottom="24dp"
+                        android:gravity="center"
+                        android:text="@string/stop"
+                        android:textAlignment="gravity"
+                        android:textAllCaps="true"
+                        android:textColor="@color/title"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintHorizontal_bias="0.0"
+                        app:layout_constraintStart_toStartOf="parent"></TextView>
+
+                    <TextView
+                        android:id="@+id/TimeConnected"
+                        android:layout_width="100dp"
+                        android:layout_height="20dp"
+                        android:gravity="center"
+                        android:text="@string/defaultTime"
+                        android:textAlignment="gravity"
+                        android:textColor="@color/title"
+                        app:layout_constraintBottom_toTopOf="@+id/StopLabel"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"></TextView>
+                </androidx.constraintlayout.widget.ConstraintLayout>
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/OffButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight=".7"
+                    android:visibility="visible">
+
+                    <ImageView
+                        android:id="@+id/StateButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:contentDescription="@string/start"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/connect"
+                        app:layout_anchorGravity="center"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintHorizontal_bias="0.496"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <LinearLayout
+                    android:id="@+id/LabelArea"
+                    android:layout_width="match_parent"
+                    android:layout_height="20dp"
+                    android:layout_weight=".05"
+                    android:gravity="center_horizontal|center_vertical"
+                    android:orientation="horizontal"
+                    android:visibility="visible">
+
+                    <TextView
+                        android:id="@+id/DownloadSpeedLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp"
+                        android:text="@string/download"
+                        android:textColor="@color/colorTitle" />
+
+                    <ImageView
+                        android:id="@+id/DownIcon"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:background="@drawable/down"
+                        android:contentDescription="@string/download"
+                        tools:srcCompat="@drawable/down" />
+
+                    <TextView
+                        android:id="@+id/UploadSpeedLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_marginEnd="8dp"
+                        android:text="@string/upload"
+                        android:textColor="@color/colorTitle" />
+
+                    <ImageView
+                        android:id="@+id/UpIcon"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:contentDescription="@string/upload"
+                        app:srcCompat="@drawable/up" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/CountArea"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight=".25"
+                    android:gravity="center_horizontal"
+                    android:orientation="horizontal"
+                    android:visibility="visible">
+
+                    <TextView
+                        android:id="@+id/DownloadSpeed"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:layout_marginEnd="10dp"
+                        android:text="@string/defults"
+                        android:textColor="@color/download"
+                        android:textSize="60sp"
+                        android:autoSizeTextType="uniform"
+                        tools:text="@string/defults" />
+
+                    <TextView
+                        android:id="@+id/UploadSpeed"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:layout_marginStart="10dp"
+                        android:text="@string/defults"
+                        android:textColor="@color/upload"
+                        android:autoSizeTextType="uniform"
+                        android:textSize="60sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/CountLabelArea"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_horizontal"
+                    android:layout_weight=".05"
+                    android:weightSum="2"
+                    android:orientation="horizontal"
+                    android:visibility="visible">
+
+                    <TextView
+                        android:id="@+id/DownloadMbps"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:text="@string/speed"
+                        android:layout_marginEnd="10dp"
+                        android:textColor="@color/subTitle" />
+                    <TextView
+                        android:id="@+id/UploadMbps"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:text="@string/speed"
+                        android:layout_marginStart="10dp"
+                        android:textColor="@color/subTitle" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/TitleIdentities"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="0.1"
+                    android:fontFamily="@font/russo_one"
+                    android:gravity="center"
+                    android:text="@string/yours"
+                    android:autoSizeTextType="uniform"
+                    android:textAlignment="gravity"
+                    android:textColor="@color/areaTitle"
+                    android:clickable="true"
+                    android:textSize="20sp" />
+                <TextView
+                    android:id="@+id/IdentityCount"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="0.2"
+                    android:fontFamily="@font/russo_one"
+                    android:gravity="center"
+                    android:text="0"
+                    android:autoSizeTextType="uniform"
+                    android:textAlignment="gravity"
+                    android:textColor="@color/areaTitle"
+                    android:clickable="true"
+                    android:textSize="20sp" />
+            </LinearLayout>
+
+
+
+
+
+
+
+
+<!--
+            <RelativeLayout
+                android:id="@+id/IdentityArea"
+                android:animateLayoutChanges="true"
+                android:layout_width="wrap_content"
+                android:layout_height="100dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent">
+                <io.netfoundry.ziti.tunnel.LockableScrollView
+                    android:id="@+id/MainScroller"
+                    android:overScrollMode="always"
+                    android:layout_centerHorizontal="true"
+                    android:animateLayoutChanges="true"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:scrollbars="none"
+                    android:fillViewport="true">
+                    <LinearLayout
+                        android:animateLayoutChanges="true"
+                        android:id="@+id/IdentityCards"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:orientation="horizontal">
+                    </LinearLayout>
+                </io.netfoundry.ziti.tunnel.LockableScrollView>
+            </RelativeLayout>
+-->
+        </androidx.constraintlayout.widget.ConstraintLayout>
+        <!-- StartFrame - Animated Curved Frame around Main when Nav is displayed -->
+        <ImageView
+            android:id="@+id/FrameArea"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0"
+            android:contentDescription="@string/name"
+            android:src="@drawable/frame" />
+        <!-- EndFrame -->
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <include android:id="@+id/AboutPage" layout="@layout/about" android:x="600dp" android:visibility="gone"/>
+    <include android:id="@+id/AdvancedPage" layout="@layout/advanced" android:x="600dp" android:visibility="gone"/>
+    <include android:id="@+id/ConfigPage" layout="@layout/configuration" android:x="600dp" android:visibility="gone"/>
+    <include android:id="@+id/LogsPage" layout="@layout/logs" android:x="600dp" android:visibility="gone"/>
+    <include android:id="@+id/LogPage" layout="@layout/log" android:x="600dp" android:visibility="gone"/>
+    <include android:id="@+id/IdentityPage" layout="@layout/identities" android:x="600dp" android:visibility="gone"/>
+    <include android:id="@+id/IdentityDetailsPage" layout="@layout/identity" android:x="600dp" android:visibility="gone"/>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

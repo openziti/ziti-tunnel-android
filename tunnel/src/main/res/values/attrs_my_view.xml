@@ -1,0 +1,15 @@
+<!--
+  ~ Copyright (c) 2020 NetFoundry. All rights reserved.
+  -->
+
+<resources>
+    <declare-styleable name="CardView">
+        <attr name="name" format="string" />
+        <attr name="network" format="string" />
+        <attr name="status" format="string" />
+        <attr name="enrollment" format="string" />
+    </declare-styleable>
+    <declare-styleable name="IdentityView">
+        <attr name="idname" format="string" />
+    </declare-styleable>
+</resources>
