@@ -21,6 +21,7 @@ android {
     }
     compileSdkVersion 29
     buildToolsVersion "29.0.3"
+    ndkVersion "21.1.6352462"
 
     defaultConfig {
         applicationId "org.openziti.tunnel"
