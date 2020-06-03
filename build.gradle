@@ -30,28 +30,35 @@ plugins {
 
 semver {
     // nextVersion = "patch"
-    snapshotSuffix = "${zitiBuildnum}<dirty>"
-    dirtyMarker = "-dirty"
-    initialVersion = "0.3.0"
+    snapshotSuffix = "pre"
+    initialVersion = "0.1.0"
+    branches {
+        branch {
+            regex = "master"
+            incrementer = "NO_VERSION_INCREMENTER"
+            formatter = { info -> "${info.version.major}.${info.version.minor}.${info.version.patch}" }
+        }
+        branch {
+            regex = ".+"
+            incrementer = "NO_VERSION_INCREMENTER"
+            formatter = { info ->
+                def v = info.version
+                """${info.branch.id}-${v.major}.${v.minor}.${v.patch}.${v.suffix?.count ?: "0"}.${v.suffix?.sha}""" }
+        }
+    }
 }
 
+version = semver.info
+println("version = $version")
 group = 'org.openziti'
 
-allprojects {
-    def versionPrefix = ""
-    def versionSuffix = "-${zitiBuildnum}"
-
-    if (semver.info.branch.id != 'master') {
-        versionPrefix = "${semver.info.branch.id}-"
-        versionSuffix = ""
-    }
-    version = "${versionPrefix}${semver.info.version}${versionSuffix}"
-
+subprojects {
     repositories {
         google()
         jcenter()
     }
 }
+
 
 task clean(type: Delete) {
     delete rootProject.buildDir

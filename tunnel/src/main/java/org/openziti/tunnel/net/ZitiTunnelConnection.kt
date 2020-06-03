@@ -86,7 +86,7 @@ class ZitiTunnelConnection(synPack: IpV4Packet,
         try {
             conn.timeout = -1
             while (!done) {
-                val read = conn.read(buf, 0, buf.size)
+                val read = conn.receive(buf, 0, buf.size)
                 if (read > 0) {
                     val copyOf = buf.copyOf(read)
                     val packet = tcpConn.toPeer(copyOf)
