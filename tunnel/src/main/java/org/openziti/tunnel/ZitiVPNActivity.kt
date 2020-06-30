@@ -458,11 +458,9 @@ class ZitiVPNActivity : AppCompatActivity() {
             for (ctx in contextList) {
                 val ctxModel = ViewModelProvider(this, ZitiContextModel.Factory(ctx)).get(ctx.name(), ZitiContextModel::class.java)
                 val identityitem = IdentityItemView(this, ctxModel)
-                var serviceCount = 0
                 ctxModel.services().observe(this, Observer { serviceList ->
-                    serviceCount = serviceList.count()
+                    identityitem.count = serviceList.count()
                 })
-                identityitem.count = serviceCount
 
                 identityitem.setOnClickListener {
                     toggleSlide(IdentityDetailsPage, "identity")
