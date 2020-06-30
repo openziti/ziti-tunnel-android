@@ -171,35 +171,49 @@
             </TextView>
         </LinearLayout>
 
-        <TextView
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:fontFamily="@font/russo_one"
-            android:paddingLeft="18dp"
-            android:paddingTop="10dp"
-            android:text="@string/services"
-            android:textColor="@color/title"
-            android:textSize="26dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
-        </TextView>
+            android:layout_height="wrap_content">
 
-        <LinearLayout
-            android:id="@+id/IdDetailServicesList"
-            android:layout_width="match_parent"
-            android:layout_height="180dp"
-            android:layout_marginTop="0dp"
-            android:orientation="vertical">
-        </LinearLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="60dp"
+                android:layout_marginStart="10dp"
+                android:fontFamily="@font/russo_one"
+                android:paddingLeft="18dp"
+                android:paddingTop="10dp"
+                android:text="@string/services"
+                android:textColor="@color/title"
+                android:textSize="26dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"></TextView>
 
-        <Button
-            android:id="@+id/IdDetailForgetButton"
-            android:background="@color/background"
-            android:textColor="@color/title"
-            android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:text="@string/forget">
-        </Button>
+            <Button
+                android:id="@+id/IdDetailForgetButton"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_marginTop="5dp"
+                android:layout_marginEnd="10dp"
+                android:background="@android:color/transparent"
+                android:text="@string/forget"
+                android:textColor="@color/title"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"></Button>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <ScrollView
+            android:layout_width="fill_parent"
+            android:minHeight="180dp"
+            android:layout_height="wrap_content">
+            <LinearLayout
+                android:id="@+id/IdDetailServicesList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="0dp"
+                android:orientation="vertical">
+            </LinearLayout>
+        </ScrollView>
 
 
 

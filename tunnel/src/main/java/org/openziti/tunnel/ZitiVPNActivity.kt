@@ -372,9 +372,6 @@ class ZitiVPNActivity : AppCompatActivity() {
         ThirdButton.setOnClickListener {
             launchUrl("https://netfoundry.io/third-party")
         }
-        WebButton.setOnClickListener {
-            launchUrl("https://netfoundry.io")
-        }
 
         // Back Buttons
         BackButton.setOnClickListener {
@@ -459,9 +456,13 @@ class ZitiVPNActivity : AppCompatActivity() {
             // create, remove cards
             var index = 0
             for (ctx in contextList) {
-                val ctxModel = ViewModelProvider(this, ZitiContextModel.Factory(ctx))
-                        .get(ctx.name(), ZitiContextModel::class.java)
+                val ctxModel = ViewModelProvider(this, ZitiContextModel.Factory(ctx)).get(ctx.name(), ZitiContextModel::class.java)
                 val identityitem = IdentityItemView(this, ctxModel)
+                var serviceCount = 0
+                ctxModel.services().observe(this, Observer { serviceList ->
+                    serviceCount = serviceList.count()
+                })
+                identityitem.count = serviceCount
 
                 identityitem.setOnClickListener {
                     toggleSlide(IdentityDetailsPage, "identity")
@@ -484,9 +485,11 @@ class ZitiVPNActivity : AppCompatActivity() {
                         clipboard.setPrimaryClip(clip)
                         Toast.makeText(applicationContext,IdDetailsNetwork.text.toString() + " has been copied to your clipboard",Toast.LENGTH_LONG).show()
                     }
+                    var sCount = 0
                     ctxModel.services().observe(this, Observer { serviceList ->
                         IdDetailServicesList.removeAllViews()
                         for (service in serviceList) {
+                            sCount++
                             var line = LineView(applicationContext)
                             line.label = service.name
                             line.value = service.dns?.let { "${it.hostname}:${it.port}" } ?: ""

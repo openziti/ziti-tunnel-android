@@ -35,4 +35,30 @@
 
         </TextView>
 
+        <ImageView
+            android:id="@+id/ServiceCountBubble"
+            android:layout_width="35dp"
+            android:layout_height="match_parent"
+            android:layout_marginTop="3dp"
+            android:layout_marginEnd="30dp"
+            android:gravity="center"
+            android:src="@drawable/bubble"
+            android:textAlignment="gravity"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"></ImageView>
+
+        <TextView
+            android:id="@+id/ServiceCount"
+            android:layout_width="35dp"
+            android:layout_height="match_parent"
+            android:layout_marginTop="3dp"
+            android:layout_marginEnd="30dp"
+            android:gravity="center"
+            android:text="0"
+            android:textAlignment="gravity"
+            android:textColor="@color/title"
+            android:textSize="12dip"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"></TextView>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -16,12 +16,20 @@ import kotlinx.android.synthetic.main.identityitem.view.*
 class IdentityItemView(context: AppCompatActivity, val ctxModel: ZitiContextModel) : RelativeLayout(context) {
 
     private var _name: String? = ""
+    private var _count: Int = 0
 
     var idname: String
         get() = this._name.toString()
         set(value) {
             this._name = value
             IdentityName.text = this._name
+        }
+
+    var count: Int
+        get() = this._count
+        set(value) {
+            this._count = value
+            ServiceCount.text = this._count.toString()
         }
 
     private fun init(attrs: AttributeSet?, defStyle: Int) {
