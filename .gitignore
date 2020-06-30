@@ -12,3 +12,6 @@ build/
 !.idea/copyright/
 libs/
 release/
+tunnel/.idea/
+tunnel/local.properties
+tunnel/gradle/wrapper/

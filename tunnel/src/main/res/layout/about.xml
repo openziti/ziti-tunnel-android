@@ -163,14 +163,6 @@
             android:paddingRight="50dp">
 
 
-            <ImageView
-                android:id="@+id/WebButton"
-                android:layout_width="match_parent"
-                android:layout_height="152dp"
-                android:clickable="true"
-                android:src="@drawable/logo"
-                app:layout_constraintBottom_toBottomOf="parent" />
-
             <TextView
                 android:id="@+id/Version"
                 android:layout_width="match_parent"
