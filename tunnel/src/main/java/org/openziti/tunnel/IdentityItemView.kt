@@ -5,10 +5,12 @@
 package org.openziti.tunnel
 import android.util.AttributeSet
 import android.view.LayoutInflater
+import android.widget.CompoundButton
 import android.widget.RelativeLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
 import kotlinx.android.synthetic.main.identityitem.view.*
+import org.openziti.ZitiContext
 
 /**
  * TODO: document your custom view class.
@@ -17,12 +19,20 @@ class IdentityItemView(context: AppCompatActivity, val ctxModel: ZitiContextMode
 
     private var _name: String? = ""
     private var _count: Int = 0
+    private var _isOn: Boolean = false
 
     var idname: String
         get() = this._name.toString()
         set(value) {
             this._name = value
             IdentityName.text = this._name
+        }
+
+    var isOn:Boolean
+        get() = this._isOn
+        set(value) {
+            this._isOn = value
+            IdToggleSwitch.isChecked = this._isOn
         }
 
     var count: Int

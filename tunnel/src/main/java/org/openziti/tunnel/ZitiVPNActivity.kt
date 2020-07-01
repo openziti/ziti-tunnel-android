@@ -36,6 +36,7 @@ import kotlinx.android.synthetic.main.configuration.*
 import kotlinx.android.synthetic.main.dashboard.*
 import kotlinx.android.synthetic.main.identities.*
 import kotlinx.android.synthetic.main.identity.*
+import kotlinx.android.synthetic.main.identityitem.view.*
 import kotlinx.android.synthetic.main.log.*
 import kotlinx.android.synthetic.main.logs.*
 import kotlinx.coroutines.Dispatchers
@@ -461,6 +462,12 @@ class ZitiVPNActivity : AppCompatActivity() {
                 ctxModel.services().observe(this, Observer { serviceList ->
                     identityitem.count = serviceList.count()
                 })
+                if (ctx.getStatus() == ZitiContext.Status.Active) {
+                    identityitem.isOn = true
+                }
+                identityitem.IdToggleSwitch.setOnCheckedChangeListener { button: CompoundButton, state: Boolean ->
+                    ctx.setEnabled(state)
+                }
 
                 identityitem.setOnClickListener {
                     toggleSlide(IdentityDetailsPage, "identity")
@@ -471,10 +478,10 @@ class ZitiVPNActivity : AppCompatActivity() {
                     }
                     IdOnOffSwitch.setOnCheckedChangeListener { button: CompoundButton, state: Boolean ->
                         ctx.setEnabled(state)
+                        true
                     }
                     ctxModel.status().observe(this, Observer { st ->
                         IdDetailsStatus.text = st.toString()
-//                        identityitem.idname = ctxModel.name()
                     })
                     IdDetailsNetwork.text = ctx.controller()
                     IdDetailsNetwork.setOnClickListener {
