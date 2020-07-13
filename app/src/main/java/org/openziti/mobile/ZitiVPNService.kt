@@ -94,7 +94,7 @@ class ZitiVPNService : VpnService() {
 
                 setConfigureIntent(
                         PendingIntent.getActivity(applicationContext, 0,
-                                Intent(applicationContext, ZitiVPNActivity::class.java),
+                                Intent(applicationContext, ZitiMobileEdgeActivity::class.java),
                                 PendingIntent.FLAG_UPDATE_CURRENT))
             }
 

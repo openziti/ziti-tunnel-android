@@ -50,7 +50,7 @@ import java.util.*
 fun Int.toDp(): Int = (this / Resources.getSystem().displayMetrics.density).toInt()
 fun Int.toPx(): Int = (this * Resources.getSystem().displayMetrics.density).toInt()
 
-class ZitiVPNActivity : AppCompatActivity() {
+class ZitiMobileEdgeActivity : AppCompatActivity() {
 
     lateinit var prefs: SharedPreferences
     val systemId: Int by lazy {

@@ -10,7 +10,7 @@ import org.openziti.android.Ziti
 /**
  *
  */
-class ZitiVPNApp: Application() {
+class ZitiApp: Application() {
     override fun onCreate() {
         super.onCreate()
         Ziti.setEnrollmentActivity(ZitiEnrollmentActivity::class.java)
