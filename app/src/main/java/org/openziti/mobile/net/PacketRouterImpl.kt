@@ -2,11 +2,11 @@
  * Copyright (c) 2020 NetFoundry. All rights reserved.
  */
 
-package org.openziti.tunnel.net
+package org.openziti.mobile.net
 
 import android.util.Log
+import org.openziti.mobile.net.tcp.TCP
 import org.openziti.net.dns.DNSResolver
-import org.openziti.tunnel.net.tcp.TCP
 import org.pcap4j.packet.IpPacket
 import org.pcap4j.packet.IpSelector
 import org.pcap4j.packet.IpV4Packet

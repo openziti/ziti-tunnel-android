@@ -2,7 +2,7 @@
  * Copyright (c) 2020 NetFoundry. All rights reserved.
  */
 
-package org.openziti.tunnel.net
+package org.openziti.mobile.net
 
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
@@ -11,8 +11,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.openziti.Ziti
 import org.openziti.ZitiConnection
-import org.openziti.tunnel.net.tcp.TCP
-import org.openziti.tunnel.net.tcp.TCPConn
+import org.openziti.mobile.net.tcp.TCP
+import org.openziti.mobile.net.tcp.TCPConn
 import org.pcap4j.packet.*
 import org.pcap4j.packet.namednumber.IpNumber
 import org.pcap4j.packet.namednumber.IpV4TosPrecedence

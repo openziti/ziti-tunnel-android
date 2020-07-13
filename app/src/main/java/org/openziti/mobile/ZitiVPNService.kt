@@ -2,7 +2,7 @@
  * Copyright (c) 2020 NetFoundry. All rights reserved.
  */
 
-package org.openziti.tunnel
+package org.openziti.mobile
 
 import android.app.PendingIntent
 import android.app.Service
@@ -14,8 +14,8 @@ import android.os.IBinder
 import android.system.OsConstants
 import android.util.Log
 import org.openziti.android.Ziti
+import org.openziti.mobile.net.TUNNEL_MTU
 import org.openziti.net.dns.DNSResolver
-import org.openziti.tunnel.net.TUNNEL_MTU
 
 class ZitiVPNService : VpnService() {
 

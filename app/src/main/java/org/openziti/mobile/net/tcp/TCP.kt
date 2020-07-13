@@ -2,7 +2,7 @@
  * Copyright (c) 2020 NetFoundry. All rights reserved.
  */
 
-package org.openziti.tunnel.net.tcp
+package org.openziti.mobile.net.tcp
 
 interface TCP {
 

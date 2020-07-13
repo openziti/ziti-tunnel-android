@@ -2,7 +2,7 @@
  * Copyright (c) 2020 NetFoundry. All rights reserved.
  */
 
-package org.openziti.tunnel
+package org.openziti.mobile
 
 import android.os.ParcelFileDescriptor
 import android.util.Log
@@ -11,9 +11,9 @@ import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.openziti.mobile.net.PacketRouterImpl
+import org.openziti.mobile.net.TUNNEL_MTU
 import org.openziti.net.dns.DNSResolver
-import org.openziti.tunnel.net.PacketRouterImpl
-import org.openziti.tunnel.net.TUNNEL_MTU
 import java.nio.ByteBuffer
 import java.nio.channels.ClosedByInterruptException
 import java.util.concurrent.Executors

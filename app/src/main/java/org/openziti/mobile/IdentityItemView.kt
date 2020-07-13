@@ -2,15 +2,13 @@
  * Copyright (c) 2020 NetFoundry. All rights reserved.
  */
 
-package org.openziti.tunnel
+package org.openziti.mobile
 import android.util.AttributeSet
 import android.view.LayoutInflater
-import android.widget.CompoundButton
 import android.widget.RelativeLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
 import kotlinx.android.synthetic.main.identityitem.view.*
-import org.openziti.ZitiContext
 
 /**
  * TODO: document your custom view class.

@@ -2,7 +2,7 @@
  * Copyright (c) 2020 NetFoundry. All rights reserved.
  */
 
-package org.openziti.tunnel.net
+package org.openziti.mobile.net
 
 import org.openziti.net.dns.DNSResolver
 import org.pcap4j.packet.DnsPacket

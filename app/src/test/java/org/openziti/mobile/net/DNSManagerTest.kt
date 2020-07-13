@@ -2,7 +2,7 @@
  * Copyright (c) 2020 NetFoundry. All rights reserved.
  */
 
-package org.openziti.tunnel.net
+package org.openziti.mobile.net
 
 import org.junit.Assert.assertEquals
 import org.junit.Ignore

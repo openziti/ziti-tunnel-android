@@ -2,7 +2,7 @@
  * Copyright (c) 2020 NetFoundry. All rights reserved.
  */
 
-package org.openziti.tunnel
+package org.openziti.mobile
 
 import android.app.Application
 import org.openziti.android.Ziti

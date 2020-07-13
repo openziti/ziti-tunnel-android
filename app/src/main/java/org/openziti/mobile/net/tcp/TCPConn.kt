@@ -2,11 +2,11 @@
  * Copyright (c) 2020 NetFoundry. All rights reserved.
  */
 
-package org.openziti.tunnel.net.tcp
+package org.openziti.mobile.net.tcp
 
 import android.util.Log
 import kotlinx.coroutines.channels.Channel
-import org.openziti.tunnel.net.flags
+import org.openziti.mobile.net.flags
 import org.pcap4j.packet.*
 import org.pcap4j.packet.namednumber.TcpPort
 import java.net.InetAddress
