@@ -16,7 +16,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.0.0'
+        classpath 'com.android.tools.build:gradle:4.0.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
 
         // NOTE: Do not place your application dependencies here; they belong
@@ -59,33 +59,6 @@ subprojects {
     }
 }
 
-
 task clean(type: Delete) {
     delete rootProject.buildDir
-}
-
-task tagIfNeeded() {
-    doLast {
-        def ver = semver.info.version
-        if (semver.info.branch.id == 'master' && semver.info.tag == "none") {
-            def tag = "${ver.major}.${ver.minor}.${ver.patch}"
-
-            if (zitiMajor > ver.major || (zitiMajor == ver.major && zitiMinor > ver.minor)) {
-                tag = "${zitiMajor}.${zitiMinor}.0"
-                logger.log(LogLevel.LIFECYCLE, "advancing tag to $tag")
-            }
-
-            logger.log(LogLevel.LIFECYCLE, "tagging with $tag")
-
-            exec {
-                commandLine 'git', 'tag', '-a', tag, '-m', "semver bump to ${tag}"
-            }
-
-            exec {
-                commandLine 'git', 'push', '--tags'
-            }
-        } else {
-            logger.log(LogLevel.LIFECYCLE, "tagging is skipped because tag exists or not on master")
-        }
-    }
 }
