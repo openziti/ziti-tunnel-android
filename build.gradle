@@ -8,7 +8,7 @@ buildscript {
     ext.zitiMajor = 0
     ext.zitiMinor = 5
 
-    ext.kotlin_version = '1.3.72'
+    ext.kotlin_version = '1.4.0'
     ext.zitiBuildnum = System.getProperty("ziti.buildNum") ?: 'local'
 
     repositories {
