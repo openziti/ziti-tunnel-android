@@ -244,9 +244,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
     fun TurnOff() {
         OnButton.visibility = View.GONE
         OffButton.visibility = View.VISIBLE
-        LabelArea.visibility = View.INVISIBLE
-        CountArea.visibility = View.INVISIBLE
-        CountLabelArea.visibility = View.INVISIBLE
         TimeConnected.visibility = View.INVISIBLE
     }
 
@@ -309,9 +306,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
             startTime = Date()
             OnButton.visibility = View.VISIBLE
             OffButton.visibility = View.GONE
-            LabelArea.visibility = View.VISIBLE
-            CountArea.visibility = View.VISIBLE
-            CountLabelArea.visibility = View.VISIBLE
             TimeConnected.visibility = View.VISIBLE
         }
         OnButton.setOnClickListener {
@@ -426,12 +420,12 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
         }
 
         // Dashboard Buttons
-        IdentityButton.setOnClickListener {
-            toggleSlide(IdentityPage, "identities")
-        }
-        IdentityCount.setOnClickListener {
-            toggleSlide(IdentityPage, "identities")
-        }
+        //IdentityButton.setOnClickListener {
+        //    toggleSlide(IdentityPage, "identities")
+       // }
+        //IdentityCount.setOnClickListener {
+        //    toggleSlide(IdentityPage, "identities")
+        //}
 
         LogDetails.movementMethod = ScrollingMovementMethod()
         ApplicationLogsButton.setOnClickListener {
@@ -467,7 +461,9 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
                 }
                 identityitem.IdToggleSwitch.setOnCheckedChangeListener { button: CompoundButton, state: Boolean ->
                     ctx.setEnabled(state)
+
                 }
+                identityitem.server = ctx.controller()
 
                 identityitem.setOnClickListener {
                     toggleSlide(IdentityDetailsPage, "identity")
@@ -521,8 +517,9 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
                         alertDialog.show()
                     }
                 }
-                IdentityList.addView(identityitem)
+                IdentityListing.addView(identityitem)
                 index++
+
 
 /*
                 val cardView = CardView(this, ctx)
@@ -558,7 +555,7 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
                 */
 
             }
-            IdentityCount.text = index.toString()
+            //IdentityCount.text = index.toString()
             if (index==0) {
                 if (OffButton!=null) {
                     TurnOff()
@@ -611,9 +608,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
     private fun updateConnectedView(on: Boolean) {
         OnButton.visibility = if (on) View.VISIBLE else View.GONE
         OffButton.visibility = if (on) View.GONE else View.VISIBLE
-        LabelArea.visibility = if (on) View.VISIBLE else View.INVISIBLE
-        CountArea.visibility = if (on) View.VISIBLE else View.INVISIBLE
-        CountLabelArea.visibility = if (on) View.VISIBLE else View.INVISIBLE
     }
 
     val MB = 1024 * 1024

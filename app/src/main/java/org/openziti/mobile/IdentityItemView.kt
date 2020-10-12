@@ -16,6 +16,7 @@ import kotlinx.android.synthetic.main.identityitem.view.*
 class IdentityItemView(context: AppCompatActivity, val ctxModel: ZitiContextModel) : RelativeLayout(context) {
 
     private var _name: String? = ""
+    private var _server: String? = ""
     private var _count: Int = 0
     private var _isOn: Boolean = false
 
@@ -26,11 +27,20 @@ class IdentityItemView(context: AppCompatActivity, val ctxModel: ZitiContextMode
             IdentityName.text = this._name
         }
 
+    var server: String
+        get() = this._server.toString()
+        set(value) {
+            this._server = value
+            IdentityServer.text = this._server
+        }
+
     var isOn:Boolean
         get() = this._isOn
         set(value) {
             this._isOn = value
             IdToggleSwitch.isChecked = this._isOn
+            if (this._isOn) StatusLabel.text = "enabled"
+            else StatusLabel.text = "disabled"
         }
 
     var count: Int
@@ -52,5 +62,6 @@ class IdentityItemView(context: AppCompatActivity, val ctxModel: ZitiContextMode
         ctxModel.status().observe(context, Observer {
             IdentityName.text = ctxModel.name()
         })
+
     }
 }

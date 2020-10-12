@@ -8,68 +8,130 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="60dp"
+    android:layout_height="85dp"
     android:background="@color/background">
-
-        <ImageView
-            android:layout_width="12dp"
-            android:layout_height="20dp"
-            android:layout_marginEnd="16dp"
-            android:background="@drawable/next"
-            android:clickable="true"
-            app:layout_constraintBottom_toBottomOf="parent"
+        <LinearLayout
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"></ImageView>
-
-        <Switch
-            android:id="@+id/IdToggleSwitch"
-            android:layout_width="50dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
-            android:layout_marginTop="16dp"
-            android:visibility="visible"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/IdentityName"
+            app:layout_constraintTop_toTopOf="parent"
             android:layout_width="match_parent"
-            android:layout_height="22dp"
-            android:layout_marginStart="80dp"
-            android:lineHeight="22dp"
-            android:paddingLeft="18dp"
-            android:textColor="@color/title"
-            android:textSize="18dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
+            android:layout_height="85dp"
+            android:orientation="horizontal">
+                <LinearLayout
+                    android:layout_weight="0"
+                    android:layout_width="85dp"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical">
+                        <Switch
+                            android:id="@+id/IdToggleSwitch"
+                            android:layout_width="55dp"
+                            android:layout_height="35dp"
+                            android:layout_marginStart="10dp"
+                            android:layout_marginTop="16dp"
+                            android:visibility="visible"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent" />
 
-        </TextView>
+                        <TextView
+                            android:id="@+id/StatusLabel"
+                            android:layout_width="fill_parent"
+                            android:layout_height="30dp"
+                            android:layout_weight="1"
+                            android:gravity="center|top"
+                            android:text="disabled"
+                            android:textSize="14dp"
+                            android:textColor="#FFFFFF"></TextView>
+                </LinearLayout>
 
-        <ImageView
-            android:id="@+id/ServiceCountBubble"
-            android:layout_width="35dp"
-            android:layout_height="match_parent"
-            android:layout_marginTop="3dp"
-            android:layout_marginEnd="30dp"
-            android:gravity="center"
-            android:src="@drawable/bubble"
-            android:textAlignment="gravity"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"></ImageView>
+                <LinearLayout
+                    android:layout_weight="1"
+                    android:layout_width="fill_parent"
+                    android:layout_height="85dp"
+                    android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/ServiceCount"
-            android:layout_width="35dp"
-            android:layout_height="match_parent"
-            android:layout_marginTop="3dp"
-            android:layout_marginEnd="30dp"
-            android:gravity="center"
-            android:text="0"
-            android:textAlignment="gravity"
-            android:textColor="@color/title"
-            android:textSize="12dip"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"></TextView>
+                        <TextView
+                            android:id="@+id/IdentityName"
+                            android:layout_width="fill_parent"
+                            android:layout_height="35dp"
+                            android:layout_weight="1"
+                            android:gravity="bottom|left"
+                            android:lineHeight="35dp"
+                            android:text="MyIdName"
+                            android:textColor="@color/title"
+                            android:textSize="24dp">
 
+                        </TextView>
+
+                        <TextView
+                            android:id="@+id/IdentityServer"
+                            android:layout_width="fill_parent"
+                            android:layout_height="22dp"
+                            android:layout_weight="1"
+                            android:gravity="top|left"
+                            android:alpha="0.4"
+                            android:lineHeight="55dp"
+                            android:text="server:8080"
+                            android:textColor="@color/title"
+                            android:textSize="14dp">
+
+                        </TextView>
+
+
+                </LinearLayout>
+                <LinearLayout
+                    android:layout_weight="0"
+                    android:layout_width="85dp"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical">
+                        <androidx.constraintlayout.widget.ConstraintLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="50dp">
+
+
+                                <ImageView
+                                    android:id="@+id/ServiceCountBubble"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="fill_parent"
+                                    android:layout_marginTop="10dp"
+                                    android:gravity="center"
+                                    android:src="@drawable/bubble"
+                                    android:textAlignment="gravity"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintTop_toTopOf="parent"></ImageView>
+                                <TextView
+                                    android:id="@+id/ServiceCount"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="fill_parent"
+                                    android:layout_marginTop="10dp"
+                                    android:gravity="center"
+                                    android:text="0"
+                                    android:textAlignment="gravity"
+                                    android:textColor="@color/title"
+                                    android:textSize="12dip"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintTop_toTopOf="parent"></TextView>
+
+                        </androidx.constraintlayout.widget.ConstraintLayout>
+
+                        <TextView
+                            android:layout_width="85dp"
+                            android:layout_height="30dp"
+                            android:gravity="center|top"
+                            android:text="services"
+                            android:textAlignment="center"
+                            android:textSize="14dp"
+                            android:textColor="#FFFFFF"></TextView>
+
+                </LinearLayout>
+                <ImageView
+                    android:layout_weight="0"
+                    android:layout_width="20dp"
+                    android:layout_height="34dp"
+                    android:layout_marginEnd="16dp"
+                    android:layout_marginTop="24dp"
+                    android:background="@drawable/next"
+                    android:clickable="true"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"></ImageView>
+        </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

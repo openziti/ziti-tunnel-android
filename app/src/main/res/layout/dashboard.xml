@@ -67,7 +67,7 @@
                     android:textColor="@color/title"
                     android:textSize="22dp"></TextView>
             </LinearLayout>
-
+<!--
             <LinearLayout
                 android:id="@+id/IdentityButton"
                 android:layout_width="match_parent"
@@ -87,7 +87,7 @@
                     android:textColor="@color/title"
                     android:textSize="22dp"></TextView>
             </LinearLayout>
-
+// -->
             <LinearLayout
                 android:id="@+id/AdvancedButton"
                 android:layout_width="match_parent"
@@ -308,7 +308,7 @@
                     android:id="@+id/OnButton"
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
-                    android:layout_weight=".7"
+                    android:layout_weight=".5"
                     android:visibility="gone">
 
                     <ImageView
@@ -355,7 +355,7 @@
                     android:id="@+id/OffButton"
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
-                    android:layout_weight=".7"
+                    android:layout_weight=".5"
                     android:visibility="visible">
 
                     <ImageView
@@ -470,33 +470,19 @@
                         android:layout_marginStart="10dp"
                         android:textColor="@color/subTitle" />
                 </LinearLayout>
+                <ScrollView
+                    android:layout_width="fill_parent"
+                    android:layout_height="fill_parent"
+                    android:layout_weight="1">
+                    <LinearLayout
+                        android:id="@+id/IdentityListing"
+                        android:layout_width="match_parent"
+                        android:layout_height="fill_parent"
+                        android:orientation="vertical"
+                        android:weightSum="1">
 
-                <TextView
-                    android:id="@+id/TitleIdentities"
-                    android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:layout_weight="0.1"
-                    android:fontFamily="@font/russo_one"
-                    android:gravity="center"
-                    android:text="@string/yours"
-                    android:autoSizeTextType="uniform"
-                    android:textAlignment="gravity"
-                    android:textColor="@color/areaTitle"
-                    android:clickable="true"
-                    android:textSize="20sp" />
-                <TextView
-                    android:id="@+id/IdentityCount"
-                    android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:layout_weight="0.2"
-                    android:fontFamily="@font/russo_one"
-                    android:gravity="center"
-                    android:text="0"
-                    android:autoSizeTextType="uniform"
-                    android:textAlignment="gravity"
-                    android:textColor="@color/areaTitle"
-                    android:clickable="true"
-                    android:textSize="20sp" />
+                    </LinearLayout>
+                </ScrollView>
             </LinearLayout>
 
 
