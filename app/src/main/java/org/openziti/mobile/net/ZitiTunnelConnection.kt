@@ -88,6 +88,7 @@ class ZitiTunnelConnection(synPack: IpV4Packet,
             while (!done) {
                 val read = conn.receive(buf, 0, buf.size)
                 if (read > 0) {
+                    Log.v(info, "from ziti backend ${String(buf,0,read)}")
                     val copyOf = buf.copyOf(read)
                     val packet = tcpConn.toPeer(copyOf)
                     sendToPeer(listOf(packet))
@@ -120,7 +121,7 @@ class ZitiTunnelConnection(synPack: IpV4Packet,
         val payload = tcpConn.fromPeer(packet.payload as TcpPacket, out)
 
         payload?.let {
-            Log.v(info, "sending ${it.size} bytes to ziti backend")
+            Log.v(info, "sending ${it.size} bytes to ziti backend\n${String(it)}")
             conn.write(it)
         }
 
