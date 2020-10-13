@@ -283,7 +283,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:weightSum="1.6"
+                android:weightSum="1.2"
                 android:orientation="vertical"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -293,7 +293,7 @@
                     android:id="@+id/MainTitle"
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
-                    android:layout_weight=".18"
+                    android:layout_weight=".1"
                     android:layout_marginStart="8dp"
                     android:layout_marginTop="12dp"
                     android:layout_marginEnd="8dp"
@@ -308,15 +308,15 @@
                     android:id="@+id/OnButton"
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
-                    android:layout_weight=".5"
+                    android:layout_weight=".3"
                     android:visibility="gone">
 
                     <ImageView
                         android:id="@+id/imageView"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:layout_marginStart="8dp"
-                        android:layout_marginEnd="8dp"
+                        android:layout_marginStart="18dp"
+                        android:layout_marginEnd="18dp"
                         android:contentDescription="@string/stop"
                         android:scaleType="fitCenter"
                         android:src="@drawable/connected"
@@ -355,7 +355,7 @@
                     android:id="@+id/OffButton"
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
-                    android:layout_weight=".5"
+                    android:layout_weight=".3"
                     android:visibility="visible">
 
                     <ImageView
@@ -376,7 +376,7 @@
                     android:id="@+id/LabelArea"
                     android:layout_width="match_parent"
                     android:layout_height="20dp"
-                    android:layout_weight=".05"
+                    android:layout_weight=".1"
                     android:gravity="center_horizontal|center_vertical"
                     android:orientation="horizontal"
                     android:visibility="visible">
@@ -418,7 +418,7 @@
                     android:id="@+id/CountArea"
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
-                    android:layout_weight=".25"
+                    android:layout_weight=".15"
                     android:gravity="center_horizontal"
                     android:orientation="horizontal"
                     android:visibility="visible">
@@ -472,8 +472,8 @@
                 </LinearLayout>
                 <ScrollView
                     android:layout_width="fill_parent"
-                    android:layout_height="fill_parent"
-                    android:layout_weight="1">
+                    android:layout_height="0dp"
+                    android:layout_weight=".5">
                     <LinearLayout
                         android:id="@+id/IdentityListing"
                         android:layout_width="match_parent"
@@ -484,42 +484,6 @@
                     </LinearLayout>
                 </ScrollView>
             </LinearLayout>
-
-
-
-
-
-
-
-
-<!--
-            <RelativeLayout
-                android:id="@+id/IdentityArea"
-                android:animateLayoutChanges="true"
-                android:layout_width="wrap_content"
-                android:layout_height="100dp"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent">
-                <io.netfoundry.ziti.tunnel.LockableScrollView
-                    android:id="@+id/MainScroller"
-                    android:overScrollMode="always"
-                    android:layout_centerHorizontal="true"
-                    android:animateLayoutChanges="true"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:scrollbars="none"
-                    android:fillViewport="true">
-                    <LinearLayout
-                        android:animateLayoutChanges="true"
-                        android:id="@+id/IdentityCards"
-                        android:layout_width="wrap_content"
-                        android:layout_height="match_parent"
-                        android:orientation="horizontal">
-                    </LinearLayout>
-                </io.netfoundry.ziti.tunnel.LockableScrollView>
-            </RelativeLayout>
--->
         </androidx.constraintlayout.widget.ConstraintLayout>
         <!-- StartFrame - Animated Curved Frame around Main when Nav is displayed -->
         <ImageView
