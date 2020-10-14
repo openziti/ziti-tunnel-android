@@ -87,11 +87,10 @@ class PacketRouterImpl(resolver: DNSResolver, val dnsAddr: String, val inbound: 
         }
     }
 
-    fun stop() {
+    override fun stop() {
         tcpConnections.forEach {
-            // TODO it.value.close()
+            it.value.closeOutbound()
         }
-        timer.cancel()
     }
 
     init {

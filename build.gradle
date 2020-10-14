@@ -5,9 +5,6 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
 buildscript {
-    ext.zitiMajor = 0
-    ext.zitiMinor = 5
-
     ext.kotlin_version = '1.4.10'
     ext.zitiBuildnum = System.getProperty("ziti.buildNum") ?: 'local'
 
