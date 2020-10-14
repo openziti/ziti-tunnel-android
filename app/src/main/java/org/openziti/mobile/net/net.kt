@@ -12,6 +12,7 @@ const val TUNNEL_MTU = 32 * 1024
 
 interface PacketRouter {
     fun route(b: ByteBuffer)
+    fun stop()
 }
 
 fun TcpPacket.ack() = if (header.ack) "ACK" else null

@@ -11,17 +11,15 @@ import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.openziti.mobile.net.PacketRouterImpl
+import org.openziti.mobile.net.PacketRouter
 import org.openziti.mobile.net.TUNNEL_MTU
-import org.openziti.net.dns.DNSResolver
 import java.nio.ByteBuffer
 import java.nio.channels.ClosedByInterruptException
 import java.util.concurrent.Executors
 
-class Tunnel(fd: ParcelFileDescriptor, dns: DNSResolver, dnsAddr: String) {
+class Tunnel(fd: ParcelFileDescriptor, val processor: PacketRouter) {
     val output = ParcelFileDescriptor.AutoCloseOutputStream(fd).channel
     val input = ParcelFileDescriptor.AutoCloseInputStream(fd).channel
-    val processor = PacketRouterImpl(dns, dnsAddr, this::onInbound)
     val readerThread = Thread(this::reader, "tunnel-read")
     val toPeerChannel = Channel<ByteBuffer>(Channel.UNLIMITED)
     val writeDispatcher = Executors.newSingleThreadExecutor{
@@ -79,7 +77,6 @@ class Tunnel(fd: ParcelFileDescriptor, dns: DNSResolver, dnsAddr: String) {
 
         toPeerChannel.close()
         writeDispatcher.close()
-        processor.stop()
         readerThread.interrupt()
         output.close()
         input.close()
