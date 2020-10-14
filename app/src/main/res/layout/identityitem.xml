@@ -8,25 +8,27 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="85dp"
+    android:layout_height="65dp"
     android:background="@color/background">
         <LinearLayout
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             android:layout_width="match_parent"
-            android:layout_height="85dp"
+            android:layout_height="65dp"
             android:orientation="horizontal">
                 <LinearLayout
                     android:layout_weight="0"
                     android:layout_width="85dp"
                     android:layout_height="match_parent"
                     android:orientation="vertical">
+
                         <Switch
                             android:id="@+id/IdToggleSwitch"
                             android:layout_width="55dp"
-                            android:layout_height="35dp"
-                            android:layout_marginStart="10dp"
-                            android:layout_marginTop="16dp"
+                            android:layout_height="25dp"
+                            android:layout_marginStart="5dp"
+                            android:layout_marginTop="8dp"
+                            android:trackTint="#D7FFFFFF"
                             android:visibility="visible"
                             app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintTop_toTopOf="parent" />
@@ -45,28 +47,30 @@
                 <LinearLayout
                     android:layout_weight="1"
                     android:layout_width="fill_parent"
-                    android:layout_height="85dp"
+                    android:layout_height="65dp"
                     android:orientation="vertical">
 
                         <TextView
                             android:id="@+id/IdentityName"
                             android:layout_width="fill_parent"
-                            android:layout_height="35dp"
+                            android:layout_height="15dp"
                             android:layout_weight="1"
+                            android:singleLine="true"
                             android:gravity="bottom|left"
-                            android:lineHeight="35dp"
+                            android:lineHeight="15dp"
                             android:text="MyIdName"
                             android:textColor="@color/title"
-                            android:textSize="24dp">
+                            android:textSize="18dp">
 
                         </TextView>
 
                         <TextView
                             android:id="@+id/IdentityServer"
                             android:layout_width="fill_parent"
-                            android:layout_height="22dp"
+                            android:layout_height="12dp"
                             android:layout_weight="1"
                             android:gravity="top|left"
+                            android:singleLine="true"
                             android:alpha="0.4"
                             android:lineHeight="55dp"
                             android:text="server:8080"
@@ -80,18 +84,18 @@
                 <LinearLayout
                     android:layout_weight="0"
                     android:layout_width="85dp"
-                    android:layout_height="match_parent"
+                    android:layout_height="65dp"
                     android:orientation="vertical">
                         <androidx.constraintlayout.widget.ConstraintLayout
                             android:layout_width="match_parent"
-                            android:layout_height="50dp">
+                            android:layout_height="35dp">
 
 
                                 <ImageView
                                     android:id="@+id/ServiceCountBubble"
                                     android:layout_width="match_parent"
                                     android:layout_height="fill_parent"
-                                    android:layout_marginTop="10dp"
+                                    android:layout_marginTop="8dp"
                                     android:gravity="center"
                                     android:src="@drawable/bubble"
                                     android:textAlignment="gravity"
@@ -101,7 +105,7 @@
                                     android:id="@+id/ServiceCount"
                                     android:layout_width="match_parent"
                                     android:layout_height="fill_parent"
-                                    android:layout_marginTop="10dp"
+                                    android:layout_marginTop="8dp"
                                     android:gravity="center"
                                     android:text="0"
                                     android:textAlignment="gravity"
@@ -124,10 +128,10 @@
                 </LinearLayout>
                 <ImageView
                     android:layout_weight="0"
-                    android:layout_width="20dp"
-                    android:layout_height="34dp"
+                    android:layout_width="12dp"
+                    android:layout_height="24dp"
                     android:layout_marginEnd="16dp"
-                    android:layout_marginTop="24dp"
+                    android:layout_marginTop="18dp"
                     android:background="@drawable/next"
                     android:clickable="true"
                     app:layout_constraintBottom_toBottomOf="parent"
