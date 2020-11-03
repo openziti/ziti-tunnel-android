@@ -68,7 +68,7 @@ repositories {
     jcenter()
 }
 
-def zitiVersion = "0.14.8"
+def zitiVersion = "0.14.13"
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
