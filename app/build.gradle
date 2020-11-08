@@ -15,14 +15,14 @@ version = parent.version
 def vc = versionCode
 
 android {
-//    signingConfigs {
-//        config {
-//            keyAlias 'ziti'
-//            keyPassword 'XXXXXX'
-//            storeFile file("$projectDir/nf-ziti.jks")
-//            storePassword 'XXXXXXXX'
-//        }
-//    }
+    signingConfigs {
+        release {
+            keyAlias 'ziti1'
+            keyPassword System.getenv('RELEASE_KEYSTORE_PASSWORD')
+            storeFile file(System.getenv('RELEASE_KEYSTORE') ?: "not found")
+            storePassword System.getenv('RELEASE_KEYSTORE_PASSWORD')
+        }
+    }
     compileSdkVersion 30
     buildToolsVersion "29.0.3"
     ndkVersion "21.3.6528147"
@@ -44,7 +44,7 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-          //  signingConfig signingConfigs.config
+            signingConfig signingConfigs.release
         }
     }
 
