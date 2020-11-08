@@ -5,22 +5,22 @@
 package org.openziti.mobile.net
 
 import android.util.Log
-import org.openziti.mobile.net.tcp.TCP
 import org.openziti.net.dns.DNSResolver
 import org.pcap4j.packet.IpPacket
 import org.pcap4j.packet.IpSelector
 import org.pcap4j.packet.IpV4Packet
 import org.pcap4j.packet.TcpPacket
 import org.pcap4j.packet.namednumber.IpNumber
+import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.concurrent.timer
 
-class PacketRouterImpl(resolver: DNSResolver, val dnsAddr: String, val inbound: (b: ByteBuffer) -> Unit) : PacketRouter {
 
+class PacketRouterImpl(resolver: DNSResolver, val dnsAddr: String, val inbound: (b: ByteBuffer) -> Unit) : PacketRouter {
     val TAG = "routing"
-    val tcpConnections = ConcurrentHashMap<String, ZitiTunnelConnection>()
+    val tcpConnections = ConcurrentHashMap<ConnectionKey, ZitiTunnelConnection>()
     val zitiNameserver = ZitiNameserver(dnsAddr, resolver)
 
     val dns = DNS(resolver)
@@ -60,20 +60,18 @@ class PacketRouterImpl(resolver: DNSResolver, val dnsAddr: String, val inbound: 
 
     private fun routeTCP(msg: IpV4Packet) {
         val tcp = msg.payload as TcpPacket
-        val key = "${msg.header.srcAddr.hostAddress}:${tcp.header.srcPort.valueAsString()}-" +
-                "${msg.header.dstAddr.hostAddress}:${tcp.header.dstPort.valueAsString()}"
+
+        val src = InetSocketAddress(msg.header.srcAddr, tcp.header.srcPort.valueAsInt())
+        val dst = InetSocketAddress(msg.header.dstAddr, tcp.header.dstPort.valueAsInt())
+        val key = Pair(src, dst)
 
         Log.v("routing", "got msg[$key]: ${msg.length()} bytes")
 
         val conn = tcpConnections[key]
 
         // new connection
-        if (tcp.header.syn) {
-            conn?.let {
-                throw IllegalStateException("SYN received for existing connection")
-            }
-
-            val newConn = ZitiTunnelConnection(msg, inbound)
+        if (conn == null && tcp.header.syn) {
+            val newConn = ZitiTunnelConnection(src, dst, msg, inbound)
             tcpConnections.put(key, newConn)
             Log.i(TAG, "created $newConn")
         } else if (conn != null) {
@@ -89,8 +87,9 @@ class PacketRouterImpl(resolver: DNSResolver, val dnsAddr: String, val inbound: 
 
     override fun stop() {
         tcpConnections.forEach {
-            it.value.closeOutbound()
+            it.value.shutdown()
         }
+        timer.cancel()
     }
 
     init {
@@ -98,7 +97,7 @@ class PacketRouterImpl(resolver: DNSResolver, val dnsAddr: String, val inbound: 
             Log.d(TAG, "${tcpConnections.size} active connections")
             tcpConnections.forEach {
                 Log.v(TAG, "${it.key}/${it.value.state}")
-                if (it.value.state == TCP.State.Closed) {
+                if (it.value.isClosed()) {
                     tcpConnections.remove(it.key)
                 }
             }

@@ -9,23 +9,23 @@ import kotlinx.coroutines.channels.Channel
 import org.openziti.mobile.net.flags
 import org.pcap4j.packet.*
 import org.pcap4j.packet.namednumber.TcpPort
-import java.net.InetAddress
+import java.net.InetSocketAddress
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.properties.Delegates
 
-class TCPConn(mtu: Int, val peerIp: InetAddress, val dstIp: InetAddress, msg: TcpPacket, out: MutableList<TcpPacket>) {
+class TCPConn(val mtu: Int, val peer: InetSocketAddress, val dst: InetSocketAddress) {
 
     // static config
-    val peerPort: TcpPort
-    val dstPort: TcpPort
+    val peerPort: TcpPort = TcpPort.getInstance(peer.port.toShort())
+    val dstPort: TcpPort = TcpPort.getInstance(dst.port.toShort())
 
-    val windowScale: Int
-    val sackPermitted: Boolean
+    var windowScale: Int = 7
+    var sackPermitted: Boolean = true
     val localWindow = 0xFFFF.toShort()
     val localWindowScale = 7.toByte()
 
-    val info: String
+    val info: String = "tcp:${peer} -> ${dst}"
 
     override fun toString() = info
 
@@ -45,11 +45,10 @@ class TCPConn(mtu: Int, val peerIp: InetAddress, val dstIp: InetAddress, msg: Tc
     // used to re-evaluate peer window
     val ackSignal = Channel<Unit>()
 
-    init {
-        assert(msg.header.syn)
-
-        peerPort = msg.header.srcPort
-        dstPort = msg.header.dstPort
+    fun init(msg: TcpPacket) {
+        if (!msg.header.syn) {
+            Log.w(info, "received $msg in $state")
+        }
 
         peerWindow.set(msg.header.window.toInt())
         peerSeq.set(msg.header.sequenceNumberAsLong)
@@ -58,10 +57,12 @@ class TCPConn(mtu: Int, val peerIp: InetAddress, val dstIp: InetAddress, msg: Tc
         var ws: Byte = 0
         for (o in msg.header.options) {
             when (o) {
-                is TcpNoOperationOption -> {}
+                is TcpNoOperationOption -> {
+                }
                 is TcpSackPermittedOption -> sp = true
                 is TcpWindowScaleOption -> ws = o.shiftCount
-                is TcpMaximumSegmentSizeOption -> {}
+                is TcpMaximumSegmentSizeOption -> {
+                }
                 is TcpTimestampsOption -> {
                     peerTimestamp.set(o.tsValue)
                 }
@@ -74,12 +75,30 @@ class TCPConn(mtu: Int, val peerIp: InetAddress, val dstIp: InetAddress, msg: Tc
         windowScale = maxOf(ws.toInt(), 14)
         sackPermitted = sp
         state = TCP.State.SYN_RCVD
-        info = "tcp:${peerIp.hostAddress}:${peerPort.valueAsString()} -> ${dstIp.hostAddress}:${dstPort.valueAsString()}"
 
-        val synAck = TcpPacket.Builder()
-                .srcAddr(dstIp)
+    }
+
+    fun reject(): Array<TcpPacket> {
+        state = TCP.State.Closed
+        val pb = TcpPacket.Builder()
+                .dstAddr(peer.address)
+                .srcAddr(dst.address)
+                .dstPort(peerPort)
                 .srcPort(dstPort)
-                .dstAddr(peerIp)
+                .ack(true)
+                .acknowledgmentNumber(peerSeq.get().toInt() + 1)
+                .rst(true)
+                .correctChecksumAtBuild(true)
+                .correctLengthAtBuild(true)
+
+        return arrayOf(pb.build())
+    }
+
+    fun accept(): Array<TcpPacket> {
+        val synAck = TcpPacket.Builder()
+                .srcAddr(dst.address)
+                .srcPort(dstPort)
+                .dstAddr(peer.address)
                 .dstPort(peerPort)
                 .syn(true)
                 .ack(true)
@@ -112,13 +131,13 @@ class TCPConn(mtu: Int, val peerIp: InetAddress, val dstIp: InetAddress, msg: Tc
                         )
                 )
 
-        out.add(synAck.build())
+        return arrayOf(synAck.build())
     }
 
     fun makePacket(ackInc: Int, syn: Boolean = false, fin: Boolean = false, payload: ByteArray = byteArrayOf()) = TcpPacket.Builder()
-            .srcAddr(dstIp)
+            .srcAddr(dst.address)
             .srcPort(dstPort)
-            .dstAddr(peerIp)
+            .dstAddr(peer.address)
             .dstPort(peerPort)
             .syn(syn)
             .fin(fin)
@@ -168,6 +187,7 @@ class TCPConn(mtu: Int, val peerIp: InetAddress, val dstIp: InetAddress, msg: Tc
 
 
         val dataLen = msg.payload?.length() ?: 0
+        Log.v(info, "state[$state] <- ${msg.header} data[$dataLen]")
         when (state) {
 
             // connection establishment
@@ -186,7 +206,6 @@ class TCPConn(mtu: Int, val peerIp: InetAddress, val dstIp: InetAddress, msg: Tc
                         out.add(makePacket(dataLen))
                     }
                     out.add(makePacket(1, fin = true))
-                    state = TCP.State.LAST_ACK
                 } else if (msg.header.rst) {
                     state = TCP.State.Closed
                     Log.e(info, "peer connection reset")
@@ -219,7 +238,7 @@ class TCPConn(mtu: Int, val peerIp: InetAddress, val dstIp: InetAddress, msg: Tc
 
             TCP.State.FIN_WAIT_2 -> {
                 if (msg.header.fin) {
-                    out.add(makePacket(1))
+                    out.add(makePacket(dataLen + 1))
                     state = TCP.State.TIME_WAIT
                 }
             }
@@ -229,7 +248,17 @@ class TCPConn(mtu: Int, val peerIp: InetAddress, val dstIp: InetAddress, msg: Tc
                     state = TCP.State.TIME_WAIT
             }
 
-            else -> TODO("$state: ${msg.header}")
+            TCP.State.CLOSE_WAIT -> {
+                // just waiting for ziti side to close
+
+            }
+
+            TCP.State.TIME_WAIT -> {
+                if (msg.header.ack)
+                    state = TCP.State.Closed
+            }
+
+            else -> Log.w(info, "unhandled $state: ${msg.header}")
         }
 
         return msg.payload?.rawData
@@ -254,6 +283,14 @@ class TCPConn(mtu: Int, val peerIp: InetAddress, val dstIp: InetAddress, msg: Tc
             TCP.State.ESTABLISHED, TCP.State.SYN_RCVD -> {
                 state = TCP.State.FIN_WAIT_1
                 makePacket(0, syn = false, fin = true)
+            }
+            TCP.State.CLOSE_WAIT -> {
+                state = TCP.State.LAST_ACK
+                makePacket(0, syn = true, fin = true)
+            }
+            TCP.State.TIME_WAIT -> {
+                state = TCP.State.Closed
+                null
             }
             else -> {
                 Log.d(info, "got close() in $state")

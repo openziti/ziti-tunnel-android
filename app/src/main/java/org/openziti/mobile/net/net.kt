@@ -5,10 +5,22 @@
 package org.openziti.mobile.net
 
 import org.pcap4j.packet.IpV4Packet
+import org.pcap4j.packet.IpV4Rfc1349Tos
 import org.pcap4j.packet.TcpPacket
+import org.pcap4j.packet.namednumber.IpV4TosPrecedence
+import org.pcap4j.packet.namednumber.IpV4TosTos
+import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 
 const val TUNNEL_MTU = 32 * 1024
+
+typealias ConnectionKey = Pair<InetSocketAddress, InetSocketAddress>
+
+val TOS = IpV4Rfc1349Tos.Builder()
+        .mbz(false)
+        .tos(IpV4TosTos.DEFAULT)
+        .precedence(IpV4TosPrecedence.ROUTINE)
+        .build()
 
 interface PacketRouter {
     fun route(b: ByteBuffer)
