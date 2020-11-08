@@ -64,25 +64,25 @@ class PacketRouterImpl(resolver: DNSResolver, val dnsAddr: String, val inbound: 
 
         val src = InetSocketAddress(msg.header.srcAddr, tcp.header.srcPort.valueAsInt())
         val dst = InetSocketAddress(msg.header.dstAddr, tcp.header.dstPort.valueAsInt())
-        val k = Pair(src, dst)
+        val key = Pair(src, dst)
 
-        Log.v("routing", "got msg[$k]: ${msg.length()} bytes")
+        Log.v("routing", "got msg[$key]: ${msg.length()} bytes")
 
-        val conn = tcpConnections[k]
+        val conn = tcpConnections[key]
 
         // new connection
         if (conn == null && tcp.header.syn) {
             val newConn = ZitiTunnelConnection(src, dst, msg, inbound)
-            tcpConnections.put(k, newConn)
+            tcpConnections.put(key, newConn)
             Log.i(TAG, "created $newConn")
         } else if (conn != null) {
             conn.process(msg)
             if (conn.isClosed()) {
-                tcpConnections.remove(k)
+                tcpConnections.remove(key)
                 Log.i(TAG, "removing ${conn.tcpConn.info}")
             }
         } else {
-            Log.e(TAG, "invalid state. No connection found for [$k]. packet is dropped")
+            Log.e(TAG, "invalid state. No connection found for [$key]. packet is dropped")
         }
     }
 
