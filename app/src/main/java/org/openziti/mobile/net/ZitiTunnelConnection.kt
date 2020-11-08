@@ -103,7 +103,6 @@ class ZitiTunnelConnection(val srcAddr: InetSocketAddress, val dstAddr: InetSock
                 tcpConn.close()?.let {
                     sendToPeer(listOf(it))
                 }
-                closeOutbound()
             }
         } finally {
             Log.i(info, "readZitiConn() is finished")
@@ -147,10 +146,10 @@ class ZitiTunnelConnection(val srcAddr: InetSocketAddress, val dstAddr: InetSock
         }
     }
 
-    fun closeOutbound() {
+    fun shutdown() {
         runBlocking { runCatching { conn.await().close() } }
         supervisor.cancel()
-        Log.d(info, "ziti conn is closing")
+        Log.d(info, "ziti tunnel conn is closed")
     }
 
     override fun toString(): String = info

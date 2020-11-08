@@ -187,6 +187,7 @@ class TCPConn(val mtu: Int, val peer: InetSocketAddress, val dst: InetSocketAddr
 
 
         val dataLen = msg.payload?.length() ?: 0
+        Log.v(info, "state[$state] <- ${msg.header} data[$dataLen]")
         when (state) {
 
             // connection establishment
@@ -237,7 +238,7 @@ class TCPConn(val mtu: Int, val peer: InetSocketAddress, val dst: InetSocketAddr
 
             TCP.State.FIN_WAIT_2 -> {
                 if (msg.header.fin) {
-                    out.add(makePacket(1))
+                    out.add(makePacket(dataLen + 1))
                     state = TCP.State.TIME_WAIT
                 }
             }
@@ -286,6 +287,10 @@ class TCPConn(val mtu: Int, val peer: InetSocketAddress, val dst: InetSocketAddr
             TCP.State.CLOSE_WAIT -> {
                 state = TCP.State.LAST_ACK
                 makePacket(0, syn = true, fin = true)
+            }
+            TCP.State.TIME_WAIT -> {
+                state = TCP.State.Closed
+                null
             }
             else -> {
                 Log.d(info, "got close() in $state")

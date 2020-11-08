@@ -5,7 +5,6 @@
 package org.openziti.mobile.net
 
 import android.util.Log
-import org.openziti.mobile.net.tcp.TCP
 import org.openziti.net.dns.DNSResolver
 import org.pcap4j.packet.IpPacket
 import org.pcap4j.packet.IpSelector
@@ -88,7 +87,7 @@ class PacketRouterImpl(resolver: DNSResolver, val dnsAddr: String, val inbound: 
 
     override fun stop() {
         tcpConnections.forEach {
-            it.value.closeOutbound()
+            it.value.shutdown()
         }
         timer.cancel()
     }
@@ -98,7 +97,7 @@ class PacketRouterImpl(resolver: DNSResolver, val dnsAddr: String, val inbound: 
             Log.d(TAG, "${tcpConnections.size} active connections")
             tcpConnections.forEach {
                 Log.v(TAG, "${it.key}/${it.value.state}")
-                if (it.value.state == TCP.State.Closed) {
+                if (it.value.isClosed()) {
                     tcpConnections.remove(it.key)
                 }
             }
