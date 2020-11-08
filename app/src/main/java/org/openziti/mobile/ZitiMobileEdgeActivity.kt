@@ -6,24 +6,18 @@ package org.openziti.mobile
 
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
-import android.animation.ValueAnimator
 import android.content.*
 import android.content.pm.PackageManager
 import android.content.res.Resources
-import android.graphics.Point
 import android.net.Uri
 import android.net.VpnService
-import android.os.Bundle
-import android.os.IBinder
-import android.os.Process
-import android.os.Vibrator
+import android.os.*
 import android.text.method.ScrollingMovementMethod
 import android.util.Log
 import android.view.View
 import android.view.WindowManager
 import android.view.animation.DecelerateInterpolator
 import android.view.inputmethod.InputMethodManager
-import android.widget.CompoundButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -41,7 +35,7 @@ import kotlinx.android.synthetic.main.log.*
 import kotlinx.android.synthetic.main.logs.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import org.openziti.ZitiContext
 import org.openziti.android.Ziti
 import java.util.*
@@ -83,7 +77,7 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
     }
 
     fun launchUrl(url:String) {
-        val openURL = Intent(android.content.Intent.ACTION_VIEW)
+        val openURL = Intent(Intent.ACTION_VIEW)
         openURL.data = Uri.parse(url)
         startActivity(openURL)
     }
@@ -103,7 +97,7 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
     }
 
     private fun toggleMenu() {
-        var posTo = getScreenWidth()-(getScreenWidth()/3)
+        val posTo = getScreenWidth()-(getScreenWidth()/3)
         var animatorSet = AnimatorSet()
         var scaleY = ObjectAnimator.ofFloat(MainArea, "scaleY", .9f, 1.0f).setDuration(duration.toLong())
         var scaleX = ObjectAnimator.ofFloat(MainArea, "scaleX", .9f, 1.0f).setDuration(duration.toLong())
@@ -158,57 +152,7 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
     }
 
     private var startPosition = 0f
-    private var startSize = 0
-    private var openSize = 0
-    private var cardWidths = 0
 
-
-    fun slideView(view:View, currentHeight:Int, newHeight:Int) {
-
-        Log.i("ek-tag", "from ${currentHeight} to ${newHeight}")
-        var slideAnimator = ValueAnimator.ofInt(currentHeight, newHeight).setDuration(500)
-
-        slideAnimator.addUpdateListener(object : ValueAnimator.AnimatorUpdateListener {
-            override fun onAnimationUpdate(animation: ValueAnimator) {
-                var animatedValue = animation.animatedValue as Int
-                view.layoutParams.height = animatedValue
-                view.requestLayout()
-            }
-        })
-
-        var animationSet = AnimatorSet()
-        animationSet.interpolator = DecelerateInterpolator()
-        animationSet.play(slideAnimator)
-        animationSet.start()
-    }
-
-    private var closeCardTo = 0
-/*
-    private fun toggleCardDetails() {
-        if (this.isOpen) {
-            slideView(IdentityArea, this.openSize, this.startSize)
-            MainScroller.scrollable = true
-            //MainScroller.smoothScrollTo(closeCardTo, 0)
-        } else {
-            if (this.startSize==0) {
-                this.startSize = IdentityArea.layoutParams.height
-                this.openSize = MainAreaLayout.height
-            }
-            slideView(IdentityArea, this.startSize, this.openSize)
-            for (i in IdentityCards.childCount downTo 1) {
-                var index = i-1
-                var card = IdentityCards.getChildAt(index) as CardView
-                if (card.isOpen) {
-                    MainScroller.smoothScrollTo(IdentityCards.getChildAt(index).left, 0)
-                    closeCardTo = IdentityCards.getChildAt(index).left+150
-                    break
-                }
-            }
-            MainScroller.scrollable = false
-        }
-        this.isOpen = !this.isOpen
-    }
-*/
     fun difference(): String {
         var stopTime = Date()
         val diff = stopTime.time-startTime.time
@@ -252,10 +196,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
         setContentView(R.layout.main)
         this.window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
 
-
-        val display = windowManager.defaultDisplay
-        val size = Point()
-        display.getSize(size)
         offScreenX = getScreenWidth()+50
         offScreenY = getScreenHeight()-370
         Version.text = "Version: $version"
@@ -296,12 +236,12 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
         // Dashboard Button Actions
         OffButton.setOnClickListener {
             val vb = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-            if (vb.hasVibrator()) vb.vibrate(100)
+            if (vb.hasVibrator()) vb.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE))
             val intent = VpnService.prepare(applicationContext)
             if (intent != null) {
                 startActivityForResult(intent, 10169)
             } else {
-                onActivityResult(10169, AppCompatActivity.RESULT_OK, null)
+                onActivityResult(10169, RESULT_OK, null)
             }
             startTime = Date()
             OnButton.visibility = View.VISIBLE
@@ -310,8 +250,8 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
         }
         OnButton.setOnClickListener {
             val vb = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-            if (vb.hasVibrator()) vb.vibrate(100)
-            onActivityResult(10168, AppCompatActivity.RESULT_OK, null)
+            if (vb.hasVibrator()) vb.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE))
+            onActivityResult(10168, RESULT_OK, null)
             TurnOff()
         }
 
@@ -431,7 +371,7 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
         ApplicationLogsButton.setOnClickListener {
             LogTypeTitle.text = ("Application Logs")
             LogDetails.text = log_application
-            GlobalScope.async(Dispatchers.IO) {
+            GlobalScope.launch(Dispatchers.IO) {
                 val p = Runtime.getRuntime().exec("logcat -d -t 200 --pid=${Process.myPid()}")
                 val lines = p.inputStream.bufferedReader().readText()
 
@@ -445,7 +385,7 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
         }
 
         contextViewModel = ViewModelProvider(this).get(ZitiViewModel::class.java)
-        contextViewModel.contexts().observe(this, Observer { contextList ->
+        contextViewModel.contexts().observe(this, { contextList ->
             //IdentityCards.removeAllViews()
             IdentityList.removeAllViews()
             // create, remove cards
@@ -453,15 +393,14 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
             for (ctx in contextList) {
                 val ctxModel = ViewModelProvider(this, ZitiContextModel.Factory(ctx)).get(ctx.name(), ZitiContextModel::class.java)
                 val identityitem = IdentityItemView(this, ctxModel)
-                ctxModel.services().observe(this, Observer { serviceList ->
+                ctxModel.services().observe(this, { serviceList ->
                     identityitem.count = serviceList.count()
                 })
-                if (ctx.getStatus() == ZitiContext.Status.Active) {
-                    identityitem.isOn = true
-                }
-                identityitem.IdToggleSwitch.setOnCheckedChangeListener { button: CompoundButton, state: Boolean ->
+                ctxModel.status().observe(this, { state ->
+                    identityitem.isOn = state != ZitiContext.Status.Disabled
+                })
+                identityitem.IdToggleSwitch.setOnCheckedChangeListener { _, state ->
                     ctx.setEnabled(state)
-
                 }
                 identityitem.server = ctx.controller()
 
@@ -472,11 +411,10 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
                     if (ctx.getStatus() == ZitiContext.Status.Active) {
                         IdOnOffSwitch.isChecked = true
                     }
-                    IdOnOffSwitch.setOnCheckedChangeListener { button: CompoundButton, state: Boolean ->
+                    IdOnOffSwitch.setOnCheckedChangeListener { _, state ->
                         ctx.setEnabled(state)
-                        true
                     }
-                    ctxModel.status().observe(this, Observer { st ->
+                    ctxModel.status().observe(this, { st ->
                         IdDetailsStatus.text = st.toString()
                     })
                     IdDetailsNetwork.text = ctx.controller()
@@ -491,7 +429,7 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
                         IdDetailServicesList.removeAllViews()
                         for (service in serviceList) {
                             sCount++
-                            var line = LineView(applicationContext)
+                            val line = LineView(applicationContext)
                             line.label = service.name
                             line.value = service.dns?.let { "${it.hostname}:${it.port}" } ?: ""
                             IdDetailServicesList.addView(line)
@@ -519,41 +457,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
                 }
                 IdentityListing.addView(identityitem)
                 index++
-
-
-/*
-                val cardView = CardView(this, ctx)
-                cardView.name = ctx.name()
-                cardView.layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.FILL_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT)
-                cardView.enrollment = ctx.status.name
-                ctx.statusLive.observe(this, Observer { st ->
-                    cardView.status = st.toString()
-                })
-                this.cardWidths = getScreenWidth()
-                cardView.layoutParams.width = this.cardWidths
-                cardView.onToggle = {
-                    this.toggleCardDetails()
-                }
-                if (index==0) {
-                    var params = cardView.layoutParams as FrameLayout.LayoutParams
-                    params.setMargins(100,0,15,-30)
-                    cardView.layoutParams = params
-                }
-                index++
-                if (index==contextList.size) {
-                    var params = cardView.layoutParams as FrameLayout.LayoutParams
-                    params.setMargins(15,0,100,-30)
-                    cardView.layoutParams = params
-                }
-                Log.i( "ek-tag", "${IdentityCards.childCount} count ${getScreenWidth()} ${getScreenWidth().toDp()} ${cardView.width} ${cardWidths} ${40.toDp()}")
-                ctx.servicesLiveData.observe(this, Observer { serviceList ->
-                    cardView.services = serviceList
-                })
-                IdentityCards.addView(cardView)
-
-                Log.i("ek-tag", "${ctx.name()} - ${ctx.status}")
-                */
-
             }
             //IdentityCount.text = index.toString()
             if (index==0) {
@@ -561,18 +464,18 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
                     TurnOff()
                     //OffButton.getBackground().setAlpha(45)
                     OffButton.isClickable = false
-                    StateButton.setAlpha(144)
+                    StateButton.imageAlpha = 144
                 }
             } else {
                 if (OffButton!=null) {
                     //OffButton.getBackground().setAlpha(100)
                     OffButton.isClickable = true
-                    StateButton.setAlpha(255)
+                    StateButton.imageAlpha = 255
                 }
             }
         })
 
-        contextViewModel.stats().observe(this, Observer {
+        contextViewModel.stats().observe(this, {
             setSpeed(it.downRate, DownloadSpeed, DownloadMbps)
             setSpeed(it.upRate, UploadSpeed, UploadMbps)
         })
@@ -585,10 +488,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        val active = vpn?.isVPNActive() ?: false
-        if (!active) {
-            // Ziti.pause()
-        }
         unbindService(serviceConnection)
     }
 
@@ -638,11 +537,11 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         when (requestCode) {
             10169 -> {
-                if (resultCode == AppCompatActivity.RESULT_OK)
+                if (resultCode == RESULT_OK)
                     startService(Intent(this, ZitiVPNService::class.java).setAction("start"))
             }
             10168 -> {
-                if (resultCode == AppCompatActivity.RESULT_OK)
+                if (resultCode == RESULT_OK)
                     startService(Intent(this, ZitiVPNService::class.java).setAction("stop"))
             }
             else -> super.onActivityResult(requestCode, resultCode, data)
