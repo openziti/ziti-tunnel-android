@@ -456,9 +456,9 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
                 ctxModel.services().observe(this, Observer { serviceList ->
                     identityitem.count = serviceList.count()
                 })
-                if (ctx.getStatus() == ZitiContext.Status.Active) {
-                    identityitem.isOn = true
-                }
+                ctxModel.status().observe(this, { state ->
+                    identityitem.isOn = state != ZitiContext.Status.Disabled
+                })
                 identityitem.IdToggleSwitch.setOnCheckedChangeListener { button: CompoundButton, state: Boolean ->
                     ctx.setEnabled(state)
 
@@ -474,7 +474,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
                     }
                     IdOnOffSwitch.setOnCheckedChangeListener { button: CompoundButton, state: Boolean ->
                         ctx.setEnabled(state)
-                        true
                     }
                     ctxModel.status().observe(this, Observer { st ->
                         IdDetailsStatus.text = st.toString()
@@ -491,7 +490,7 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
                         IdDetailServicesList.removeAllViews()
                         for (service in serviceList) {
                             sCount++
-                            var line = LineView(applicationContext)
+                            val line = LineView(applicationContext)
                             line.label = service.name
                             line.value = service.dns?.let { "${it.hostname}:${it.port}" } ?: ""
                             IdDetailServicesList.addView(line)
@@ -519,41 +518,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
                 }
                 IdentityListing.addView(identityitem)
                 index++
-
-
-/*
-                val cardView = CardView(this, ctx)
-                cardView.name = ctx.name()
-                cardView.layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.FILL_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT)
-                cardView.enrollment = ctx.status.name
-                ctx.statusLive.observe(this, Observer { st ->
-                    cardView.status = st.toString()
-                })
-                this.cardWidths = getScreenWidth()
-                cardView.layoutParams.width = this.cardWidths
-                cardView.onToggle = {
-                    this.toggleCardDetails()
-                }
-                if (index==0) {
-                    var params = cardView.layoutParams as FrameLayout.LayoutParams
-                    params.setMargins(100,0,15,-30)
-                    cardView.layoutParams = params
-                }
-                index++
-                if (index==contextList.size) {
-                    var params = cardView.layoutParams as FrameLayout.LayoutParams
-                    params.setMargins(15,0,100,-30)
-                    cardView.layoutParams = params
-                }
-                Log.i( "ek-tag", "${IdentityCards.childCount} count ${getScreenWidth()} ${getScreenWidth().toDp()} ${cardView.width} ${cardWidths} ${40.toDp()}")
-                ctx.servicesLiveData.observe(this, Observer { serviceList ->
-                    cardView.services = serviceList
-                })
-                IdentityCards.addView(cardView)
-
-                Log.i("ek-tag", "${ctx.name()} - ${ctx.status}")
-                */
-
             }
             //IdentityCount.text = index.toString()
             if (index==0) {
@@ -586,9 +550,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         val active = vpn?.isVPNActive() ?: false
-        if (!active) {
-            // Ziti.pause()
-        }
         unbindService(serviceConnection)
     }
 
