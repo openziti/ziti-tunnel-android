@@ -121,7 +121,7 @@ class ZitiTunnelConnection(val srcAddr: InetSocketAddress, val dstAddr: InetSock
             val payload = tcpConn.fromPeer(packet.payload as TcpPacket, out)
 
             payload?.let {
-                Log.v(info, "sending ${it.size} bytes to ziti backend\n${String(it)}")
+                Log.v(info, "sending ${it.size} bytes to ziti backend")
                 zitiConn.writeCompletely(ByteBuffer.wrap(it))
             }
 

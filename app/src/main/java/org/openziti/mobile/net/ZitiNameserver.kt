@@ -59,12 +59,12 @@ class ZitiNameserver(val addr: String, resolver: DNSResolver) {
             }
 
             IpNumber.ICMPV4,IpNumber.ICMPV6 -> { // TODO?
-                Log.i(TAG, "ignoring received ${ipv4.payload}")
+                Log.v(TAG, "ignoring received ${ipv4.payload.header}")
                 null
             }
 
             else -> {
-                Log.wtf("ziti-nameserver", "WTF is this? ${packet.payload.header}")
+                Log.wtf(TAG, "WTF is this? ${packet.payload.header}")
                 null
             }
         }

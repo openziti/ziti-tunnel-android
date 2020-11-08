@@ -90,6 +90,7 @@ class PacketRouterImpl(resolver: DNSResolver, val dnsAddr: String, val inbound: 
         tcpConnections.forEach {
             it.value.closeOutbound()
         }
+        timer.cancel()
     }
 
     init {
