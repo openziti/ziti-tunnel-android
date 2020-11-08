@@ -12,15 +12,16 @@ import org.pcap4j.packet.IpSelector
 import org.pcap4j.packet.IpV4Packet
 import org.pcap4j.packet.TcpPacket
 import org.pcap4j.packet.namednumber.IpNumber
+import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.concurrent.timer
 
-class PacketRouterImpl(resolver: DNSResolver, val dnsAddr: String, val inbound: (b: ByteBuffer) -> Unit) : PacketRouter {
 
+class PacketRouterImpl(resolver: DNSResolver, val dnsAddr: String, val inbound: (b: ByteBuffer) -> Unit) : PacketRouter {
     val TAG = "routing"
-    val tcpConnections = ConcurrentHashMap<String, ZitiTunnelConnection>()
+    val tcpConnections = ConcurrentHashMap<ConnectionKey, ZitiTunnelConnection>()
     val zitiNameserver = ZitiNameserver(dnsAddr, resolver)
 
     val dns = DNS(resolver)
@@ -60,30 +61,28 @@ class PacketRouterImpl(resolver: DNSResolver, val dnsAddr: String, val inbound: 
 
     private fun routeTCP(msg: IpV4Packet) {
         val tcp = msg.payload as TcpPacket
-        val key = "${msg.header.srcAddr.hostAddress}:${tcp.header.srcPort.valueAsString()}-" +
-                "${msg.header.dstAddr.hostAddress}:${tcp.header.dstPort.valueAsString()}"
 
-        Log.v("routing", "got msg[$key]: ${msg.length()} bytes")
+        val src = InetSocketAddress(msg.header.srcAddr, tcp.header.srcPort.valueAsInt())
+        val dst = InetSocketAddress(msg.header.dstAddr, tcp.header.dstPort.valueAsInt())
+        val k = Pair(src, dst)
 
-        val conn = tcpConnections[key]
+        Log.v("routing", "got msg[$k]: ${msg.length()} bytes")
+
+        val conn = tcpConnections[k]
 
         // new connection
-        if (tcp.header.syn) {
-            conn?.let {
-                throw IllegalStateException("SYN received for existing connection")
-            }
-
-            val newConn = ZitiTunnelConnection(msg, inbound)
-            tcpConnections.put(key, newConn)
+        if (conn == null && tcp.header.syn) {
+            val newConn = ZitiTunnelConnection(src, dst, msg, inbound)
+            tcpConnections.put(k, newConn)
             Log.i(TAG, "created $newConn")
         } else if (conn != null) {
             conn.process(msg)
             if (conn.isClosed()) {
-                tcpConnections.remove(key)
+                tcpConnections.remove(k)
                 Log.i(TAG, "removing ${conn.tcpConn.info}")
             }
         } else {
-            Log.e(TAG, "invalid state. No connection found for [$key]. packet is dropped")
+            Log.e(TAG, "invalid state. No connection found for [$k]. packet is dropped")
         }
     }
 

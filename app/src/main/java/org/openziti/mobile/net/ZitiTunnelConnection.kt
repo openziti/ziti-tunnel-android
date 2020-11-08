@@ -5,135 +5,150 @@
 package org.openziti.mobile.net
 
 import android.util.Log
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.receiveAsFlow
 import org.openziti.Ziti
 import org.openziti.ZitiConnection
 import org.openziti.mobile.net.tcp.TCP
 import org.openziti.mobile.net.tcp.TCPConn
-import org.pcap4j.packet.*
+import org.openziti.net.nio.writeCompletely
+import org.pcap4j.packet.IpV4Packet
+import org.pcap4j.packet.Packet
+import org.pcap4j.packet.SimpleBuilder
+import org.pcap4j.packet.TcpPacket
 import org.pcap4j.packet.namednumber.IpNumber
-import org.pcap4j.packet.namednumber.IpV4TosPrecedence
-import org.pcap4j.packet.namednumber.IpV4TosTos
 import org.pcap4j.packet.namednumber.IpVersion
 import java.net.Inet4Address
-import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.SocketException
 import java.nio.ByteBuffer
+import java.nio.channels.AsynchronousSocketChannel
 import kotlin.coroutines.CoroutineContext
 
 /**
  *
  */
-class ZitiTunnelConnection(synPack: IpV4Packet,
+class ZitiTunnelConnection(val srcAddr: InetSocketAddress, val dstAddr: InetSocketAddress, synPack: IpV4Packet,
                            val onInbound: (ByteBuffer) -> Unit) : CoroutineScope {
 
     val supervisor = SupervisorJob()
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.IO + supervisor
 
-    lateinit var conn: ZitiConnection
-    lateinit var tcpConn: TCPConn
+    val conn = async { Ziti.connect(dstAddr) }
+    val tcpConn: TCPConn = TCPConn(TUNNEL_MTU, srcAddr, dstAddr)
 
-    val peerIp: InetAddress
-    val dstIp: InetAddress
-    val tos = IpV4Rfc1349Tos.Builder()
-            .mbz(false)
-            .tos(IpV4TosTos.DEFAULT)
-            .precedence(IpV4TosPrecedence.ROUTINE)
-            .build()
-
-    val info: String
+    val peerIp: Inet4Address = srcAddr.address as Inet4Address
+    val dstIp: Inet4Address = dstAddr.address as Inet4Address
+    val info: String = "tcp:${srcAddr} -> ${dstAddr}"
 
     val state: TCP.State
-        get() = if (::tcpConn.isInitialized) tcpConn.state else TCP.State.Closed
+        get() = tcpConn.state
+
+    val inboundPackets = Channel<IpV4Packet>(64, BufferOverflow.DROP_LATEST) {
+        Log.d(info, "failed to process $it")
+    }
 
     init {
-        peerIp = synPack.header.srcAddr
-        dstIp = synPack.header.dstAddr
+        start(synPack)
+    }
 
+    fun start(synPack: IpV4Packet) = launch {
         val tcp = synPack.payload as TcpPacket
+        tcpConn.init(tcp)
 
-        val dstAddr = InetSocketAddress(synPack.header.dstAddr, tcp.header.dstPort.valueAsInt())
-
-        info = "tcp:${peerIp.hostAddress}:${tcp.header.srcPort.valueAsInt()} -> ${dstIp.hostAddress}:${tcp.header.dstPort.valueAsInt()}"
-        launch {
-            val acks = mutableListOf<TcpPacket>()
-            tcpConn = TCPConn(TUNNEL_MTU, synPack.header.srcAddr, synPack.header.dstAddr, tcp, acks)
-            try {
-                conn = Ziti.connect(dstAddr)
-
-                readZitiConn()
-
-                Log.i(info, "started reading from ziti backend")
-            } catch (ex: Exception) {
-                Log.e(info, "failed to connect to ziti backend service", ex)
-                acks.clear()
-                tcpConn.state = TCP.State.Closed
-                acks.add(rejectTcpConnection(synPack).build())
-            }
-            sendToPeer(acks)
-        }
-    }
-
-
-    fun readZitiConn() = launch {
-        val buf = ByteArray(1024 * 16)
-        var done = false
         try {
-            conn.timeout = -1
-            while (!done) {
-                val read = conn.receive(buf, 0, buf.size)
-                if (read > 0) {
-                    Log.v(info, "from ziti backend ${String(buf,0,read)}")
-                    val copyOf = buf.copyOf(read)
-                    val packet = tcpConn.toPeer(copyOf)
-                    sendToPeer(listOf(packet))
-                } else if (read < 0) {
-                    done = true
-                    Log.d(info, "ziti conn is closed")
-                }
-            }
-
-            tcpConn.close()?.let {
-                sendToPeer(listOf(it))
-            }
-
-        } catch (psex: SocketException) {
-            Log.w(info, "peer exception", psex)
-        } catch (ex: Throwable) {
-            Log.wtf(info, "ziti socket ex", ex)
-        } finally {
-            tcpConn.close()?.let {
-                sendToPeer(listOf(it))
-            }
-            closeOutbound()
+            val c = conn.await()
+            sendToPeer(tcpConn.accept().toList())
+            processPeerPackets()
+            readZitiConn(c)
+        } catch (ex: Exception) {
+            Log.e(info, "failed to connect to Ziti Service: $ex")
+            sendToPeer(tcpConn.reject().toList())
+            return@launch
         }
     }
 
-    fun isClosed() = conn.isClosed() && tcpConn.isClosed()
 
-    fun process(packet: IpV4Packet) {
-        val out = mutableListOf<TcpPacket>()
-        val payload = tcpConn.fromPeer(packet.payload as TcpPacket, out)
+    fun readZitiConn(conn: ZitiConnection) = launch {
+        try {
+            val buf = ByteArray(1024 * 16)
+            var done = false
+            try {
+                conn.timeout = -1
+                while (!done) {
+                    val read = conn.receive(buf, 0, buf.size)
+                    if (read > 0) {
+                        val copyOf = buf.copyOf(read)
+                        val packet = tcpConn.toPeer(copyOf)
+                        sendToPeer(listOf(packet))
+                    } else if (read < 0) {
+                        done = true
+                        Log.d(info, "ziti conn is closed")
+                    }
+                }
 
-        payload?.let {
-            Log.v(info, "sending ${it.size} bytes to ziti backend\n${String(it)}")
-            conn.write(it)
+                tcpConn.close()?.let {
+                    sendToPeer(listOf(it))
+                }
+
+            } catch (psex: SocketException) {
+                Log.w(info, "peer exception", psex)
+            } catch (ex: Throwable) {
+                Log.wtf(info, "ziti socket ex", ex)
+            } finally {
+                tcpConn.close()?.let {
+                    sendToPeer(listOf(it))
+                }
+                closeOutbound()
+            }
+        } finally {
+            Log.i(info, "readZitiConn() is finished")
+        }
+    }
+
+    fun isClosed() = tcpConn.isClosed()
+
+    fun processPeerPackets() = launch {
+
+        val zitiConn = conn.await() as AsynchronousSocketChannel
+
+        inboundPackets.receiveAsFlow().collect { packet ->
+            val out = mutableListOf<TcpPacket>()
+            val payload = tcpConn.fromPeer(packet.payload as TcpPacket, out)
+
+            payload?.let {
+                Log.v(info, "sending ${it.size} bytes to ziti backend\n${String(it)}")
+                zitiConn.writeCompletely(ByteBuffer.wrap(it))
+            }
+
+            when (tcpConn.state) {
+                TCP.State.LAST_ACK, TCP.State.Closed -> {
+                    zitiConn.close()
+                }
+                TCP.State.FIN_WAIT_1 -> {
+                    zitiConn.shutdownOutput()
+                }
+                else -> {}
+            }
+
+            sendToPeer(out)
         }
 
-        if (tcpConn.state in arrayOf(TCP.State.LAST_ACK, TCP.State.Closed)) {
-            conn.close()
-        }
+        Log.i(info, "processPeerPackets() is done")
+    }
 
-        sendToPeer(out)
+    fun process(packet: IpV4Packet) = runBlocking {
+        if (!inboundPackets.offer(packet)) {
+           Log.w(info, "packet was dropped: queue is full")
+        }
     }
 
     fun closeOutbound() {
-        conn.close()
+        runBlocking { runCatching { conn.await().close() } }
         supervisor.cancel()
         Log.d(info, "ziti conn is closing")
     }
@@ -145,9 +160,9 @@ class ZitiTunnelConnection(synPack: IpV4Packet,
             val ipPack = IpV4Packet.Builder()
                     .version(IpVersion.IPV4)
                     .protocol(IpNumber.TCP)
-                    .tos(tos)
-                    .srcAddr(dstIp as Inet4Address)
-                    .dstAddr(peerIp as Inet4Address)
+                    .tos(TOS)
+                    .srcAddr(dstIp)
+                    .dstAddr(peerIp)
                     .correctChecksumAtBuild(true)
                     .correctLengthAtBuild(true)
                     .payloadBuilder(SimpleBuilder(p)).build()
