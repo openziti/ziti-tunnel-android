@@ -25,12 +25,17 @@ jobs:
         env:
           RELEASE_KEYSTORE: ${{ runner.workspace }}/ziti-mobile.jks
           RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+      - name: Get release
+        id: get_release
+        uses: bruceadams/get-release@v1.2.2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
       - name: upload release bundle
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: app/build/outputs/bundle/release/app-release.aab
           asset_name: ziti-mobile-edge.aab
           asset_content_type: application/octet-stream
