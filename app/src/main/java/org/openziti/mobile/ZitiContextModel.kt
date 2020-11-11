@@ -10,7 +10,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.launch
 import org.openziti.ZitiContext
 import org.openziti.android.Ziti
@@ -31,13 +30,13 @@ class ZitiContextModel(val ctx: ZitiContext): ViewModel() {
 
     init {
         GlobalScope.launch {
-            statusSub.consumeAsFlow().collect {
+            statusSub.collect {
                 statusLive.postValue(it)
             }
         }
 
         GlobalScope.launch {
-            serviceSub.consumeAsFlow().collect {
+            serviceSub.collect {
                 when(it.type) {
                     ZitiContext.ServiceUpdate.Available -> {
                         servicesMap.put(it.service.name, it.service)
@@ -76,7 +75,5 @@ class ZitiContextModel(val ctx: ZitiContext): ViewModel() {
     }
 
     override fun onCleared() {
-        statusSub.cancel()
-        serviceSub.cancel()
     }
 }

@@ -16,11 +16,13 @@ import android.os.IBinder
 import android.system.OsConstants
 import android.util.Log
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import kotlinx.coroutines.channels.Channel
 import org.openziti.android.Ziti
 import org.openziti.mobile.net.PacketRouter
 import org.openziti.mobile.net.PacketRouterImpl
 import org.openziti.mobile.net.TUNNEL_MTU
 import org.openziti.net.dns.DNSResolver
+import java.nio.ByteBuffer
 
 class ZitiVPNService : VpnService() {
 
@@ -31,6 +33,7 @@ class ZitiVPNService : VpnService() {
     private val TAG: String = javaClass.simpleName
     val dnsAddr = "169.254.0.2"
 
+    private val peerChannel = Channel<ByteBuffer>(128)
     private var tunnel: Tunnel? = null
     lateinit var packetRouter: PacketRouter
     lateinit var dnsResolver: DNSResolver
@@ -73,7 +76,7 @@ class ZitiVPNService : VpnService() {
 
         dnsResolver = Ziti.getDnsResolver()
         packetRouter = PacketRouterImpl(dnsResolver, dnsAddr) {buf ->
-            tunnel?.onInbound(buf) ?: Log.w(TAG, "failed to send packet because tunnel was closed")
+            peerChannel.send(buf)
         }
 
         LocalBroadcastManager.getInstance(applicationContext).registerReceiver(receiver,
@@ -153,9 +156,8 @@ class ZitiVPNService : VpnService() {
             val fd = builder.establish()!!
 
             Log.i(TAG, "starting tunnel for fd=$fd")
-            return Tunnel(fd, packetRouter).let {
+            return Tunnel(fd, packetRouter, peerChannel).let {
                 tunnel = it
-                it.start()
             }
         } catch (ex: Throwable) {
             Log.wtf(TAG, ex)
