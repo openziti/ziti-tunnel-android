@@ -387,7 +387,7 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
         contextViewModel = ViewModelProvider(this).get(ZitiViewModel::class.java)
         contextViewModel.contexts().observe(this, { contextList ->
             //IdentityCards.removeAllViews()
-            IdentityList.removeAllViews()
+            IdentityListing.removeAllViews()
             // create, remove cards
             var index = 0
             for (ctx in contextList) {
