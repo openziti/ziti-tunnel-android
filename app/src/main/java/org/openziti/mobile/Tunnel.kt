@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 NetFoundry. All rights reserved.
+ * Copyright (c) 2021 NetFoundry. All rights reserved.
  */
 
 package org.openziti.mobile
@@ -9,10 +9,11 @@ import android.util.Log
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.consumeAsFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import org.openziti.mobile.net.PacketRouter
 import org.openziti.mobile.net.TUNNEL_MTU
 import java.nio.ByteBuffer
+import java.nio.channels.AsynchronousCloseException
 import java.nio.channels.ClosedByInterruptException
 import java.util.concurrent.Executors
 
@@ -26,10 +27,14 @@ class Tunnel(fd: ParcelFileDescriptor, val processor: PacketRouter, val toPeerCh
     init {
         readerThread.start()
         writer = GlobalScope.launch(writeDispatcher) {
-            toPeerChannel.consumeAsFlow().collect {
+            toPeerChannel.receiveAsFlow().collect {
                 Log.v(TAG, "writing ${it.remaining()} on t[${Thread.currentThread().name}]")
-                output.write(it)
+                kotlin.runCatching { output.write(it) }
+                        .onFailure {
+                            Log.e(TAG, "write failed", it)
+                        }
             }
+            Log.i(TAG, "writer is done")
         }
         writer.invokeOnCompletion {
             Log.i(TAG, "writer() finished ${it?.localizedMessage}")
@@ -53,31 +58,28 @@ class Tunnel(fd: ParcelFileDescriptor, val processor: PacketRouter, val toPeerCh
                     Log.w(TAG, "routing exception ${ex.localizedMessage}", ex)
                 }
             }
-        } catch (interrupt: ClosedByInterruptException) {
-            Log.i(TAG, "reader() was interrupted")
+        } catch (clex: ClosedByInterruptException) {
+            Log.i(TAG, "reader() was interrupted: $clex")
+        } catch (acex: AsynchronousCloseException) {
+            Log.i(TAG, "reader() was interrupted: $acex")
         } catch (ex: Throwable) {
             Log.wtf(TAG, "unexpected!", ex)
             close(ex)
         }
     }
 
-//    fun onInbound(b: ByteBuffer): Unit = runBlocking {
-//        toPeerChannel.runCatching {
-//            toPeerChannel.send(b)
-//        }.onFailure {
-//            Log.w(TAG, "")
-//        }
-//    }
-
     fun close(ex: Throwable? = null) {
-        ex?.let {
-            Log.e(TAG, "closing with exception: $it")
+        if (ex != null) {
+            Log.e(TAG, "closing with exception", ex)
+        } else {
+            Log.i(TAG, "closing")
         }
 
         runBlocking { writer.cancelAndJoin() }
-        readerThread.interrupt()
         output.close()
         input.close()
+
+        readerThread.join()
     }
 
     companion object {
