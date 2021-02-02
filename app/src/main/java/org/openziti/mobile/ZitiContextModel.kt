@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 NetFoundry. All rights reserved.
+ * Copyright (c) 2021 NetFoundry. All rights reserved.
  */
 
 package org.openziti.mobile
@@ -24,6 +24,7 @@ class ZitiContextModel(val ctx: ZitiContext): ViewModel() {
     private val serviceSub = ctx.serviceUpdates()
 
     private val statusLive = MutableLiveData(ctx.getStatus())
+    private val nameLive = MutableLiveData(ctx.name())
 
     private val servicesMap = sortedMapOf<String,Service>()
     private val servicesData = MutableLiveData<Collection<Service>>(listOf())
@@ -32,6 +33,9 @@ class ZitiContextModel(val ctx: ZitiContext): ViewModel() {
         GlobalScope.launch {
             statusSub.collect {
                 statusLive.postValue(it)
+                if (it is ZitiContext.Status.Active)
+                    nameLive.postValue(ctx.getId()?.name ?: ctx.name())
+
             }
         }
 
@@ -58,17 +62,9 @@ class ZitiContextModel(val ctx: ZitiContext): ViewModel() {
         }
     }
 
-    fun name(): String {
-        return ctx.getId()?.name ?: ctx.name()
-    }
-
-    fun status(): LiveData<ZitiContext.Status> {
-        return statusLive
-    }
-
-    fun services(): LiveData<Collection<Service>> {
-        return servicesData
-    }
+    fun name(): LiveData<String> = nameLive
+    fun status(): LiveData<ZitiContext.Status> = statusLive
+    fun services(): LiveData<Collection<Service>> = servicesData
 
     fun delete() {
         Ziti.deleteIdentity(ctx)

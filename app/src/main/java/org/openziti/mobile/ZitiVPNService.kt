@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 NetFoundry. All rights reserved.
+ * Copyright (c) 2021 NetFoundry. All rights reserved.
  */
 
 package org.openziti.mobile
@@ -90,10 +90,10 @@ class ZitiVPNService : VpnService() {
         Log.i(TAG, "onDestroy")
     }
 
-    override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.i(TAG, "onStartCommand $intent, $startId")
 
-        when (intent.action) {
+        when (intent?.action) {
             "start" -> {
                 startTunnel()
             }
