@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 NetFoundry. All rights reserved.
+ * Copyright (c) 2021 NetFoundry. All rights reserved.
  */
 
 package org.openziti.mobile
@@ -59,8 +59,8 @@ class IdentityItemView(context: AppCompatActivity, val ctxModel: ZitiContextMode
     init {
         init(null, 0)
 
-        ctxModel.status().observe(context, Observer {
-            IdentityName.text = ctxModel.name()
+        ctxModel.name().observe(context, Observer {
+            IdentityName.text = it
         })
 
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 NetFoundry. All rights reserved.
+ * Copyright (c) 2021 NetFoundry. All rights reserved.
  */
 
 package org.openziti.mobile
@@ -393,6 +393,9 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
             for (ctx in contextList) {
                 val ctxModel = ViewModelProvider(this, ZitiContextModel.Factory(ctx)).get(ctx.name(), ZitiContextModel::class.java)
                 val identityitem = IdentityItemView(this, ctxModel)
+                ctxModel.name().observe(this, { n ->
+                    IdIdentityDetailName.text = n
+                })
                 ctxModel.services().observe(this, { serviceList ->
                     identityitem.count = serviceList.count()
                 })
@@ -406,7 +409,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
 
                 identityitem.setOnClickListener {
                     toggleSlide(IdentityDetailsPage, "identity")
-                    IdIdentityDetailName.text = ctxModel.name()
                     IdDetailsEnrollment.text = ctxModel.status().value?.toString()
                     if (ctx.getStatus() == ZitiContext.Status.Active) {
                         IdOnOffSwitch.isChecked = true
