@@ -51,7 +51,7 @@ class ZitiContextModel(val ctx: ZitiContext): ViewModel() {
                     ZitiContext.ServiceUpdate.ConfigurationChange -> {}
                 }
 
-                servicesData.postValue(servicesMap.values)
+                servicesData.postValue(servicesMap.values.toList())
             }
         }
     }
