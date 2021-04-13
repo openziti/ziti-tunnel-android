@@ -8,18 +8,18 @@ buildscript {
     ext {
         versions = [
                 kotlin: '1.4.32',
-                coroutines: '1.4.2',
-                ziti: '0.18.5'
+                coroutines: '1.4.3',
+                ziti: '0.19.1'
         ]
     }
     ext.zitiBuildnum = System.getProperty("ziti.buildNum") ?: 'local'
 
     repositories {
+        mavenCentral()
         google()
-        jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.1.2'
+        classpath 'com.android.tools.build:gradle:4.2.0-rc01'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${versions.kotlin}"
 
         // NOTE: Do not place your application dependencies here; they belong
@@ -93,8 +93,8 @@ ext.versionCode = getVersionCode()
 
 subprojects {
     repositories {
+        mavenCentral()
         google()
-        jcenter()
     }
 }
 
