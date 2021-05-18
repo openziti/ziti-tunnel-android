@@ -15,6 +15,8 @@ import org.openziti.mobile.net.TUNNEL_MTU
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousCloseException
 import java.nio.channels.ClosedByInterruptException
+import java.time.Duration
+import java.time.Instant
 import java.util.concurrent.Executors
 
 class Tunnel(fd: ParcelFileDescriptor, val processor: PacketRouter, val toPeerChannel: ReceiveChannel<ByteBuffer>) {
@@ -22,6 +24,9 @@ class Tunnel(fd: ParcelFileDescriptor, val processor: PacketRouter, val toPeerCh
     val output = ParcelFileDescriptor.AutoCloseOutputStream(fd).channel
     val input = ParcelFileDescriptor.AutoCloseInputStream(fd).channel
     val readerThread = Thread(this::reader, "tunnel-read")
+    val startTime = Instant.now()
+    val uptime: Duration
+        get() = Duration.between(startTime, Instant.now())
 
     val writer: Job
     init {
