@@ -9,6 +9,7 @@ import android.content.Intent
 import android.util.Log
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import org.openziti.android.Ziti
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  *
@@ -17,7 +18,11 @@ class ZitiMobileEdgeApp: Application() {
     companion object {
         val ROUTE_CHANGE = "route_change"
     }
-    internal val routes = mutableSetOf<ZitiVPNService.Route>()
+    private val routesMap = ConcurrentHashMap<ZitiVPNService.Route, ZitiVPNService.Route>()
+
+    internal val routes: Collection<ZitiVPNService.Route>
+        get() = routesMap.values
+
     override fun onCreate() {
         super.onCreate()
         Ziti.setEnrollmentActivity(ZitiEnrollmentActivity::class.java)
@@ -25,19 +30,19 @@ class ZitiMobileEdgeApp: Application() {
 
         dnsResolver.subscribe { de ->
             Log.i("ziti-app", "dns event $de")
-            val existingRt = routes.find { it.route == de.ip.hostAddress && it.prefix == 32 }
+            val rt = ZitiVPNService.Route(de.ip.hostAddress, 32)
+            val existingRt = routesMap[rt]
             if (existingRt == null) {
                 if (!de.removed) {
-                    val rt = ZitiVPNService.Route(de.ip.hostAddress, 32)
                     rt.count = 1
-                    routes.add(rt)
+                    routesMap.put(rt, rt)
                     notifyRouteChange()
                 }
             } else {
                 if (de.removed) {
                     existingRt.count--
                     if (existingRt.count < 1) {
-                        routes.remove(existingRt)
+                        routesMap.remove(existingRt)
                         notifyRouteChange()
                     }
                 } else {
