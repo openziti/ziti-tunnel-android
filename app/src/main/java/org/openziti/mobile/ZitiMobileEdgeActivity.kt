@@ -433,7 +433,7 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
                             sCount++
                             val line = LineView(applicationContext)
                             line.label = service.name
-                            line.value = service.dns?.let { "${it.hostname}:${it.port}" } ?: ""
+                            line.value = service.interceptConfig?.toString() ?: ""
                             IdDetailServicesList.addView(line)
                         }
                     })
