@@ -16,13 +16,18 @@ import android.os.IBinder
 import android.system.OsConstants
 import android.util.Log
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.consumeEach
 import org.openziti.android.Ziti
 import org.openziti.mobile.net.PacketRouter
 import org.openziti.mobile.net.PacketRouterImpl
 import org.openziti.mobile.net.TUNNEL_MTU
 import org.openziti.net.dns.DNSResolver
 import java.nio.ByteBuffer
+import java.time.Duration
+import java.time.Instant
 
 class ZitiVPNService : VpnService() {
 
@@ -38,6 +43,8 @@ class ZitiVPNService : VpnService() {
     lateinit var packetRouter: PacketRouter
     lateinit var dnsResolver: DNSResolver
 
+    val restartSignal = Channel<String>(capacity = 1, onBufferOverflow = BufferOverflow.DROP_LATEST)
+
     internal data class Route(val route: String, val prefix: Int) {
         var count = 0
     }
@@ -45,6 +52,7 @@ class ZitiVPNService : VpnService() {
     // prefs
     lateinit var addr: String
     var addrPrefix: Int = 32
+    lateinit var monitor: Job
 
     lateinit var defaultRoute: String
 
@@ -53,8 +61,9 @@ class ZitiVPNService : VpnService() {
 
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            intent?.let {
-                restartTunnel()
+            intent?.action?.let {
+                Log.i(TAG, "restarting tunnel due to $intent")
+                restartSignal.offer(it)
             }
         }
     }
@@ -79,6 +88,19 @@ class ZitiVPNService : VpnService() {
             peerChannel.send(buf)
         }
 
+        monitor = GlobalScope.launch(Dispatchers.IO) {
+            restartSignal.consumeEach {
+                when(it) {
+                    "start" -> startTunnel()
+                    "restart" -> restartTunnel()
+                    "stop" -> {
+                        tunnel?.close()
+                        tunnel = null
+                    }
+                }
+            }
+        }
+
         LocalBroadcastManager.getInstance(applicationContext).registerReceiver(receiver,
                 IntentFilter(ZitiMobileEdgeApp.ROUTE_CHANGE))
     }
@@ -86,6 +108,8 @@ class ZitiVPNService : VpnService() {
     override fun onDestroy() {
         tunnel?.close()
         packetRouter.stop()
+        restartSignal.close()
+        monitor.cancel()
         super.onDestroy()
         Log.i(TAG, "onDestroy")
     }
@@ -93,14 +117,17 @@ class ZitiVPNService : VpnService() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.i(TAG, "onStartCommand $intent, $startId")
 
-        when (intent?.action) {
+        val action = intent?.action
+        when (action) {
+            SERVICE_INTERFACE,
             "start" -> {
-                startTunnel()
+                runBlocking {
+                    restartSignal.send("start")
+                }
             }
 
-            "stop" -> {
-                tunnel?.close()
-                stopSelf()
+            "stop" -> runBlocking {
+                restartSignal.send("stop")
             }
 
             else -> Log.wtf(TAG, "what is your intent? $intent")
@@ -168,9 +195,11 @@ class ZitiVPNService : VpnService() {
         }
     }
 
-    override fun onBind(intent: Intent?): IBinder? = ZitiVPNBinder()
+    override fun onBind(intent: Intent?): IBinder = ZitiVPNBinder()
 
     inner class ZitiVPNBinder: Binder() {
         fun isVPNActive() = tunnel != null
+
+        fun getUptime(): Duration? = tunnel?.uptime
     }
 }
