@@ -41,9 +41,6 @@ import org.openziti.android.Ziti
 import java.util.*
 
 
-fun Int.toDp(): Int = (this / Resources.getSystem().displayMetrics.density).toInt()
-fun Int.toPx(): Int = (this * Resources.getSystem().displayMetrics.density).toInt()
-
 class ZitiMobileEdgeActivity : AppCompatActivity() {
 
     lateinit var prefs: SharedPreferences
@@ -60,7 +57,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
     var log_application = ""
     var log_tunneler = ""
     val version = "${BuildConfig.VERSION_NAME}(${BuildConfig.GIT_COMMIT})"
-    var startTime = Date()
 
     lateinit var contextViewModel: ZitiViewModel
     internal var vpn: ZitiVPNService.ZitiVPNBinder? = null
@@ -153,37 +149,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
 
     private var startPosition = 0f
 
-    fun difference(): String {
-        var stopTime = Date()
-        val diff = stopTime.time-startTime.time
-        var seconds = diff / 1000
-        var minutes = seconds / 60
-        var hours = minutes / 60
-
-        if (minutes>0) {
-            seconds = seconds/(minutes+1)
-        }
-        if (hours>0) {
-            minutes = minutes/(hours+1)
-        }
-
-        var totalString = seconds.toString()
-        if (seconds<10) totalString = "0"+seconds
-        if (minutes>0) {
-            if (minutes>=10 ) totalString = minutes.toString()+":"+totalString
-            else totalString = "0"+minutes.toString()+":"+totalString
-        } else {
-            totalString = "00:"+totalString
-        }
-        if (hours>0) {
-            if (hours>=10) totalString = hours.toString()+":"+totalString
-            else totalString = "0"+hours.toString()+":"+totalString
-        } else {
-            totalString = "00:"+totalString
-        }
-
-        return totalString
-    }
 
     fun TurnOff() {
         OnButton.visibility = View.GONE
@@ -243,7 +208,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
             } else {
                 onActivityResult(10169, RESULT_OK, null)
             }
-            startTime = Date()
             OnButton.visibility = View.VISIBLE
             OffButton.visibility = View.GONE
             TimeConnected.visibility = View.VISIBLE
@@ -258,8 +222,9 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
         val timer = Timer()
         val task = object: TimerTask() {
             override fun run() {
+                val uptime = vpn?.getUptime()?.format() ?: ""
                 TimeConnected.post {
-                    TimeConnected.text = difference()
+                    TimeConnected.text = uptime
                 }
             }
         }
