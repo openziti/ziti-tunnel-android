@@ -27,13 +27,9 @@ import org.openziti.mobile.net.TUNNEL_MTU
 import org.openziti.net.dns.DNSResolver
 import java.nio.ByteBuffer
 import java.time.Duration
-import java.time.Instant
+
 
 class ZitiVPNService : VpnService() {
-
-    companion object {
-        const val BUFFER_SIZE: Int = 1 shl 16
-    }
 
     private val TAG: String = javaClass.simpleName
     val dnsAddr = "169.254.0.2"
@@ -43,7 +39,7 @@ class ZitiVPNService : VpnService() {
     lateinit var packetRouter: PacketRouter
     lateinit var dnsResolver: DNSResolver
 
-    val restartSignal = Channel<String>(capacity = 1, onBufferOverflow = BufferOverflow.DROP_LATEST)
+    val restartSignal = Channel<String>(capacity = 1, onBufferOverflow = BufferOverflow.SUSPEND)
 
     internal data class Route(val route: String, val prefix: Int) {
         var count = 0
@@ -90,6 +86,7 @@ class ZitiVPNService : VpnService() {
 
         monitor = GlobalScope.launch(Dispatchers.IO) {
             restartSignal.consumeEach {
+                Log.v(TAG, "received signal[$it]")
                 when(it) {
                     "start" -> startTunnel()
                     "restart" -> restartTunnel()
@@ -106,12 +103,14 @@ class ZitiVPNService : VpnService() {
     }
 
     override fun onDestroy() {
+        Log.i(TAG, "onDestroy")
+
+        LocalBroadcastManager.getInstance(applicationContext).unregisterReceiver(receiver)
         tunnel?.close()
         packetRouter.stop()
         restartSignal.close()
         monitor.cancel()
         super.onDestroy()
-        Log.i(TAG, "onDestroy")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -195,11 +194,14 @@ class ZitiVPNService : VpnService() {
         }
     }
 
-    override fun onBind(intent: Intent?): IBinder = ZitiVPNBinder()
+    override fun onBind(intent: Intent?): IBinder? =
+        if (intent?.action == SERVICE_INTERFACE)
+            super.onBind(intent)
+        else
+            ZitiVPNBinder()
 
     inner class ZitiVPNBinder: Binder() {
         fun isVPNActive() = tunnel != null
-
         fun getUptime(): Duration? = tunnel?.uptime
     }
 }
