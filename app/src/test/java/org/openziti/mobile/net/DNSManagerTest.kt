@@ -11,6 +11,7 @@ import org.openziti.net.dns.DNSResolver
 import org.pcap4j.packet.DnsPacket
 import org.pcap4j.packet.IpSelector
 import org.pcap4j.packet.UdpPacket
+import java.io.Writer
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
@@ -34,6 +35,10 @@ class DNSManagerTest {
         }
 
         override fun subscribe(sub: Consumer<DNSResolver.DNSEvent>) {
+            TODO("Not yet implemented")
+        }
+
+        override fun dump(writer: Writer) {
             TODO("Not yet implemented")
         }
     }
