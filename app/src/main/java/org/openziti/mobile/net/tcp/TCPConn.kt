@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.properties.Delegates
 
-class TCPConn(val mtu: Int, val peer: InetSocketAddress, val dst: InetSocketAddress) {
+class TCPConn(val mtu: Int, val peer: InetSocketAddress, val dst: InetSocketAddress, dstHost: String?) {
 
     // static config
     val peerPort: TcpPort = TcpPort.getInstance(peer.port.toShort())
@@ -25,7 +25,7 @@ class TCPConn(val mtu: Int, val peer: InetSocketAddress, val dst: InetSocketAddr
     val localWindow = 0xFFFF.toShort()
     val localWindowScale = 7.toByte()
 
-    val info: String = "tcp:${peer} -> ${dst}"
+    val info = "tcp:${peer} -> ${dstHost}${dst}"
 
     override fun toString() = info
 
@@ -43,7 +43,7 @@ class TCPConn(val mtu: Int, val peer: InetSocketAddress, val dst: InetSocketAddr
 
     // channel to signal new ack has been received
     // used to re-evaluate peer window
-    val ackSignal = Channel<Unit>()
+    val ackSignal = Channel<Unit>(Channel.CONFLATED)
 
     fun init(msg: TcpPacket) {
         if (!msg.header.syn) {
@@ -175,7 +175,7 @@ class TCPConn(val mtu: Int, val peer: InetSocketAddress, val dst: InetSocketAddr
         peerWindow.set(msg.header.windowAsInt)
         if (msg.header.ack) {
             peerAck.set(msg.header.acknowledgmentNumberAsLong)
-            ackSignal.offer(Unit)
+            ackSignal.trySend(Unit)
         }
 
         for (opt in msg.header.options) {
@@ -187,7 +187,7 @@ class TCPConn(val mtu: Int, val peer: InetSocketAddress, val dst: InetSocketAddr
 
 
         val dataLen = msg.payload?.length() ?: 0
-        Log.v(info, "state[$state] <- ${msg.header} data[$dataLen]")
+        Log.v(info, "state[$state] <- ${msg.flags()} data[$dataLen]")
         when (state) {
 
             // connection establishment
