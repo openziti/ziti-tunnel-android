@@ -41,6 +41,10 @@ class DNSManagerTest {
         override fun dump(writer: Writer) {
             TODO("Not yet implemented")
         }
+
+        override fun lookup(addr: InetAddress): String? {
+            TODO("Not yet implemented")
+        }
     }
 
     @Test
