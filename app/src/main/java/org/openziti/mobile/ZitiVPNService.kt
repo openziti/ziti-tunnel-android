@@ -65,7 +65,7 @@ class ZitiVPNService : VpnService(), CoroutineScope {
         override fun onReceive(context: Context?, intent: Intent?) {
             intent?.action?.let {
                 Log.i(TAG, "restarting tunnel due to $intent")
-                restartSignal.offer(it)
+                restartSignal.trySend(it)
             }
         }
     }
