@@ -21,7 +21,9 @@ import java.time.Instant
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 
-class Tunnel(fd: ParcelFileDescriptor, val processor: PacketRouter, val toPeerChannel: ReceiveChannel<ByteBuffer>) {
+class Tunnel(fd: ParcelFileDescriptor, val processor: PacketRouter, val toPeerChannel: ReceiveChannel<ByteBuffer>): CoroutineScope {
+
+    override val coroutineContext = SupervisorJob() + tunnelDispatch
 
     val output = ParcelFileDescriptor.AutoCloseOutputStream(fd).channel
     val input = ParcelFileDescriptor.AutoCloseInputStream(fd).channel
@@ -30,8 +32,8 @@ class Tunnel(fd: ParcelFileDescriptor, val processor: PacketRouter, val toPeerCh
     val uptime: Duration
         get() = Duration.between(startTime, Instant.now())
 
-    val reader: Job = GlobalScope.launch(tunnelDispatch) { reader() }
-    val writer = GlobalScope.launch(tunnelDispatch) {
+    val reader: Job = launch { reader() }
+    val writer = launch {
         toPeerChannel.receiveAsFlow().collect {
             Log.v(TAG, "writing ${it.remaining()} on t[${Thread.currentThread().name}]")
             CompletableFuture.supplyAsync {
@@ -92,14 +94,15 @@ class Tunnel(fd: ParcelFileDescriptor, val processor: PacketRouter, val toPeerCh
         runBlocking {
             reader.cancelAndJoin()
             writer.cancelAndJoin()
-
-            runCatching { output.close() }.onFailure {
-                Log.d(TAG, "output.close exception", ex)
-            }
-            runCatching { input.close() }.onFailure {
-                Log.d(TAG, "input.close exception", ex)
-            }
         }
+
+        runCatching { output.close() }.onFailure {
+            Log.v(TAG, "output.close exception", it)
+        }
+        runCatching { input.close() }.onFailure {
+            Log.v(TAG, "input.close exception", it)
+        }
+        cancel("tunnel closed", ex)
     }
 
     companion object {

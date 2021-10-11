@@ -11,9 +11,13 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.receiveAsFlow
 import org.openziti.Ziti
-import org.openziti.ZitiConnection
+import org.openziti.ZitiAddress
+import org.openziti.ZitiContext
+import org.openziti.api.Service
 import org.openziti.mobile.net.tcp.TCP
 import org.openziti.mobile.net.tcp.TCPConn
+import org.openziti.net.nio.connectSuspend
+import org.openziti.net.nio.readSuspend
 import org.openziti.net.nio.writeCompletely
 import org.pcap4j.packet.IpV4Packet
 import org.pcap4j.packet.Packet
@@ -38,8 +42,10 @@ class ZitiTunnelConnection(val srcAddr: InetSocketAddress, val dstAddr: InetSock
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.IO + supervisor
 
-    val conn = async { Ziti.connect(dstAddr) }
-    val tcpConn: TCPConn = TCPConn(TUNNEL_MTU, srcAddr, dstAddr)
+    val ztx: ZitiContext?
+    val service: Service?
+    val conn: AsynchronousSocketChannel?
+    val tcpConn: TCPConn
 
     val peerIp: Inet4Address = srcAddr.address as Inet4Address
     val dstIp: Inet4Address = dstAddr.address as Inet4Address
@@ -53,37 +59,57 @@ class ZitiTunnelConnection(val srcAddr: InetSocketAddress, val dstAddr: InetSock
     }
 
     init {
+        val dstHostname = Ziti.getDNSResolver().lookup(dstAddr.address)
+        tcpConn = TCPConn(TUNNEL_MTU, srcAddr, dstAddr, dstHostname)
+
+        val ztxService = Ziti.getServiceFor(dstAddr)
+
+        ztx = ztxService?.first
+        service = ztxService?.second
+        conn = ztx?.open()
         start(synPack)
     }
 
-    fun start(synPack: IpV4Packet) = launch {
+    fun start(synPack: IpV4Packet) {
+
+        if (service == null) {
+            Log.e(info, "could not find Ziti Service for dst[$dstAddr]")
+            launch { sendToPeer(tcpConn.reject().toList()) }
+            return
+        }
+
         val tcp = synPack.payload as TcpPacket
         tcpConn.init(tcp)
 
-        try {
-            val c = withTimeout(3000) {
-                conn.await()
+        val dialAddr = ZitiAddress.Dial(
+            service = service.name)
+
+        launch {
+            try {
+                requireNotNull(conn)
+                conn.connectSuspend(dialAddr, 5000)
+                sendToPeer(tcpConn.accept().toList())
+                processPeerPackets(conn)
+                readZitiConn(conn)
+            } catch (ex: Exception) {
+                Log.e(info, "failed to connect to Ziti Service: $ex")
+                sendToPeer(tcpConn.reject().toList())
             }
-            sendToPeer(tcpConn.accept().toList())
-            processPeerPackets(c as AsynchronousSocketChannel)
-            readZitiConn(c)
-        } catch (ex: Exception) {
-            Log.e(info, "failed to connect to Ziti Service: $ex")
-            sendToPeer(tcpConn.reject().toList())
-            return@launch
         }
     }
 
-    fun readZitiConn(conn: ZitiConnection) = launch {
+    private fun readZitiConn(conn: AsynchronousSocketChannel) = launch {
         try {
-            val buf = ByteArray(1024 * 16)
+            val buf = ByteBuffer.allocate(1024 * 16)
             var done = false
             try {
-                conn.timeout = -1
                 while (!done) {
-                    val read = conn.receive(buf, 0, buf.size)
+                    buf.clear()
+                    val read = conn.readSuspend(buf)
                     if (read > 0) {
-                        val copyOf = buf.copyOf(read)
+                        val copyOf = ByteArray(read)
+                        buf.flip()
+                        buf.get(copyOf)
                         val packet = tcpConn.toPeer(copyOf)
                         sendToPeer(listOf(packet))
                     } else if (read < 0) {
@@ -148,13 +174,16 @@ class ZitiTunnelConnection(val srcAddr: InetSocketAddress, val dstAddr: InetSock
     }
 
     fun process(packet: IpV4Packet) = runBlocking {
-        if (!inboundPackets.offer(packet)) {
-           Log.w(info, "packet was dropped: queue is full")
+        inboundPackets.trySend(packet).also {
+            if (!it.isSuccess)
+                Log.w(info,
+                    """packet was dropped: queue is ${if (it.isClosed) "closed" else "full"}"""
+                )
         }
     }
 
     fun shutdown() {
-        runBlocking { runCatching { conn.await().close() } }
+        runCatching { conn?.close() }
         supervisor.cancel()
         Log.d(info, "ziti tunnel conn is closed")
     }
