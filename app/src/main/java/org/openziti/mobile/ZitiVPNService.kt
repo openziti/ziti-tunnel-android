@@ -20,9 +20,9 @@ import android.system.OsConstants
 import android.util.Log
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collect
 import org.openziti.android.Ziti
 import org.openziti.mobile.net.PacketRouter
 import org.openziti.mobile.net.PacketRouterImpl
@@ -30,14 +30,16 @@ import org.openziti.mobile.net.TUNNEL_MTU
 import org.openziti.net.dns.DNSResolver
 import java.nio.ByteBuffer
 import java.time.Duration
-import kotlin.coroutines.CoroutineContext
 
 
 class ZitiVPNService : VpnService(), CoroutineScope {
 
+    companion object {
+        private val TAG: String = ZitiVPNService::class.java.simpleName
+    }
+
     override val coroutineContext = SupervisorJob() + Dispatchers.IO
 
-    private val TAG: String = javaClass.simpleName
     val dnsAddr = "169.254.0.2"
 
     private val peerChannel = Channel<ByteBuffer>(128)
@@ -45,7 +47,7 @@ class ZitiVPNService : VpnService(), CoroutineScope {
     lateinit var packetRouter: PacketRouter
     lateinit var dnsResolver: DNSResolver
 
-    val restartSignal = Channel<String>(capacity = 1, onBufferOverflow = BufferOverflow.SUSPEND)
+    val tunnelState = MutableStateFlow("stop")
 
     internal data class Route(val route: String, val prefix: Int) {
         var count = 0
@@ -65,7 +67,7 @@ class ZitiVPNService : VpnService(), CoroutineScope {
         override fun onReceive(context: Context?, intent: Intent?) {
             intent?.action?.let {
                 Log.i(TAG, "restarting tunnel due to $intent")
-                restartSignal.trySend(it)
+                tunnelState.value = it
             }
         }
     }
@@ -107,18 +109,27 @@ class ZitiVPNService : VpnService(), CoroutineScope {
             peerChannel.send(buf)
         }
 
-        monitor = launch(Dispatchers.IO) {
-            restartSignal.consumeEach {
-                Log.v(TAG, "received signal[$it]")
-                when(it) {
-                    "start" -> startTunnel()
-                    "restart" -> restartTunnel()
-                    "stop" -> {
-                        tunnel?.close()
-                        tunnel = null
+        monitor = launch {
+            tunnelState.collect { cmd ->
+                Log.v(TAG, "received signal[$cmd]")
+                runCatching {
+                    when(cmd) {
+                        "start" -> startTunnel()
+                        "restart" -> restartTunnel()
+                        "stop" -> {
+                            tunnel?.close()
+                            tunnel = null
+                        }
+                        else -> Log.i(TAG, "unsupported command[$cmd]")
                     }
+                }.onFailure {
+                    Log.w(TAG, "exception during tunnel $cmd", it)
                 }
             }
+        }
+
+        monitor.invokeOnCompletion {
+            Log.i(TAG, "monitor stopped", it)
         }
 
         LocalBroadcastManager.getInstance(applicationContext).registerReceiver(receiver,
@@ -131,7 +142,6 @@ class ZitiVPNService : VpnService(), CoroutineScope {
         LocalBroadcastManager.getInstance(applicationContext).unregisterReceiver(receiver)
         tunnel?.close()
         packetRouter.stop()
-        restartSignal.close()
         monitor.cancel()
         coroutineContext.cancel()
         super.onDestroy()
@@ -143,15 +153,11 @@ class ZitiVPNService : VpnService(), CoroutineScope {
         val action = intent?.action
         when (action) {
             SERVICE_INTERFACE,
-            "start" -> {
-                runBlocking {
-                    restartSignal.send("start")
-                }
-            }
+            "start" -> tunnelState.value = "start"
 
-            "stop" -> runBlocking {
-                restartSignal.send("stop")
-            }
+            "restart" -> tunnelState.value = "restart"
+
+            "stop" -> tunnelState.value = "stop"
 
             else -> Log.wtf(TAG, "what is your intent? $intent")
 
@@ -214,7 +220,7 @@ class ZitiVPNService : VpnService(), CoroutineScope {
                 setConfigureIntent(
                         PendingIntent.getActivity(applicationContext, 0,
                                 Intent(applicationContext, ZitiMobileEdgeActivity::class.java),
-                                PendingIntent.FLAG_UPDATE_CURRENT))
+                                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
             }
 
             Log.i(TAG, "creating tunnel interface")
