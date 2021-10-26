@@ -27,6 +27,7 @@ import org.openziti.android.Ziti
 import org.openziti.mobile.net.PacketRouter
 import org.openziti.mobile.net.PacketRouterImpl
 import org.openziti.mobile.net.TUNNEL_MTU
+import org.openziti.mobile.net.ZitiRouteManager
 import org.openziti.net.dns.DNSResolver
 import java.nio.ByteBuffer
 import java.time.Duration
@@ -40,7 +41,7 @@ class ZitiVPNService : VpnService(), CoroutineScope {
 
     override val coroutineContext = SupervisorJob() + Dispatchers.IO
 
-    val dnsAddr = "169.254.0.2"
+    val dnsAddr = "100.64.0.2"
 
     private val peerChannel = Channel<ByteBuffer>(128)
     private var tunnel: Tunnel? = null
@@ -58,10 +59,7 @@ class ZitiVPNService : VpnService(), CoroutineScope {
     var addrPrefix: Int = 32
     lateinit var monitor: Job
 
-    lateinit var defaultRoute: String
-
     private val allowedApps = mutableSetOf<String>()
-    private val routes = mutableSetOf<Route>()
 
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -95,10 +93,6 @@ class ZitiVPNService : VpnService(), CoroutineScope {
         val prefs = getSharedPreferences("ziti-vpn", Context.MODE_PRIVATE)
         addr = prefs.getString("address", "169.254.0.1")!!
         addrPrefix = prefs.getInt("addrPrefix", 32)
-
-        defaultRoute = prefs.getString("route", "169.254.0.0")!!
-        val routePrefix = prefs.getInt("routePrefix", 16)
-        routes.add(Route(defaultRoute, routePrefix))
 
         prefs.getStringSet("selected-apps", emptySet())?.let {
             allowedApps.addAll(it)
@@ -190,14 +184,17 @@ class ZitiVPNService : VpnService(), CoroutineScope {
 
             val builder = Builder().apply {
                 addAddress(addr, addrPrefix)
-                addRoute(dnsAddr, 32)
-                val app = application as ZitiMobileEdgeApp
-                app.routes.forEach {
-                    if (it.route.startsWith("127."))
-                        Log.w(TAG, "skipping local route ${it.route}/${it.prefix}")
+                addRoute(ZitiRouteManager.defaultRoute.ip, ZitiRouteManager.defaultRoute.bits)
+                ZitiRouteManager.routes.forEach { route ->
+                    if (route.ip.isAnyLocalAddress)
+                        Log.w(TAG, "skipping local route ${route}")
                     else {
-                        Log.d(TAG, "adding route ${it.route}/${it.prefix} ${it.count}")
-                        addRoute(it.route, it.prefix)
+                        Log.d(TAG, "adding route $route")
+                        route.runCatching {
+                            addRoute(route.cidrAddress, route.bits)
+                        }.onFailure {
+                            Log.e(TAG, "invalid route[$route]", it)
+                        }
                     }
                 }
                 setUnderlyingNetworks(arrayOf(network))
