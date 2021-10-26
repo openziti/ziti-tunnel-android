@@ -16,7 +16,6 @@ import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
 import java.util.*
-import java.util.function.Consumer
 
 class DNSManagerTest {
 
@@ -28,14 +27,6 @@ class DNSManagerTest {
         override fun resolve(hostname: String): InetAddress? = when (hostname) {
             expectedHost -> InetAddress.getByAddress(byteArrayOf(0x10, 0x11, 0x12, 0x33))
             else -> null
-        }
-
-        override fun subscribe(sub: (DNSResolver.DNSEvent) -> Unit) {
-            TODO("Not yet implemented")
-        }
-
-        override fun subscribe(sub: Consumer<DNSResolver.DNSEvent>) {
-            TODO("Not yet implemented")
         }
 
         override fun dump(writer: Writer) {

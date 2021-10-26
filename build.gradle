@@ -9,7 +9,7 @@ buildscript {
         versions = [
                 kotlin: '1.5.31',
                 coroutines: '1.5.2',
-                ziti: '0.22.9'
+                ziti: '0.23.0'
         ]
     }
     ext.zitiBuildnum = System.getProperty("ziti.buildNum") ?: 'local'
@@ -19,7 +19,7 @@ buildscript {
         google()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.0.2'
+        classpath 'com.android.tools.build:gradle:7.0.3'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${versions.kotlin}"
 
         // NOTE: Do not place your application dependencies here; they belong
