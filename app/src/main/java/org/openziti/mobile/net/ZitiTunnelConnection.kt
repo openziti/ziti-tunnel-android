@@ -11,9 +11,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.receiveAsFlow
 import org.openziti.Ziti
-import org.openziti.ZitiAddress
 import org.openziti.ZitiContext
-import org.openziti.api.Service
 import org.openziti.mobile.net.tcp.TCP
 import org.openziti.mobile.net.tcp.TCPConn
 import org.openziti.net.nio.connectSuspend
@@ -27,6 +25,7 @@ import org.pcap4j.packet.namednumber.IpNumber
 import org.pcap4j.packet.namednumber.IpVersion
 import java.net.Inet4Address
 import java.net.InetSocketAddress
+import java.net.SocketAddress
 import java.net.SocketException
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousSocketChannel
@@ -43,7 +42,7 @@ class ZitiTunnelConnection(val srcAddr: InetSocketAddress, val dstAddr: InetSock
         get() = Dispatchers.IO + supervisor
 
     val ztx: ZitiContext?
-    val service: Service?
+    val dialAddr: SocketAddress?
     val conn: AsynchronousSocketChannel?
     val tcpConn: TCPConn
 
@@ -62,17 +61,18 @@ class ZitiTunnelConnection(val srcAddr: InetSocketAddress, val dstAddr: InetSock
         val dstHostname = Ziti.getDNSResolver().lookup(dstAddr.address)
         tcpConn = TCPConn(TUNNEL_MTU, srcAddr, dstAddr, dstHostname)
 
-        val ztxService = Ziti.getServiceFor(dstAddr)
+        val dialInfo = Ziti.findDialInfo(dstAddr)
 
-        ztx = ztxService?.first
-        service = ztxService?.second
+        ztx = dialInfo?.first
+        dialAddr = dialInfo?.second
+
         conn = ztx?.open()
         start(synPack)
     }
 
     fun start(synPack: IpV4Packet) {
 
-        if (service == null) {
+        if (ztx == null) {
             Log.e(info, "could not find Ziti Service for dst[$dstAddr]")
             launch { sendToPeer(tcpConn.reject().toList()) }
             return
@@ -81,13 +81,10 @@ class ZitiTunnelConnection(val srcAddr: InetSocketAddress, val dstAddr: InetSock
         val tcp = synPack.payload as TcpPacket
         tcpConn.init(tcp)
 
-        val dialAddr = ZitiAddress.Dial(
-            service = service.name)
-
         launch {
             try {
                 requireNotNull(conn)
-                conn.connectSuspend(dialAddr, 5000)
+                conn.connectSuspend(dialAddr!!, 5000)
                 sendToPeer(tcpConn.accept().toList())
                 processPeerPackets(conn)
                 readZitiConn(conn)
