@@ -4,7 +4,6 @@
 
 package org.openziti.mobile.net
 
-import android.util.Log
 import org.openziti.net.dns.DNSResolver
 import org.pcap4j.packet.DnsPacket
 import org.pcap4j.packet.DnsRDataA
@@ -34,16 +33,12 @@ class DNS(val dnsResolver: DNSResolver) {
                             .ttl(30)
                             .rdLength(ByteArrays.INET4_ADDRESS_SIZE_IN_BYTES.toShort())
 
-                    Log.d(ZitiNameserver.TAG, "resolving ${it.qName.name}/${it.qType}")
                     val ip = dnsResolver.resolve(it.qName.name) ?: bypassDNS(it.qName.name, it.qType)
 
                     if (ip != null) {
-                        Log.d(ZitiNameserver.TAG, "resolved ${it.qName.name} => $ip")
                         val rdata = DnsRDataA.Builder()
                                 .address(ip as Inet4Address).build()
                         answer.rData(rdata)
-                    } else {
-                        Log.w(ZitiNameserver.TAG, "failed to resolved ${it.qName.name}")
                     }
 
                     answer.build()
