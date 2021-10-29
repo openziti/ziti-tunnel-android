@@ -16,6 +16,7 @@ class ZitiMobileEdgeApp: Application() {
     companion object {
         val ROUTE_CHANGE = "route_change"
         lateinit var app: ZitiMobileEdgeApp
+        var vpnService: ZitiVPNService? = null
     }
 
     override fun onCreate() {
