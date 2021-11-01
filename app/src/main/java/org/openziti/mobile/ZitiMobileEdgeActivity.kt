@@ -38,6 +38,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.openziti.ZitiContext
 import org.openziti.android.Ziti
+import org.openziti.mobile.debug.DebugInfoActivity
 import java.util.*
 
 
@@ -243,6 +244,14 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
         AdvancedButton.setOnClickListener {
             toggleSlide(AdvancedPage, "advanced")
         }
+
+        LogsLabel.isLongClickable = true
+        LogsLabel.setOnLongClickListener {
+            val intent = Intent(it.context, DebugInfoActivity::class.java)
+            startActivity(intent)
+            true
+        }
+
         FeedbackButton.setOnClickListener {
             startActivity(Intent.createChooser(Ziti.sendFeedbackIntent(), "Send Email"))
         }
