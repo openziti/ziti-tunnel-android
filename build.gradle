@@ -9,6 +9,7 @@ buildscript {
         versions = [
                 kotlin: '1.5.31',
                 coroutines: '1.5.2',
+                androidxLifecycle: '2.4.0',
                 ziti: '0.23.4'
         ]
     }
