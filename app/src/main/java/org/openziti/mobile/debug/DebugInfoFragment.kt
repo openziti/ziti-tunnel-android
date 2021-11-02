@@ -19,7 +19,7 @@ import java.io.StringWriter
 /**
  * A placeholder fragment containing a simple view.
  */
-class DebugInfoFragment : Fragment() {
+class DebugInfoFragment(val section: String, val provider: DebugInfoProvider) : Fragment() {
 
     private lateinit var pageViewModel: PageViewModel
     private var _binding: FragmentDebugInfoBinding? = null
@@ -31,7 +31,11 @@ class DebugInfoFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         pageViewModel = ViewModelProvider(this).get(PageViewModel::class.java).apply {
-            setText(arguments?.getString(ARG_SECTION_TEXT) ?: "")
+            val text = StringWriter()
+            provider.runCatching { dump(section, text) }.onFailure {
+                it.printStackTrace(PrintWriter(text))
+            }
+            setText(text.toString())
         }
     }
 
@@ -50,19 +54,9 @@ class DebugInfoFragment : Fragment() {
     }
 
     companion object {
-        private const val ARG_SECTION_TEXT = "section_text"
-
         @JvmStatic
         fun newInstance(section: String, provider: DebugInfoProvider): DebugInfoFragment {
-            val text = StringWriter()
-            provider.runCatching { dump(section, text) }.onFailure {
-                it.printStackTrace(PrintWriter(text))
-            }
-            return DebugInfoFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_SECTION_TEXT, text.toString())
-                }
-            }
+            return DebugInfoFragment(section, provider)
         }
     }
 

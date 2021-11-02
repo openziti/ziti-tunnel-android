@@ -7,7 +7,10 @@ package org.openziti.mobile
 import android.os.ParcelFileDescriptor
 import android.util.Log
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.channels.onFailure
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.future.asDeferred
@@ -15,7 +18,6 @@ import org.openziti.mobile.net.PacketRouter
 import org.openziti.mobile.net.TUNNEL_MTU
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousCloseException
-import java.nio.channels.ClosedByInterruptException
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.CompletableFuture
@@ -32,12 +34,14 @@ class Tunnel(fd: ParcelFileDescriptor, val processor: PacketRouter, val toPeerCh
     val uptime: Duration
         get() = Duration.between(startTime, Instant.now())
 
-    val reader: Job = launch { reader() }
+    val reader: Job = reader()
     val writer = launch {
-        toPeerChannel.receiveAsFlow().collect {
-            Log.v(TAG, "writing ${it.remaining()} on t[${Thread.currentThread().name}]")
+        Log.i(TAG, "running tunnel writer [${Thread.currentThread()}]")
+
+        while(true) {
+            val msg = toPeerChannel.receiveCatching().getOrNull() ?: break
             CompletableFuture.supplyAsync {
-                output.write(it)
+                output.write(msg)
             }.asDeferred().await()
         }
         Log.i(TAG, "writer is done")
@@ -52,35 +56,49 @@ class Tunnel(fd: ParcelFileDescriptor, val processor: PacketRouter, val toPeerCh
         }
     }
 
-    suspend fun reader() {
-        Log.i(TAG, "running tunnel reader")
-
+    fun readerRun(readerQueue: SendChannel<ByteBuffer>) {
+        Log.i(TAG, "running tunnel reader [${Thread.currentThread()}]")
         val buf = ByteBuffer.allocateDirect(TUNNEL_MTU)
         try {
             while (true) {
-                    val msg = CompletableFuture.supplyAsync {
-                        buf.clear()
-                        val n = input.read(buf)
-                        if (n < 0)
-                            Log.e(TAG, "read $n bytes")
-                        val msg = ByteBuffer.allocate(n).put(buf.flip() as ByteBuffer)
-                        msg.flip() as ByteBuffer
-                    }.asDeferred().await()
-                runCatching {
-                    processor.route(msg)
-                }.onFailure {
-                    Log.w(TAG, "routing exception ${it.localizedMessage}", it)
+                buf.clear()
+                val n = input.read(buf)
+                if (n < 0)
+                    Log.e(TAG, "read $n bytes")
+                val msg = ByteBuffer.allocate(n).put(buf.flip() as ByteBuffer)
+                msg.flip() as ByteBuffer
+                readerQueue.trySend(msg).onFailure {
+                    runBlocking { readerQueue.send(msg) }
                 }
             }
-        } catch (cex: CancellationException) {
-            Log.i(TAG, "reader was cancelled")
-        } catch (clex: ClosedByInterruptException) {
-            Log.i(TAG, "reader() was interrupted: $clex")
+        } catch (iex: InterruptedException) {
+            Log.i(TAG, "reader thread was interrupted")
         } catch (acex: AsynchronousCloseException) {
-            Log.i(TAG, "reader() was interrupted: $acex")
+            Log.i(TAG, "reader() input was closed: $acex")
         } catch (ex: Throwable) {
             Log.wtf(TAG, "unexpected!", ex)
             close(ex)
+        } finally {
+            readerQueue.close()
+        }
+    }
+
+    fun reader() = launch {
+        Log.i(TAG, "starting reader")
+        val q = Channel<ByteBuffer>(1024)
+        val readerThread = Thread(Runnable { readerRun(q) },"tunnel-reader")
+        try {
+            readerThread.start()
+
+            q.receiveAsFlow().collect {
+                processor.route(it)
+            }
+        } catch (cex: CancellationException) {
+            Log.i(TAG, "reader was cancelled")
+        } catch (acex: AsynchronousCloseException) {
+            Log.i(TAG, "reader() was interrupted: $acex")
+        } finally {
+            readerThread.interrupt()
         }
     }
 
@@ -91,17 +109,14 @@ class Tunnel(fd: ParcelFileDescriptor, val processor: PacketRouter, val toPeerCh
             Log.i(TAG, "closing")
         }
 
-        runBlocking {
-            reader.cancelAndJoin()
-            writer.cancelAndJoin()
-        }
-
         runCatching { output.close() }.onFailure {
             Log.v(TAG, "output.close exception", it)
         }
         runCatching { input.close() }.onFailure {
             Log.v(TAG, "input.close exception", it)
         }
+
+        coroutineContext.cancelChildren()
         cancel("tunnel closed", ex)
     }
 
