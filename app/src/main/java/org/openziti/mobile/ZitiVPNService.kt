@@ -100,26 +100,29 @@ class ZitiVPNService : VpnService(), CoroutineScope {
         }
     }
 
+    private fun setNetworks() {
+        val nwrks = networks()
+        runCatching {
+           // setUnderlyingNetworks(nwrks)
+        }.onFailure {
+            Log.w(TAG, "failed to set networks", it)
+        }
+
+    }
+
     private val networkMonitor = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
             val capabilities = connMgr.getNetworkCapabilities(network)
             Log.i(TAG, "network available: $network, caps:$capabilities")
             allNetworks += network
 
-            val nwrks = networks()
-            runCatching { setUnderlyingNetworks(nwrks) }.onFailure {
-                Log.w(TAG, "failed to set networks", it)
-            }
+            setNetworks()
         }
 
         override fun onLost(network: Network) {
             Log.i(TAG, "network: $network is lost")
             allNetworks -= network
-            runCatching {
-                setUnderlyingNetworks(networks())
-            }.onFailure {
-                Log.w(TAG, "failed to set networks", it)
-            }
+            setNetworks()
         }
     }
 
@@ -234,7 +237,8 @@ class ZitiVPNService : VpnService(), CoroutineScope {
                         }
                     }
                 }
-                setUnderlyingNetworks(networks())
+                //setUnderlyingNetworks(networks())
+                setUnderlyingNetworks(null)
                 allowFamily(OsConstants.AF_INET)
                 addDnsServer(dnsAddr)
                 setMtu(TUNNEL_MTU)
