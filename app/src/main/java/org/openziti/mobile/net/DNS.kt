@@ -4,6 +4,7 @@
 
 package org.openziti.mobile.net
 
+import android.util.Log
 import org.openziti.net.dns.DNSResolver
 import org.pcap4j.packet.DnsPacket
 import org.pcap4j.packet.DnsRDataA
@@ -64,7 +65,10 @@ class DNS(val dnsResolver: DNSResolver) {
                     answer.build()
                 }
 
-                else -> null
+                else -> {
+                    Log.d("DNS", "request ${it.qType} ${it.qName}")
+                    null
+                }
             }
         }
 
