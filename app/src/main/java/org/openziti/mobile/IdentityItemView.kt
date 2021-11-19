@@ -3,65 +3,55 @@
  */
 
 package org.openziti.mobile
-import android.util.AttributeSet
+import android.content.Context
 import android.view.LayoutInflater
 import android.widget.RelativeLayout
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.Observer
-import kotlinx.android.synthetic.main.identityitem.view.*
+import org.openziti.ZitiContext
+import org.openziti.mobile.databinding.IdentityitemBinding
 
 /**
  * TODO: document your custom view class.
  */
-class IdentityItemView(context: AppCompatActivity, val ctxModel: ZitiContextModel) : RelativeLayout(context) {
+class IdentityItemView(context: Context) : RelativeLayout(context) {
 
-    private var _name: String? = ""
-    private var _server: String? = ""
     private var _count: Int = 0
     private var _isOn: Boolean = false
-
-    var idname: String
-        get() = this._name.toString()
-        set(value) {
-            this._name = value
-            IdentityName.text = this._name
-        }
-
-    var server: String
-        get() = this._server.toString()
-        set(value) {
-            this._server = value
-            IdentityServer.text = this._server
-        }
+    lateinit var ctxModel: ZitiContextModel
+    val owner = context as AppCompatActivity
+    val binding: IdentityitemBinding
 
     var isOn:Boolean
         get() = this._isOn
         set(value) {
             this._isOn = value
-            IdToggleSwitch.isChecked = this._isOn
-            if (this._isOn) StatusLabel.text = "enabled"
-            else StatusLabel.text = "disabled"
+            binding.IdToggleSwitch.isChecked = value
+            binding.StatusLabel.text = if(value) "enabled" else "disabled"
         }
 
-    var count: Int
-        get() = this._count
-        set(value) {
-            this._count = value
-            ServiceCount.text = this._count.toString()
-        }
-
-    private fun init(attrs: AttributeSet?, defStyle: Int) {
-        val a = context.obtainStyledAttributes(attrs, R.styleable.IdentityView, defStyle, 0)
-        LayoutInflater.from(context).inflate(R.layout.identityitem, this, true)
+    init {
+        val a = context.obtainStyledAttributes(null, R.styleable.IdentityItemView, 0, 0)
+        binding = IdentityitemBinding.inflate(LayoutInflater.from(context), this, true)
+        // LayoutInflater.from(context).inflate(R.layout.identityitem, this, true)
         a.recycle()
     }
 
-    init {
-        init(null, 0)
+    fun setModel(ztx: ZitiContextModel) {
+        ctxModel = ztx
+        binding.IdentityServer.text = ztx.ctx.controller()
 
-        ctxModel.name().observe(context, Observer {
-            IdentityName.text = it
+        ctxModel.name().observe(owner, {
+            binding.IdentityName.text = it
         })
+
+        ctxModel.services().observe(owner, { binding.ServiceCount.text = it.size.toString() })
+        ctxModel.status().observe(owner, { state ->
+            isOn = state != ZitiContext.Status.Disabled
+        })
+
+        binding.IdToggleSwitch.setOnCheckedChangeListener { _, state ->
+            ctxModel.ctx.setEnabled(state)
+        }
 
     }
 }
