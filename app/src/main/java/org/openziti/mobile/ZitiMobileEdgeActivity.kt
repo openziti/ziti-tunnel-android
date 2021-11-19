@@ -30,7 +30,6 @@ import kotlinx.android.synthetic.main.configuration.*
 import kotlinx.android.synthetic.main.dashboard.*
 import kotlinx.android.synthetic.main.identities.*
 import kotlinx.android.synthetic.main.identity.*
-import kotlinx.android.synthetic.main.identityitem.view.*
 import kotlinx.android.synthetic.main.log.*
 import kotlinx.android.synthetic.main.logs.*
 import kotlinx.coroutines.Dispatchers
@@ -366,20 +365,10 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
             var index = 0
             for (ctx in contextList) {
                 val ctxModel = ViewModelProvider(this, ZitiContextModel.Factory(ctx)).get(ctx.name(), ZitiContextModel::class.java)
-                val identityitem = IdentityItemView(this, ctxModel)
+                val identityitem = IdentityItemView(this).apply { setModel(ctxModel) }
                 ctxModel.name().observe(this, { n ->
                     IdIdentityDetailName.text = n
                 })
-                ctxModel.services().observe(this, { serviceList ->
-                    identityitem.count = serviceList.count()
-                })
-                ctxModel.status().observe(this, { state ->
-                    identityitem.isOn = state != ZitiContext.Status.Disabled
-                })
-                identityitem.IdToggleSwitch.setOnCheckedChangeListener { _, state ->
-                    ctx.setEnabled(state)
-                }
-                identityitem.server = ctx.controller()
 
                 identityitem.setOnClickListener {
                     toggleSlide(IdentityDetailsPage, "identity")

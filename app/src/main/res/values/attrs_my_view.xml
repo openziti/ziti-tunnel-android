@@ -9,7 +9,7 @@
         <attr name="status" format="string" />
         <attr name="enrollment" format="string" />
     </declare-styleable>
-    <declare-styleable name="IdentityView">
+    <declare-styleable name="IdentityItemView">
         <attr name="idname" format="string" />
     </declare-styleable>
 </resources>

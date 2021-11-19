@@ -10,7 +10,7 @@ buildscript {
                 kotlin: '1.6.0',
                 coroutines: '1.5.2',
                 androidxLifecycle: '2.4.0',
-                ziti: '0.23.7'
+                ziti: '0.23.9'
         ]
     }
     ext.zitiBuildnum = System.getProperty("ziti.buildNum") ?: 'local'
