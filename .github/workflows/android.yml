@@ -26,12 +26,12 @@ jobs:
     - name: Setup keystore
       run: |
         echo "${{ secrets.RELEASE_KEYSTORE }}" | base64 -d > ${{ runner.workspace }}/ziti-mobile.jks
-    - name: Build Android Release Bundle
-      run: ./gradlew :app:bundleRelease
+    - name: Build Android Debug Bundle
+      run: ./gradlew :app:bundleDebug
       env:
         RELEASE_KEYSTORE: ${{ runner.workspace }}/ziti-mobile.jks
         RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
     - uses: actions/upload-artifact@v2
       with:
         name: ziti-mobile-edge.aab
-        path: app/build/outputs/bundle/release/*.aab
+        path: app/build/outputs/bundle/debug/*.aab
