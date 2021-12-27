@@ -7,7 +7,7 @@
 buildscript {
     ext {
         versions = [
-                kotlin: '1.6.0',
+                kotlin: '1.6.10',
                 coroutines: '1.5.2',
                 androidxLifecycle: '2.4.0',
                 ziti: '0.23.9'
