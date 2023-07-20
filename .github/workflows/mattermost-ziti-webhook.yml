@@ -16,6 +16,11 @@ jobs:
   ziti-webhook:
     runs-on: ubuntu-latest
     name: Ziti Mattermost Webhook
+    if: env.ZITI_MATTERMOST_WEBHOOK_URL != null && github.actor != 'dependabot[bot]'
+    env:
+      ZITI_LOG: 99
+      ZITI_NODEJS_LOG: 99
+      ZITI_MATTERMOST_WEBHOOK_URL: ${{ secrets.ZITI_MATTERMOST_WEBHOOK_URL }}
     steps:
     - uses: openziti/ziti-mattermost-action-py@main
       if: github.event_name != 'pull_request_review'
