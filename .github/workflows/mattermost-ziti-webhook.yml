@@ -23,7 +23,7 @@ jobs:
       ZITI_MATTERMOST_WEBHOOK_URL: ${{ secrets.ZITI_MATTERMOST_WEBHOOK_URL }}
     steps:
     - uses: openziti/ziti-mattermost-action-py@main
-      if: github.event_name != 'pull_request_review'
+      if: github.event_name != 'pull_request_review' && env.ZITI_MATTERMOST_WEBHOOK_URL != null && github.actor != 'dependabot[bot]'
       with:
         zitiId: ${{ secrets.ZITI_MATTERMOST_IDENTITY }}
         webhookUrl: ${{ secrets.ZHOOK_URL }}
@@ -31,7 +31,7 @@ jobs:
         senderUsername: "GitHubZ"
         destChannel: "dev-notifications"
     - uses: openziti/ziti-mattermost-action-py@main
-      if: github.event_name == 'pull_request_review' && github.event.review.state == 'approved'
+      if: github.event_name == 'pull_request_review' && github.event.review.state == 'approved' && env.ZITI_MATTERMOST_WEBHOOK_URL != null && github.actor != 'dependabot[bot]'
       with:
         zitiId: ${{ secrets.ZITI_MATTERMOST_IDENTITY }}
         webhookUrl: ${{ secrets.ZHOOK_URL }}
