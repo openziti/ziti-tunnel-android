@@ -7,7 +7,7 @@
 buildscript {
     ext {
         versions = [
-                kotlin: '1.6.10',
+                kotlin: '1.6.21',
                 coroutines: '1.6.0',
                 androidxLifecycle: '2.4.0',
                 ziti: '0.23.11'
@@ -20,7 +20,7 @@ buildscript {
         google()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.0.4'
+        classpath 'com.android.tools.build:gradle:7.4.2'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${versions.kotlin}"
 
         // NOTE: Do not place your application dependencies here; they belong
