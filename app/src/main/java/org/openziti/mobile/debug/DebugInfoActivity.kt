@@ -5,19 +5,14 @@
 package org.openziti.mobile.debug
 
 import android.os.Bundle
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.material.snackbar.Snackbar
+import androidx.fragment.app.FragmentActivity
 import com.google.android.material.tabs.TabLayout
-import androidx.viewpager.widget.ViewPager
-import androidx.appcompat.app.AppCompatActivity
-import android.view.Menu
-import android.view.MenuItem
-import org.openziti.mobile.debug.SectionsPagerAdapter
+import com.google.android.material.tabs.TabLayoutMediator
 import org.openziti.mobile.databinding.ActivityDebugInfoBinding
 import org.openziti.util.DebugInfoProvider
-import java.util.*
+import java.util.ServiceLoader
 
-class DebugInfoActivity : AppCompatActivity() {
+class DebugInfoActivity : FragmentActivity() {
 
     internal val contentMap: List<Pair<String, DebugInfoProvider>>
     init {
@@ -26,7 +21,6 @@ class DebugInfoActivity : AppCompatActivity() {
     }
 
     private lateinit var binding: ActivityDebugInfoBinding
-    private lateinit var sectionsPagerAdapter: SectionsPagerAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,13 +28,17 @@ class DebugInfoActivity : AppCompatActivity() {
         binding = ActivityDebugInfoBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val viewPager: ViewPager = binding.viewPager
-        viewPager.adapter = SectionsPagerAdapter(this, supportFragmentManager).apply {
+        val viewPager = binding.viewPager
+        val adapter = SectionsPagerAdapter(this).apply {
             names = contentMap.map{ it.first }.toList()
         }
 
+        viewPager.adapter = adapter
+
         val tabs: TabLayout = binding.tabs
-        tabs.setupWithViewPager(viewPager)
+        TabLayoutMediator(tabs, viewPager) { tab, pos ->
+            tab.text = adapter.names[pos]
+        }.attach()
     }
 
     internal fun getSectionProvider(section: String): DebugInfoProvider? {
