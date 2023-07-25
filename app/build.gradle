@@ -6,8 +6,6 @@
 plugins {
     id('com.android.application')
     id('kotlin-android')
-    id('kotlin-kapt')
-    id('kotlin-android-extensions')
 }
 
 version = parent.version
@@ -15,6 +13,7 @@ version = parent.version
 def vc = versionCode
 
 android {
+    namespace = "org.openziti.mobile"
     signingConfigs {
         release {
             keyAlias 'ziti1'

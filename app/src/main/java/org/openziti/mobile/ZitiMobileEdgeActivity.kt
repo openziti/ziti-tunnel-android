@@ -13,15 +13,16 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.SharedPreferences
-import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.net.Uri
 import android.net.VpnService
+import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.os.Process
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.os.VibratorManager
 import android.text.method.ScrollingMovementMethod
 import android.util.Log
 import android.view.View
@@ -30,78 +31,19 @@ import android.view.animation.DecelerateInterpolator
 import android.view.inputmethod.InputMethodManager
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
-import kotlinx.android.synthetic.main.about.BackButton
-import kotlinx.android.synthetic.main.about.PrivacyButton
-import kotlinx.android.synthetic.main.about.TermsButton
-import kotlinx.android.synthetic.main.about.ThirdButton
-import kotlinx.android.synthetic.main.about.Version
-import kotlinx.android.synthetic.main.advanced.BackAdvancedButton
-import kotlinx.android.synthetic.main.advanced.LogsButton
-import kotlinx.android.synthetic.main.advanced.TunnelButton
-import kotlinx.android.synthetic.main.configuration.BackConfigButton
-import kotlinx.android.synthetic.main.configuration.BackConfigButton2
-import kotlinx.android.synthetic.main.configuration.DNSInput
-import kotlinx.android.synthetic.main.configuration.IPInput
-import kotlinx.android.synthetic.main.configuration.MTUInput
-import kotlinx.android.synthetic.main.configuration.SubNetInput
-import kotlinx.android.synthetic.main.dashboard.AboutButton
-import kotlinx.android.synthetic.main.dashboard.AboutPage
-import kotlinx.android.synthetic.main.dashboard.AddIdentityButton
-import kotlinx.android.synthetic.main.dashboard.AddIdentityLabel
-import kotlinx.android.synthetic.main.dashboard.AdvancedButton
-import kotlinx.android.synthetic.main.dashboard.AdvancedPage
-import kotlinx.android.synthetic.main.dashboard.ConfigPage
-import kotlinx.android.synthetic.main.dashboard.DashboardButton
-import kotlinx.android.synthetic.main.dashboard.DownloadMbps
-import kotlinx.android.synthetic.main.dashboard.DownloadSpeed
-import kotlinx.android.synthetic.main.dashboard.FeedbackButton
-import kotlinx.android.synthetic.main.dashboard.FrameArea
-import kotlinx.android.synthetic.main.dashboard.HamburgerButton
-import kotlinx.android.synthetic.main.dashboard.HamburgerLabel
-import kotlinx.android.synthetic.main.dashboard.IdentityDetailsPage
-import kotlinx.android.synthetic.main.dashboard.IdentityListing
-import kotlinx.android.synthetic.main.dashboard.IdentityPage
-import kotlinx.android.synthetic.main.dashboard.LogPage
-import kotlinx.android.synthetic.main.dashboard.LogsPage
-import kotlinx.android.synthetic.main.dashboard.MainArea
-import kotlinx.android.synthetic.main.dashboard.MainLogo
-import kotlinx.android.synthetic.main.dashboard.MainMenu
-import kotlinx.android.synthetic.main.dashboard.OffButton
-import kotlinx.android.synthetic.main.dashboard.OnButton
-import kotlinx.android.synthetic.main.dashboard.StateButton
-import kotlinx.android.synthetic.main.dashboard.SupportButton
-import kotlinx.android.synthetic.main.dashboard.TimeConnected
-import kotlinx.android.synthetic.main.dashboard.UploadMbps
-import kotlinx.android.synthetic.main.dashboard.UploadSpeed
-import kotlinx.android.synthetic.main.identities.BackIdentityButton
-import kotlinx.android.synthetic.main.identity.BackIdentityDetailsButton
-import kotlinx.android.synthetic.main.identity.IdDetailForgetButton
-import kotlinx.android.synthetic.main.identity.IdDetailServicesList
-import kotlinx.android.synthetic.main.identity.IdDetailsEnrollment
-import kotlinx.android.synthetic.main.identity.IdDetailsNetwork
-import kotlinx.android.synthetic.main.identity.IdDetailsStatus
-import kotlinx.android.synthetic.main.identity.IdIdentityDetailName
-import kotlinx.android.synthetic.main.identity.IdOnOffSwitch
-import kotlinx.android.synthetic.main.log.BackToLogsButton
-import kotlinx.android.synthetic.main.log.BackToLogsButton2
-import kotlinx.android.synthetic.main.log.CopyLogButton
-import kotlinx.android.synthetic.main.log.LogDetails
-import kotlinx.android.synthetic.main.log.LogTypeTitle
-import kotlinx.android.synthetic.main.logs.ApplicationLogsButton
-import kotlinx.android.synthetic.main.logs.BackLogsButton
-import kotlinx.android.synthetic.main.logs.LogsLabel
-import kotlinx.android.synthetic.main.logs.PacketLogsButton
+import androidx.viewbinding.ViewBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.openziti.ZitiContext
 import org.openziti.android.Ziti
-import org.openziti.mobile.databinding.AboutBinding
-import org.openziti.mobile.databinding.MainBinding
+import org.openziti.mobile.databinding.DashboardBinding
 import org.openziti.mobile.debug.DebugInfoActivity
 import java.util.Timer
 import java.util.TimerTask
@@ -109,13 +51,79 @@ import java.util.TimerTask
 
 class ZitiMobileEdgeActivity : AppCompatActivity() {
 
-    private lateinit var binding: MainBinding
-    private lateinit var about: AboutBinding
+    private lateinit var binding: DashboardBinding
+
+    private val MainArea by lazy { binding.MainArea }
+    private val FrameArea by lazy { binding.FrameArea }
+    private val MainMenu by lazy { binding.MainMenu }
+    private val AboutPage by lazy { binding.AboutPage }
+    private val AdvancedPage by lazy { binding.AdvancedPage }
+    private val ConfigPage by lazy { binding.ConfigPage }
+    private val LogsPage by lazy { binding.LogsPage }
+    private val LogPage by lazy { binding.LogPage }
+    private val IdentityDetailsPage by lazy { binding.IdentityDetailsPage }
+    private val IdentityPage by lazy { binding.IdentityPage }
+
+    private val OnButton by lazy { binding.OnButton }
+    private val OffButton by lazy { binding.OffButton }
+    private val DashboardButton by lazy { binding.DashboardButton }
+    private val AdvancedButton by lazy { binding.AdvancedButton }
+    private val AboutButton by lazy { binding.AboutButton }
+    private val FeedbackButton by lazy { binding.FeedbackButton }
+    private val SupportButton by lazy { binding.SupportButton }
+    private val AddIdentityButton by lazy { binding.AddIdentityButton }
+    private val AddIdentityLabel by lazy { binding.AddIdentityLabel }
+    private val HamburgerButton by lazy { binding.HamburgerButton }
+    private val HamburgerLabel by lazy { binding.HamburgerLabel }
+    private val IdentityListing by lazy { binding.IdentityListing }
+    private val StateButton by lazy { binding.StateButton }
+    private val DownloadSpeed by lazy { binding.DownloadSpeed }
+    private val DownloadMbps by lazy { binding.DownloadMbps }
+    private val UploadMbps by lazy { binding.UploadMbps }
+    private val UploadSpeed by lazy { binding.UploadSpeed }
+    private val TimeConnected by lazy { binding.TimeConnected }
+    private val MainLogo by lazy { binding.MainLogo }
+
+    private val Version by lazy { AboutPage.Version }
+    private val PrivacyButton by lazy { AboutPage.PrivacyButton }
+    private val TermsButton by lazy { AboutPage.TermsButton }
+    private val ThirdButton by lazy { AboutPage.ThirdButton }
+    private val BackButton by lazy { AboutPage.BackButton }
+
+    private val BackAdvancedButton by lazy { AdvancedPage.BackAdvancedButton }
+    private val LogsButton by lazy { AdvancedPage.LogsButton }
+    private val TunnelButton by lazy { AdvancedPage.TunnelButton }
+
+    private val BackIdentityButton by lazy { IdentityPage.BackIdentityButton }
+
+    private val IPInput by lazy { ConfigPage.IPInput }
+    private val SubNetInput by lazy { ConfigPage.SubNetInput }
+    private val MTUInput by lazy { ConfigPage.MTUInput }
+    private val DNSInput by lazy { ConfigPage.DNSInput }
+    private val BackConfigButton by lazy { ConfigPage.BackConfigButton }
+    private val BackConfigButton2 by lazy { ConfigPage.BackConfigButton2 }
+
+    private val BackIdentityDetailsButton by lazy { IdentityDetailsPage.BackIdentityDetailsButton }
+    private val IdIdentityDetailName by lazy { IdentityDetailsPage.IdIdentityDetailName }
+    private val IdDetailsEnrollment by lazy { IdentityDetailsPage.IdDetailsEnrollment }
+    private val IdOnOffSwitch by lazy { IdentityDetailsPage.IdOnOffSwitch }
+    private val IdDetailsStatus by lazy { IdentityDetailsPage.IdDetailsStatus }
+    private val IdDetailsNetwork by lazy { IdentityDetailsPage.IdDetailsNetwork }
+    private val IdDetailServicesList by lazy { IdentityDetailsPage.IdDetailServicesList }
+    private val IdDetailForgetButton by lazy { IdentityDetailsPage.IdDetailForgetButton }
+
+    private val LogsLabel by lazy { LogsPage.LogsLabel }
+    private val BackLogsButton by lazy { LogsPage.BackLogsButton }
+    private val PacketLogsButton by lazy { LogsPage.PacketLogsButton }
+    private val ApplicationLogsButton by lazy { LogsPage.ApplicationLogsButton }
+
+    private val BackToLogsButton by lazy { LogPage.BackToLogsButton }
+    private val BackToLogsButton2 by lazy { LogPage.BackToLogsButton2 }
+    private val CopyLogButton by lazy { LogPage.CopyLogButton }
+    private val LogDetails by lazy { LogPage.LogDetails }
+    private val LogTypeTitle by lazy { LogPage.LogTypeTitle }
 
     lateinit var prefs: SharedPreferences
-    val systemId: Int by lazy {
-        this.packageManager?.getApplicationInfo("android", PackageManager.GET_META_DATA)?.uid ?: 0
-    }
     var isMenuOpen = false
 
     var ipAddress = "169.254.0.1"
@@ -164,8 +172,8 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
     private fun toggleMenu() {
         val posTo = getScreenWidth()-(getScreenWidth()/3)
         var animatorSet = AnimatorSet()
-        var scaleY = ObjectAnimator.ofFloat(MainArea, "scaleY", .9f, 1.0f).setDuration(duration.toLong())
-        var scaleX = ObjectAnimator.ofFloat(MainArea, "scaleX", .9f, 1.0f).setDuration(duration.toLong())
+        var scaleY = ObjectAnimator.ofFloat(binding.MainArea, "scaleY", .9f, 1.0f).setDuration(duration.toLong())
+        var scaleX = ObjectAnimator.ofFloat(binding.MainArea, "scaleX", .9f, 1.0f).setDuration(duration.toLong())
         var fader = ObjectAnimator.ofFloat(FrameArea, "alpha", 1f, 0f).setDuration(duration.toLong())
 
         var animateTo = ObjectAnimator.ofFloat( MainArea,"translationX",posTo.toFloat(), 0f ).setDuration(duration.toLong())
@@ -188,10 +196,11 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
         isMenuOpen = !isMenuOpen
     }
 
+    private fun toggleSlide(b: ViewBinding, newState: String) = toggleSlide(b.root, newState)
     private fun toggleSlide(view:View, newState:String) {
         try {
             val inputManager:InputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-            inputManager.hideSoftInputFromWindow(currentFocus!!.windowToken, InputMethodManager.SHOW_FORCED)
+            inputManager.hideSoftInputFromWindow(currentFocus!!.windowToken, 0)
         } catch (e:Exception) {}
         var fader = ObjectAnimator.ofFloat(view, "alpha", 0f, 1f).setDuration(duration.toLong())
         var animateTo = ObjectAnimator.ofFloat( view,"translationX", offScreenX.toFloat(), 0f ).setDuration(duration.toLong())
@@ -207,13 +216,15 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
         animatorSet.start()
     }
 
-    override fun onBackPressed() {
-        if (state=="menu") toggleMenu()
-        else if (state=="about") toggleSlide(AboutPage, "menu")
-        else if (state=="advanced") toggleSlide(AdvancedPage, "menu")
-        else if (state=="config") toggleSlide(ConfigPage, "advanced")
-        else if (state=="identity") toggleSlide(ConfigPage, "identities")
-        else super.onBackPressed()
+    private fun doBackPress() {
+        when (state)  {
+            "menu" -> toggleMenu()
+            "about" -> toggleSlide(AboutPage.root, "menu")
+            "advanced" -> toggleSlide(AdvancedPage.root, "menu")
+            "config" -> toggleSlide(ConfigPage.root, "advanced")
+            "identity" -> toggleSlide(ConfigPage.root, "identities")
+            else -> finish()
+        }
     }
 
     private var startPosition = 0f
@@ -228,9 +239,9 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        binding = MainBinding.inflate(layoutInflater)
+        binding = DashboardBinding.inflate(layoutInflater)
 
-        setContentView(R.layout.main)
+        setContentView(binding.root)
         this.window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
 
         offScreenX = getScreenWidth()+50
@@ -238,27 +249,27 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
         Version.text = "Version: $version"
 
         // Setup Screens
-        AboutPage.visibility = View.VISIBLE
-        AdvancedPage.visibility = View.VISIBLE
-        ConfigPage.visibility = View.VISIBLE
-        LogsPage.visibility = View.VISIBLE
-        LogPage.visibility = View.VISIBLE
-        IdentityDetailsPage.visibility = View.VISIBLE
-        IdentityPage.visibility = View.VISIBLE
-        AboutPage.alpha = 0f
-        AdvancedPage.alpha = 0f
-        ConfigPage.alpha = 0f
-        LogsPage.alpha = 0f
-        LogPage.alpha = 0f
-        IdentityPage.alpha = 0f
-        IdentityDetailsPage.alpha = 0f
-        AboutPage.x = offScreenX.toFloat()
-        AdvancedPage.x = offScreenX.toFloat()
-        ConfigPage.x = offScreenX.toFloat()
-        LogsPage.x = offScreenX.toFloat()
-        LogPage.x = offScreenX.toFloat()
-        IdentityPage.x = offScreenX.toFloat()
-        IdentityDetailsPage.x = offScreenX.toFloat()
+        AboutPage.root.visibility = View.VISIBLE
+        AdvancedPage.root.visibility = View.VISIBLE
+        ConfigPage.root.visibility = View.VISIBLE
+        LogsPage.root.visibility = View.VISIBLE
+        LogPage.root.visibility = View.VISIBLE
+        IdentityDetailsPage.root.visibility = View.VISIBLE
+        IdentityPage.root.visibility = View.VISIBLE
+        AboutPage.root.alpha = 0f
+        AdvancedPage.root.alpha = 0f
+        ConfigPage.root.alpha = 0f
+        LogsPage.root.alpha = 0f
+        LogPage.root.alpha = 0f
+        IdentityPage.root.alpha = 0f
+        IdentityDetailsPage.root.alpha = 0f
+        AboutPage.root.x = offScreenX.toFloat()
+        AdvancedPage.root.x = offScreenX.toFloat()
+        ConfigPage.root.x = offScreenX.toFloat()
+        LogsPage.root.x = offScreenX.toFloat()
+        LogPage.root.x = offScreenX.toFloat()
+        IdentityPage.root.x = offScreenX.toFloat()
+        IdentityDetailsPage.root.x = offScreenX.toFloat()
         openY = offScreenY
         this.startPosition = getScreenHeight().toDp()-130.toDp().toFloat()
 
@@ -270,24 +281,41 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
         MTUInput.text = mtu
         DNSInput.text = dns
 
+        onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() = doBackPress()
+        })
+
+        val vb = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val vbm = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+            vbm.defaultVibrator
+        } else {
+            getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        }
+
+        val vpnPrepare = registerForActivityResult(StartActivityForResult()) {
+            if (it.resultCode == RESULT_OK) {
+                startZitiVPN()
+            } else {
+                // TODO: maybe toast
+            }
+        }
         // Dashboard Button Actions
         OffButton.setOnClickListener {
-            val vb = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
             if (vb.hasVibrator()) vb.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE))
             val intent = VpnService.prepare(applicationContext)
             if (intent != null) {
-                startActivityForResult(intent, 10169)
+                vpnPrepare.launch(intent)
             } else {
-                onActivityResult(10169, RESULT_OK, null)
+                startZitiVPN()
             }
             OnButton.visibility = View.VISIBLE
             OffButton.visibility = View.GONE
             TimeConnected.visibility = View.VISIBLE
         }
+
         OnButton.setOnClickListener {
-            val vb = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
             if (vb.hasVibrator()) vb.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE))
-            onActivityResult(10168, RESULT_OK, null)
+            stopZitiVPN()
             TurnOff()
         }
 
@@ -426,13 +454,13 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
                     LogDetails.text = lines
                 }
             }
-            toggleSlide(LogPage, "logdetails")
+            toggleSlide(binding.LogPage.root, "logdetails")
         }
 
         contextViewModel = ViewModelProvider(this).get(ZitiViewModel::class.java)
         contextViewModel.contexts().observe(this, { contextList ->
             //IdentityCards.removeAllViews()
-            IdentityListing.removeAllViews()
+            binding.IdentityListing.removeAllViews()
             // create, remove cards
             var index = 0
             for (ctx in contextList) {
@@ -443,7 +471,7 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
                 })
 
                 identityitem.setOnClickListener {
-                    toggleSlide(IdentityDetailsPage, "identity")
+                    toggleSlide(binding.IdentityDetailsPage.root, "identity")
                     IdDetailsEnrollment.text = ctxModel.status().value?.toString()
                     if (ctx.getStatus() == ZitiContext.Status.Active) {
                         IdOnOffSwitch.isChecked = true
@@ -497,18 +525,14 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
             }
             //IdentityCount.text = index.toString()
             if (index==0) {
-                if (OffButton!=null) {
-                    TurnOff()
-                    //OffButton.getBackground().setAlpha(45)
-                    OffButton.isClickable = false
-                    StateButton.imageAlpha = 144
-                }
+                TurnOff()
+                //OffButton.getBackground().setAlpha(45)
+                OffButton.isClickable = false
+                StateButton.imageAlpha = 144
             } else {
-                if (OffButton!=null) {
-                    //OffButton.getBackground().setAlpha(100)
-                    OffButton.isClickable = true
-                    StateButton.imageAlpha = 255
-                }
+                //OffButton.getBackground().setAlpha(100)
+                OffButton.isClickable = true
+                StateButton.imageAlpha = 255
             }
         })
 
@@ -571,18 +595,12 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
         label.text = l
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        when (requestCode) {
-            10169 -> {
-                if (resultCode == RESULT_OK)
-                    startService(Intent(this, ZitiVPNService::class.java).setAction("start"))
-            }
-            10168 -> {
-                if (resultCode == RESULT_OK)
-                    startService(Intent(this, ZitiVPNService::class.java).setAction("stop"))
-            }
-            else -> super.onActivityResult(requestCode, resultCode, data)
-        }
+    private fun stopZitiVPN() {
+        startService(Intent(this, ZitiVPNService::class.java).setAction("stop"))
+    }
+
+    private fun startZitiVPN() {
+        startService(Intent(this, ZitiVPNService::class.java).setAction("start"))
     }
 
 }
