@@ -10,7 +10,7 @@ import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.widget.RelativeLayout
 import android.widget.Toast
-import kotlinx.android.synthetic.main.line.view.*
+import org.openziti.mobile.databinding.LineBinding
 
 /**
  * Service List Line Items
@@ -24,30 +24,30 @@ class LineView : RelativeLayout {
         get() = this._label.toString()
         set(value) {
             this._label = value
-            Label.text = this._label
+            binding.Label.text = this._label
         }
 
     var value: String
         get() = this._value.toString()
         set(value) {
             this._value = value
-            Value.text = this._value
+            binding.Value.text = this._value
         }
 
     constructor(context: Context) : super(context) {
         init(null, 0)
-        Label.setOnClickListener {
+        binding.Label.setOnClickListener {
             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            val clip = ClipData.newPlainText("Label", Label.text.toString())
+            val clip = ClipData.newPlainText("Label", binding.Label.text.toString())
             clipboard.setPrimaryClip(clip)
-            val content = Label.text.toString() + " has been copied to your clipboard"
+            val content = binding.Label.text.toString() + " has been copied to your clipboard"
             Toast.makeText(context, content, Toast.LENGTH_LONG).show()
         }
-        Value.setOnClickListener {
+        binding.Value.setOnClickListener {
             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            val clip = ClipData.newPlainText("Value", Value.text.toString())
+            val clip = ClipData.newPlainText("Value", binding.Value.text.toString())
             clipboard.setPrimaryClip(clip)
-            val content = Value.text.toString() + " has been copied to your clipboard"
+            val content = binding.Value.text.toString() + " has been copied to your clipboard"
             Toast.makeText(context, content, Toast.LENGTH_LONG).show()
         }
     }
@@ -61,6 +61,9 @@ class LineView : RelativeLayout {
     }
 
     private fun init(attrs: AttributeSet?, defStyle: Int) {
-        LayoutInflater.from(context).inflate(R.layout.line, this, true)
+        binding = LineBinding.inflate(LayoutInflater.from(context))
+//        LayoutInflater.from(context).inflate(R.layout.line, this, true)
     }
+
+    private lateinit var binding: LineBinding
 }

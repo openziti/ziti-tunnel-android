@@ -9,24 +9,28 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
-import androidx.appcompat.app.AlertDialog
+import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.appcompat.app.AppCompatActivity
 import com.google.zxing.BarcodeFormat
-import com.google.zxing.integration.android.IntentIntegrator
-import kotlinx.android.synthetic.main.activity_ziti_enrollment.*
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
 import org.openziti.android.Ziti
+import org.openziti.mobile.databinding.ActivityZitiEnrollmentBinding
+
 
 class ZitiEnrollmentActivity : AppCompatActivity() {
 
     companion object {
-        const val REQUEST_LOAD_JWT = 10001
-        const val REQUEST_LOAD_CERT = 10002
-        val TAG = ZitiEnrollmentActivity::class.java.simpleName
+        val TAG: String = ZitiEnrollmentActivity::class.java.simpleName
     }
 
+    private lateinit var binding: ActivityZitiEnrollmentBinding
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_ziti_enrollment)
+        binding = ActivityZitiEnrollmentBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         intent.data?.let {
             enroll(it)
@@ -45,94 +49,77 @@ class ZitiEnrollmentActivity : AppCompatActivity() {
             }
         }
 */
-        QRButtonArea.setOnClickListener {
-            QrEnroll()
+        val scanLauncher = registerForActivityResult(ScanContract()) {
+            if (it.contents == null) {
+                Toast.makeText(this@ZitiEnrollmentActivity, "Cancelled", Toast.LENGTH_LONG).show()
+            } else {
+                Ziti.enrollZiti(it.contents.toByteArray())
+            }
+        }
+        binding.QRButtonArea.setOnClickListener { qrEnroll(scanLauncher) }
+        binding.QRButton.setOnClickListener { qrEnroll(scanLauncher) }
+
+        val jwtLauncher = registerForActivityResult(StartActivityForResult()) {
+            if (it.resultCode == Activity.RESULT_OK) {
+                it.data?.data?.let {uri ->
+                    enroll(uri)
+                }
+            }
         }
 
-        QRButton.setOnClickListener {
-            QrEnroll()
-        }
+        binding.JWTButton.setOnClickListener { jwtEnroll(jwtLauncher) }
+        binding.IdButton.setOnClickListener { jwtEnroll(jwtLauncher) }
 
-        JWTButton.setOnClickListener {
-            JwtEnroll()
-        }
-
-        IdButton.setOnClickListener {
-            JwtEnroll()
-        }
-
-        CloseIdentityButton.setOnClickListener {
+        binding.CloseIdentityButton.setOnClickListener {
             this.finish()
         }
     }
 
-    fun JwtEnroll() {
-        //hideEnrollOptions()
+    fun jwtEnroll(launcher: ActivityResultLauncher<Intent>) {
         val intent = Intent(Intent.ACTION_GET_CONTENT)
         intent.type = "*/*"
-        startActivityForResult(intent, REQUEST_LOAD_JWT)
+        launcher.launch(intent)
     }
 
-    fun QrEnroll() {
-        //hideEnrollOptions()
-        IntentIntegrator(this).apply {
+    fun qrEnroll(scanLauncher: ActivityResultLauncher<ScanOptions>) {
+        val scanOptions = ScanOptions().apply {
             setDesiredBarcodeFormats(BarcodeFormat.QR_CODE.name)
             setPrompt("Scan enrollment code")
             setOrientationLocked(false)
             setCameraId(0)
-            initiateScan()
         }
+        scanLauncher.launch(scanOptions)
     }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent?) {
-        when (requestCode) {
-            REQUEST_LOAD_JWT -> {
-                if (resultCode == Activity.RESULT_OK) {
-                    intent?.data?.let {
-                        enroll(it)
-                    }
-                }
-            }
-
-            IntentIntegrator.REQUEST_CODE -> {
-                if (resultCode == Activity.RESULT_OK) {
-                    val result = IntentIntegrator.parseActivityResult(resultCode, intent)
-                    Ziti.enrollZiti(result.contents.toByteArray())
-                }
-            }
-
-            REQUEST_LOAD_CERT -> {
-                if (resultCode == Activity.RESULT_OK) {
-                    intent?.data?.let {
-                        Log.i(TAG, "cert $it")
-                        // TODO enrollWithCert(it)
-                    }
-                }
-            }
-            else ->
-                super.onActivityResult(requestCode, resultCode, intent)
-        }
-    }
-
-    private lateinit var jwt: String
 
     fun enroll(jwtUri: Uri) {
         Log.i(TAG, "enrolling with $jwtUri")
         Ziti.enrollZiti(jwtUri)
     }
 
-    override fun onSupportNavigateUp() = true.also { onBackPressed(); }
-
-    private fun showCertDialog() {
-        AlertDialog.Builder(this)
-                .setIcon(android.R.drawable.ic_secure)
-                .setTitle("Certificate required for enrollment")
-                .setNegativeButton(android.R.string.cancel) { _, _ -> }
-                .setPositiveButton("Select") { _, _ ->
-                    val intent = Intent(Intent.ACTION_GET_CONTENT)
-                    intent.type = "application/x-pkcs12"
-                    startActivityForResult(intent, REQUEST_LOAD_CERT)
-                }
-                .show()
+    override fun onSupportNavigateUp(): Boolean {
+        onBackPressedDispatcher.onBackPressed()
+        return true
     }
+
+//    private fun showCertDialog() {
+//        AlertDialog.Builder(this)
+//                .setIcon(android.R.drawable.ic_secure)
+//                .setTitle("Certificate required for enrollment")
+//                .setNegativeButton(android.R.string.cancel) { _, _ -> }
+//                .setPositiveButton("Select") { _, _ ->
+//                    val launcher = registerForActivityResult(StartActivityForResult()) {
+//                        if (it.resultCode == Activity.RESULT_OK) {
+//                            it.data?.data?.let {
+//                                Log.i(TAG, "cert $it")
+//                                // TODO enrollWithCert(it)
+//                            }
+//                        }
+//                    }
+//                    val intent = Intent(Intent.ACTION_GET_CONTENT)
+//                    intent.type = "application/x-pkcs12"
+//
+//                    launcher.launch(intent)
+//                }
+//                .show()
+//    }
 }

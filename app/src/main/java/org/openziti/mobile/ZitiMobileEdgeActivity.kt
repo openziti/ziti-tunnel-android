@@ -6,12 +6,22 @@ package org.openziti.mobile
 
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
-import android.content.*
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.net.Uri
 import android.net.VpnService
-import android.os.*
+import android.os.Bundle
+import android.os.IBinder
+import android.os.Process
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.text.method.ScrollingMovementMethod
 import android.util.Log
 import android.view.View
@@ -24,24 +34,83 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
-import kotlinx.android.synthetic.main.about.*
-import kotlinx.android.synthetic.main.advanced.*
-import kotlinx.android.synthetic.main.configuration.*
-import kotlinx.android.synthetic.main.dashboard.*
-import kotlinx.android.synthetic.main.identities.*
-import kotlinx.android.synthetic.main.identity.*
-import kotlinx.android.synthetic.main.log.*
-import kotlinx.android.synthetic.main.logs.*
+import kotlinx.android.synthetic.main.about.BackButton
+import kotlinx.android.synthetic.main.about.PrivacyButton
+import kotlinx.android.synthetic.main.about.TermsButton
+import kotlinx.android.synthetic.main.about.ThirdButton
+import kotlinx.android.synthetic.main.about.Version
+import kotlinx.android.synthetic.main.advanced.BackAdvancedButton
+import kotlinx.android.synthetic.main.advanced.LogsButton
+import kotlinx.android.synthetic.main.advanced.TunnelButton
+import kotlinx.android.synthetic.main.configuration.BackConfigButton
+import kotlinx.android.synthetic.main.configuration.BackConfigButton2
+import kotlinx.android.synthetic.main.configuration.DNSInput
+import kotlinx.android.synthetic.main.configuration.IPInput
+import kotlinx.android.synthetic.main.configuration.MTUInput
+import kotlinx.android.synthetic.main.configuration.SubNetInput
+import kotlinx.android.synthetic.main.dashboard.AboutButton
+import kotlinx.android.synthetic.main.dashboard.AboutPage
+import kotlinx.android.synthetic.main.dashboard.AddIdentityButton
+import kotlinx.android.synthetic.main.dashboard.AddIdentityLabel
+import kotlinx.android.synthetic.main.dashboard.AdvancedButton
+import kotlinx.android.synthetic.main.dashboard.AdvancedPage
+import kotlinx.android.synthetic.main.dashboard.ConfigPage
+import kotlinx.android.synthetic.main.dashboard.DashboardButton
+import kotlinx.android.synthetic.main.dashboard.DownloadMbps
+import kotlinx.android.synthetic.main.dashboard.DownloadSpeed
+import kotlinx.android.synthetic.main.dashboard.FeedbackButton
+import kotlinx.android.synthetic.main.dashboard.FrameArea
+import kotlinx.android.synthetic.main.dashboard.HamburgerButton
+import kotlinx.android.synthetic.main.dashboard.HamburgerLabel
+import kotlinx.android.synthetic.main.dashboard.IdentityDetailsPage
+import kotlinx.android.synthetic.main.dashboard.IdentityListing
+import kotlinx.android.synthetic.main.dashboard.IdentityPage
+import kotlinx.android.synthetic.main.dashboard.LogPage
+import kotlinx.android.synthetic.main.dashboard.LogsPage
+import kotlinx.android.synthetic.main.dashboard.MainArea
+import kotlinx.android.synthetic.main.dashboard.MainLogo
+import kotlinx.android.synthetic.main.dashboard.MainMenu
+import kotlinx.android.synthetic.main.dashboard.OffButton
+import kotlinx.android.synthetic.main.dashboard.OnButton
+import kotlinx.android.synthetic.main.dashboard.StateButton
+import kotlinx.android.synthetic.main.dashboard.SupportButton
+import kotlinx.android.synthetic.main.dashboard.TimeConnected
+import kotlinx.android.synthetic.main.dashboard.UploadMbps
+import kotlinx.android.synthetic.main.dashboard.UploadSpeed
+import kotlinx.android.synthetic.main.identities.BackIdentityButton
+import kotlinx.android.synthetic.main.identity.BackIdentityDetailsButton
+import kotlinx.android.synthetic.main.identity.IdDetailForgetButton
+import kotlinx.android.synthetic.main.identity.IdDetailServicesList
+import kotlinx.android.synthetic.main.identity.IdDetailsEnrollment
+import kotlinx.android.synthetic.main.identity.IdDetailsNetwork
+import kotlinx.android.synthetic.main.identity.IdDetailsStatus
+import kotlinx.android.synthetic.main.identity.IdIdentityDetailName
+import kotlinx.android.synthetic.main.identity.IdOnOffSwitch
+import kotlinx.android.synthetic.main.log.BackToLogsButton
+import kotlinx.android.synthetic.main.log.BackToLogsButton2
+import kotlinx.android.synthetic.main.log.CopyLogButton
+import kotlinx.android.synthetic.main.log.LogDetails
+import kotlinx.android.synthetic.main.log.LogTypeTitle
+import kotlinx.android.synthetic.main.logs.ApplicationLogsButton
+import kotlinx.android.synthetic.main.logs.BackLogsButton
+import kotlinx.android.synthetic.main.logs.LogsLabel
+import kotlinx.android.synthetic.main.logs.PacketLogsButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.openziti.ZitiContext
 import org.openziti.android.Ziti
+import org.openziti.mobile.databinding.AboutBinding
+import org.openziti.mobile.databinding.MainBinding
 import org.openziti.mobile.debug.DebugInfoActivity
-import java.util.*
+import java.util.Timer
+import java.util.TimerTask
 
 
 class ZitiMobileEdgeActivity : AppCompatActivity() {
+
+    private lateinit var binding: MainBinding
+    private lateinit var about: AboutBinding
 
     lateinit var prefs: SharedPreferences
     val systemId: Int by lazy {
@@ -158,6 +227,9 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        binding = MainBinding.inflate(layoutInflater)
+
         setContentView(R.layout.main)
         this.window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
 
