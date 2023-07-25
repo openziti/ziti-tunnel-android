@@ -19,10 +19,15 @@ import android.os.IBinder
 import android.system.OsConstants
 import android.util.Log
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.job
+import kotlinx.coroutines.launch
 import org.openziti.android.Ziti
 import org.openziti.mobile.net.PacketRouter
 import org.openziti.mobile.net.PacketRouterImpl
@@ -33,7 +38,6 @@ import java.io.Writer
 import java.nio.ByteBuffer
 import java.time.Duration
 import java.util.concurrent.Executors
-import kotlin.coroutines.CoroutineContext
 
 
 class ZitiVPNService : VpnService(), CoroutineScope {
@@ -101,7 +105,7 @@ class ZitiVPNService : VpnService(), CoroutineScope {
     }
 
     private fun setNetworks() {
-        val nwrks = networks()
+//        val nwrks = networks()
         runCatching {
            // setUnderlyingNetworks(nwrks)
         }.onFailure {
