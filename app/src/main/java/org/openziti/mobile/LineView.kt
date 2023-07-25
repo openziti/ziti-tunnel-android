@@ -6,7 +6,6 @@ package org.openziti.mobile
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.widget.RelativeLayout
 import android.widget.Toast
@@ -15,27 +14,14 @@ import org.openziti.mobile.databinding.LineBinding
 /**
  * Service List Line Items
  */
-class LineView : RelativeLayout {
+class LineView(context: Context) : RelativeLayout(context) {
 
     var _label: String? = ""
     var _value: String? = ""
 
-    var label: String
-        get() = this._label.toString()
-        set(value) {
-            this._label = value
-            binding.Label.text = this._label
-        }
+    private val binding = LineBinding.inflate(LayoutInflater.from(context), this, true)
 
-    var value: String
-        get() = this._value.toString()
-        set(value) {
-            this._value = value
-            binding.Value.text = this._value
-        }
-
-    constructor(context: Context) : super(context) {
-        init(null, 0)
+    init {
         binding.Label.setOnClickListener {
             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             val clip = ClipData.newPlainText("Label", binding.Label.text.toString())
@@ -52,18 +38,17 @@ class LineView : RelativeLayout {
         }
     }
 
-    constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {
-        init(attrs, 0)
-    }
+    var label: String
+        get() = this._label.toString()
+        set(value) {
+            this._label = value
+            binding.Label.text = this._label
+        }
 
-    constructor(context: Context, attrs: AttributeSet, defStyle: Int) : super(context, attrs, defStyle) {
-        init(attrs, defStyle)
-    }
-
-    private fun init(attrs: AttributeSet?, defStyle: Int) {
-        binding = LineBinding.inflate(LayoutInflater.from(context))
-//        LayoutInflater.from(context).inflate(R.layout.line, this, true)
-    }
-
-    private lateinit var binding: LineBinding
+    var value: String
+        get() = this._value.toString()
+        set(value) {
+            this._value = value
+            binding.Value.text = this._value
+        }
 }
