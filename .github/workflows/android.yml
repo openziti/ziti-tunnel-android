@@ -13,26 +13,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: '0'
-    - name: set up JDK 17
-      uses: actions/setup-java@v2
+
+    - name: Build App
+      uses: ./.github/actions/gradle
       with:
-        java-version: 17
-        distribution: temurin
-        cache: gradle
-    - name: Check with Gradle
-      run: ./gradlew check
-    - name: Setup keystore
-      run: |
-        echo "${{ secrets.RELEASE_KEYSTORE }}" | base64 -d > ${{ runner.workspace }}/ziti-mobile.jks
-    - name: Build Android Debug Bundle
-      run: ./gradlew :app:bundleDebug
-      env:
-        RELEASE_KEYSTORE: ${{ runner.workspace }}/ziti-mobile.jks
-        RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
-    - uses: actions/upload-artifact@v2
+        buildType: Debug
+        runTests: true
+        keystore: ${{ secrets.RELEASE_KEYSTORE }}
+        keystorePassword: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+
+    - uses: actions/upload-artifact@v3
       with:
         name: ziti-mobile-edge.aab
         path: app/build/outputs/bundle/debug/*.aab

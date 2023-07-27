@@ -1,0 +1,46 @@
+name: CMake build
+description: CMake Composite Action
+
+inputs:
+  buildType:
+    required: true
+    description: Debug or Release
+
+  runTests:
+    required: false
+    description: Run 'gradle check'
+
+  keystore:
+    required: true
+    description: signing keystore
+
+  keystorePassword:
+    required: true
+    description: signing keystore password
+
+runs:
+  using: "composite"
+  steps:
+    - name: set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: 17
+        distribution: temurin
+        cache: gradle
+
+    - name: Setup keystore
+      shell: bash
+      run: |
+        echo "${{ inputs.keystore }}" | base64 -d > ${{ runner.workspace }}/ziti-mobile.jks
+
+    - name: Check with Gradle
+      if: inputs.runTests
+      shell: bash
+      run: ./gradlew check
+
+    - name: Build Android ${{ inputs.buildType }} Bundle
+      shell: bash
+      run: ./gradlew :app:bundle${{ inputs.buildType }}
+      env:
+        RELEASE_KEYSTORE: ${{ runner.workspace }}/ziti-mobile.jks
+        RELEASE_KEYSTORE_PASSWORD: ${{ inputs.keystorePassword }}
