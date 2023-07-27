@@ -25,7 +25,7 @@ jobs:
         keystore: ${{ secrets.RELEASE_KEYSTORE }}
         keystorePassword: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: ziti-mobile-edge.aab
         path: app/build/outputs/bundle/debug/*.aab
