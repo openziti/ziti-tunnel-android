@@ -21,14 +21,17 @@ runs:
         cache: gradle
 
     - name: Setup keystore
+      shell: bash
       run: |
         echo "${{ secrets.RELEASE_KEYSTORE }}" | base64 -d > ${{ runner.workspace }}/ziti-mobile.jks
 
     - name: Check with Gradle
       if: inputs.runTests
+      shell: bash
       run: ./gradlew check
 
     - name: Build Android ${{ inputs.buildType }} Bundle
+      shell: bash
       run: ./gradlew :app:bundle${{ inputs.buildType }}
       env:
         RELEASE_KEYSTORE: ${{ runner.workspace }}/ziti-mobile.jks
