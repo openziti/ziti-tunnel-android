@@ -17,15 +17,31 @@ class ZitiRouteManager: RouteManager {
         private val TAG = ZitiRouteManager::class.java.simpleName
 
         // 100.64.0.0/10
-        val defaultRoute = CIDRBlock(InetAddress.getByAddress(byteArrayOf(100, 64, 0, 0)), 10)
-
-        private val routesMap =
-            ConcurrentHashMap<CIDRBlock, CIDRBlock>()
-
-
-        internal val routes: Collection<CIDRBlock>
-            get() = routesMap.values
+        val defaultRoute by lazy {
+            CIDRBlock(
+                InetAddress.getByAddress(byteArrayOf(100, 64, 0, 0)),
+                10
+            )
+        }
+        val defaultRoute6 by lazy {
+            CIDRBlock(
+                InetAddress.getByAddress(
+                    byteArrayOf(
+                        0xfd.toByte(), *("ziti!".toByteArray(Charsets.US_ASCII)),
+                        0, 0,
+                        0, 0, 0, 0,
+                        0, 0, 0, 0
+                    )
+                ), 48
+            )
+        }
     }
+
+    private val routesMap =
+        ConcurrentHashMap<CIDRBlock, CIDRBlock>()
+
+    internal val routes: Collection<CIDRBlock>
+        get() = routesMap.values
 
     override fun addRoute(cidr: CIDRBlock) {
         if (!defaultRoute.includes(cidr)) {

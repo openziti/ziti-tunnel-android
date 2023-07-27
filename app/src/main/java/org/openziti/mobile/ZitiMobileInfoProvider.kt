@@ -5,6 +5,7 @@
 package org.openziti.mobile
 
 import org.openziti.mobile.net.ZitiRouteManager
+import org.openziti.net.routing.RouteManager
 import org.openziti.util.DebugInfoProvider
 import java.io.Writer
 
@@ -22,7 +23,9 @@ class ZitiMobileInfoProvider: DebugInfoProvider {
         output.appendLine()
         output.appendLine("=== Routing ===")
         output.appendLine("${ZitiRouteManager.defaultRoute} (default)")
-        ZitiRouteManager.routes.forEach {
+
+        val rtm = RouteManager() as ZitiRouteManager
+        rtm.routes.forEach {
             output.appendLine(it.toString())
         }
     }

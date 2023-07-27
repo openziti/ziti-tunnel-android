@@ -6,13 +6,22 @@ package org.openziti.mobile.net
 
 import android.util.Log
 import org.openziti.net.dns.DNSResolver
-import org.pcap4j.packet.*
+import org.pcap4j.packet.DnsPacket
+import org.pcap4j.packet.IpPacket
+import org.pcap4j.packet.IpV4Packet
+import org.pcap4j.packet.Packet
+import org.pcap4j.packet.SimpleBuilder
+import org.pcap4j.packet.TcpPacket
+import org.pcap4j.packet.UdpPacket
 import org.pcap4j.packet.namednumber.IpNumber
 import org.pcap4j.packet.namednumber.IpVersion
+import java.net.Inet4Address
+import java.net.Inet6Address
 
 
-class ZitiNameserver(val addr: String, resolver: DNSResolver) {
+class ZitiNameserver(resolver: DNSResolver) {
 
+    val addresses = setOf(defaultIPv4Address)
     val dns = DNS(resolver)
 
     fun process(packet: IpPacket): IpPacket? {
@@ -83,5 +92,17 @@ class ZitiNameserver(val addr: String, resolver: DNSResolver) {
     }
     companion object {
         const val TAG = "ziti-dns"
+
+        val defaultIPv4Address = Inet4Address.getByAddress(byteArrayOf(100, 64, 0, 2))
+        val defaultIPv6Address = Inet6Address.getByAddress(
+            byteArrayOf(
+                0xFDu.toByte(),                                 // ULA prefix
+                *("ziti!".toByteArray(Charsets.US_ASCII)),
+                0, 0,// uniq Global ID
+                0, 0, 0, 0,
+                0, 0, 0, 2
+            )
+        )
+
     }
 }
