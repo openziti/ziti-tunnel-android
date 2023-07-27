@@ -22,6 +22,8 @@ jobs:
       with:
         buildType: Debug
         runTests: true
+        keystore: ${{ secrets.RELEASE_KEYSTORE }}
+        keystorePassword: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
 
     - uses: actions/upload-artifact@v2
       with:
