@@ -6,7 +6,6 @@ package org.openziti.mobile.net
 
 import android.util.Log
 import kotlinx.coroutines.runBlocking
-import org.openziti.net.dns.DNSResolver
 import org.pcap4j.packet.IpPacket
 import org.pcap4j.packet.IpSelector
 import org.pcap4j.packet.IpV4Packet
@@ -14,17 +13,15 @@ import org.pcap4j.packet.TcpPacket
 import org.pcap4j.packet.namednumber.IpNumber
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
-import java.util.*
+import java.util.Timer
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.concurrent.timer
 
 
-class PacketRouterImpl(resolver: DNSResolver, val dnsAddr: String, val inbound: suspend (b: ByteBuffer) -> Unit) : PacketRouter {
+class PacketRouterImpl(val dnsServer: ZitiNameserver, val inbound: suspend (b: ByteBuffer) -> Unit) : PacketRouter {
     val TAG = "routing"
     val tcpConnections = ConcurrentHashMap<ConnectionKey, ZitiTunnelConnection>()
-    val zitiNameserver = ZitiNameserver(dnsAddr, resolver)
 
-    val dns = DNS(resolver)
     val timer: Timer
 
     override fun route(b: ByteBuffer) {
@@ -36,8 +33,8 @@ class PacketRouterImpl(resolver: DNSResolver, val dnsAddr: String, val inbound: 
             return
         }
 
-        if (packet.header.dstAddr.hostAddress == dnsAddr) {
-            zitiNameserver.process(packet)?.let {
+        if (packet.header.dstAddr in dnsServer.addresses) {
+            dnsServer.process(packet)?.let {
                 runBlocking { inbound(ByteBuffer.wrap(it.rawData)) }
             }
 

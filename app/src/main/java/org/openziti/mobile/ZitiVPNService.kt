@@ -29,11 +29,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import org.openziti.android.Ziti
+import org.openziti.api.CIDRBlock
 import org.openziti.mobile.net.PacketRouter
 import org.openziti.mobile.net.PacketRouterImpl
 import org.openziti.mobile.net.TUNNEL_MTU
+import org.openziti.mobile.net.ZitiNameserver
 import org.openziti.mobile.net.ZitiRouteManager
 import org.openziti.net.dns.DNSResolver
+import org.openziti.net.routing.RouteManager
 import java.io.Writer
 import java.nio.ByteBuffer
 import java.time.Duration
@@ -60,6 +63,7 @@ class ZitiVPNService : VpnService(), CoroutineScope {
     private var tunnel: Tunnel? = null
     lateinit var packetRouter: PacketRouter
     lateinit var dnsResolver: DNSResolver
+    lateinit var zitiNameserver: ZitiNameserver
 
     val tunnelState = MutableStateFlow("stop")
 
@@ -146,7 +150,9 @@ class ZitiVPNService : VpnService(), CoroutineScope {
         }
 
         dnsResolver = Ziti.getDnsResolver()
-        packetRouter = PacketRouterImpl(dnsResolver, dnsAddr) {buf ->
+
+        zitiNameserver = ZitiNameserver(dnsResolver)
+        packetRouter = PacketRouterImpl(zitiNameserver) { buf ->
             peerChannel.send(buf)
         }
 
@@ -224,14 +230,29 @@ class ZitiVPNService : VpnService(), CoroutineScope {
         tunnel?.close()
         tunnel = null
 
+        val rtm = RouteManager() as ZitiRouteManager
+
         Log.i(TAG, "startTunnel()")
         try {
             val builder = Builder().apply {
-                addAddress(addr, addrPrefix)
+                allowFamily(OsConstants.AF_INET)
+                allowFamily(OsConstants.AF_INET6)
+                allowBypass()
+
+                addAddress(ZitiRouteManager.defaultRoute.ip, ZitiRouteManager.defaultRoute.ip.address.size * 8)
+
+                // default route
                 addRoute(ZitiRouteManager.defaultRoute.ip, ZitiRouteManager.defaultRoute.bits)
-                ZitiRouteManager.routes.forEach { route ->
+
+                // DNS
+                for (a in zitiNameserver.addresses) {
+                    addDnsServer(a)
+                    rtm.addRoute(CIDRBlock(a, a.address.size * 8))
+                }
+
+                rtm.routes.forEach { route ->
                     if (route.ip.isAnyLocalAddress)
-                        Log.w(TAG, "skipping local route ${route}")
+                        Log.d(TAG, "skipping local route ${route}")
                     else {
                         Log.d(TAG, "adding route $route")
                         route.runCatching {
@@ -241,12 +262,9 @@ class ZitiVPNService : VpnService(), CoroutineScope {
                         }
                     }
                 }
-                //setUnderlyingNetworks(networks())
                 setUnderlyingNetworks(null)
-                allowFamily(OsConstants.AF_INET)
-                addDnsServer(dnsAddr)
+
                 setMtu(TUNNEL_MTU)
-                allowBypass()
                 setBlocking(true)
                 if (allowedApps.isEmpty()) {
                     val thisApp = applicationContext.packageName
