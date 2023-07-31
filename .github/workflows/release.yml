@@ -33,4 +33,3 @@ jobs:
           asset_path: app/build/outputs/bundle/release/app-release.aab
           asset_name: ziti-mobile-edge.aab
           asset_content_type: application/octet-stream
-
