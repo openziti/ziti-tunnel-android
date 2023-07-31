@@ -16,12 +16,12 @@ jobs:
   ziti-webhook:
     runs-on: ubuntu-latest
     name: Ziti Mattermost Webhook
-    if: env.ZITI_MATTERMOST_WEBHOOK_URL != null && github.actor != 'dependabot[bot]'
+    if: env.ZHOOK_URL != null && github.actor != 'dependabot[bot]'
     env:
-      ZITI_MATTERMOST_WEBHOOK_URL: ${{ secrets.ZITI_MATTERMOST_WEBHOOK_URL }}
+      ZHOOK_URL: ${{ secrets.ZHOOK_URL}}
     steps:
     - uses: openziti/ziti-mattermost-action-py@main
-      if: github.event_name != 'pull_request_review' && env.ZITI_MATTERMOST_WEBHOOK_URL != null && github.actor != 'dependabot[bot]'
+      if: github.event_name != 'pull_request_review' && env.ZHOOK_URL != null && github.actor != 'dependabot[bot]'
       with:
         zitiId: ${{ secrets.ZITI_MATTERMOST_IDENTITY }}
         webhookUrl: ${{ secrets.ZHOOK_URL }}
@@ -29,7 +29,7 @@ jobs:
         senderUsername: "GitHubZ"
         destChannel: "dev-notifications"
     - uses: openziti/ziti-mattermost-action-py@main
-      if: github.event_name == 'pull_request_review' && github.event.review.state == 'approved' && env.ZITI_MATTERMOST_WEBHOOK_URL != null && github.actor != 'dependabot[bot]'
+      if: github.event_name == 'pull_request_review' && github.event.review.state == 'approved' && env.ZHOOK_URL != null && github.actor != 'dependabot[bot]'
       with:
         zitiId: ${{ secrets.ZITI_MATTERMOST_IDENTITY }}
         webhookUrl: ${{ secrets.ZHOOK_URL }}
