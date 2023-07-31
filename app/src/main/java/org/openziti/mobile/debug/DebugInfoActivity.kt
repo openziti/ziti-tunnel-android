@@ -34,6 +34,7 @@ class DebugInfoActivity : FragmentActivity() {
         }
 
         viewPager.adapter = adapter
+        viewPager.isUserInputEnabled = false // scroll content not the tabs
 
         val tabs: TabLayout = binding.tabs
         TabLayoutMediator(tabs, viewPager) { tab, pos ->
