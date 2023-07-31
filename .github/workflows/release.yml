@@ -21,7 +21,7 @@ jobs:
 
       - name: Get release
         id: get_release
-        uses: bruceadams/get-release@v1.2.2
+        uses: bruceadams/get-release@v1.3.2
         env:
           GITHUB_TOKEN: ${{ github.token }}
       - name: upload release bundle
@@ -33,4 +33,3 @@ jobs:
           asset_path: app/build/outputs/bundle/release/app-release.aab
           asset_name: ziti-mobile-edge.aab
           asset_content_type: application/octet-stream
-
