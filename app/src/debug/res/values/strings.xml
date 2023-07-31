@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+  ~ Copyright (c) 2023 NetFoundry. All rights reserved.
+  -->
+
+<resources>
+
+    <string name="app_name">ZME Debug</string>
+
+</resources>
