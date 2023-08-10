@@ -80,9 +80,15 @@ dependencies {
         artifact {
             type = "aar"
         }
+        exclude(module: "jna")
+    }
+    implementation(libs.jna) {
+        artifact {
+            type = "aar"
+        }
     }
 
-    implementation(libs.android.logger)
+    implementation(libs.slf4j.android)
 
     implementation(libs.kotlin)
     implementation(libs.coroutines.android)
