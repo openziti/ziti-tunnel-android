@@ -24,6 +24,7 @@ jobs:
         uses: bruceadams/get-release@v1.3.2
         env:
           GITHUB_TOKEN: ${{ github.token }}
+
       - name: upload release bundle
         uses: actions/upload-release-asset@v1
         env:
@@ -32,4 +33,14 @@ jobs:
           upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: app/build/outputs/bundle/release/app-release.aab
           asset_name: ziti-mobile-edge.aab
+          asset_content_type: application/octet-stream
+
+      - name: upload release APK
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
+          asset_path: app/build/outputs/apk/release/app-release.apk
+          asset_name: ziti-mobile-edge.apk
           asset_content_type: application/octet-stream

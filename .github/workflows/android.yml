@@ -29,3 +29,8 @@ jobs:
       with:
         name: ziti-mobile-edge-debug.aab
         path: app/build/outputs/bundle/debug/*.aab
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: ziti-mobile-edge-debug.apk
+        path: app/build/outputs/apk/debug/*.apk
