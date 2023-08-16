@@ -4,9 +4,11 @@
 
 package org.openziti.mobile.net
 
-import android.util.Log
 import org.openziti.net.dns.DNSResolver
+import org.openziti.util.Logged
+import org.openziti.util.ZitiLog
 import org.pcap4j.packet.DnsPacket
+import org.pcap4j.packet.DnsQuestion
 import org.pcap4j.packet.DnsRDataA
 import org.pcap4j.packet.DnsRDataAaaa
 import org.pcap4j.packet.DnsResourceRecord
@@ -19,59 +21,12 @@ import java.net.Inet6Address
 import java.net.InetAddress
 import java.net.UnknownHostException
 
-class DNS(val dnsResolver: DNSResolver) {
+class DNS(val dnsResolver: DNSResolver): Logged by ZitiLog() {
 
     fun resolve(packet: DnsPacket): DnsPacket {
         val q = packet.header.questions.firstOrNull()
 
-        val resp = q?.let {
-            when(it.qType) {
-                DnsResourceRecordType.A -> {
-                    val answer = DnsResourceRecord.Builder()
-                            .dataType(it.qType)
-                            .dataClass(it.qClass)
-                            .name(it.qName)
-                            .ttl(30)
-                            .rdLength(ByteArrays.INET4_ADDRESS_SIZE_IN_BYTES.toShort())
-
-                    val ip = dnsResolver.resolve(it.qName.name) ?: bypassDNS(it.qName.name, it.qType)
-
-                    if (ip != null) {
-                        val rdata = DnsRDataA.Builder()
-                                .address(ip as Inet4Address).build()
-                        answer.rData(rdata)
-                    }
-
-                    answer.build()
-                }
-
-                DnsResourceRecordType.AAAA -> {
-                    val answer = DnsResourceRecord.Builder()
-                            .dataType(it.qType)
-                            .dataClass(it.qClass)
-                            .name(it.qName)
-                            .ttl(30)
-                            .rdLength(ByteArrays.INET6_ADDRESS_SIZE_IN_BYTES.toShort())
-
-
-                    val ip = bypassDNS(it.qName.name, it.qType)
-
-                    if (ip != null) {
-                        val rdata = DnsRDataAaaa.Builder()
-                                .address(ip as Inet6Address).build()
-                        answer.rData(rdata)
-                    }
-
-                    answer.build()
-                }
-
-                else -> {
-                    Log.d("DNS", "request ${it.qType} ${it.qName}")
-                    null
-                }
-            }
-        }
-
+        val resp = findAnswer(q)
 
         val rb = DnsPacket.Builder()
                 .id(packet.header.id)
@@ -91,6 +46,36 @@ class DNS(val dnsResolver: DNSResolver) {
         }
 
         return rb.build()
+    }
+
+    private fun findAnswer(q: DnsQuestion?): DnsResourceRecord? {
+        if (q == null) return null
+        if (q.qType != DnsResourceRecordType.A && q.qType != DnsResourceRecordType.AAAA) return null
+
+        // don't log since it may be sensitive, keep for debugging purposes
+        // d { "resolving ${q.qType} ${q.qName}"}
+        val addr = dnsResolver.resolve(q.qName.name) ?: bypassDNS(q.qName.name, q.qType) ?: return null
+        // d { "resolved $q => $addr" }
+
+        val answer = DnsResourceRecord.Builder()
+            .dataType(q.qType)
+            .dataClass(q.qClass)
+            .name(q.qName)
+            .ttl(30)
+
+        if (q.qType == DnsResourceRecordType.A) {
+            answer.rdLength(ByteArrays.INET4_ADDRESS_SIZE_IN_BYTES.toShort())
+
+            val rdata = DnsRDataA.Builder()
+                .address(addr as Inet4Address).build()
+            answer.rData(rdata)
+        } else if (q.qType == DnsResourceRecordType.AAAA) {
+            val addr6 = mapToIPv6(addr)
+            answer.rdLength(ByteArrays.INET6_ADDRESS_SIZE_IN_BYTES.toShort())
+            answer.rData(DnsRDataAaaa.Builder().address(addr6).build())
+        }
+
+        return answer.build()
     }
 
     private fun bypassDNS(name: String, type: DnsResourceRecordType): InetAddress? {
