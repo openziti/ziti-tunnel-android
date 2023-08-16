@@ -9,6 +9,8 @@ import kotlinx.coroutines.runBlocking
 import org.pcap4j.packet.IpPacket
 import org.pcap4j.packet.IpSelector
 import org.pcap4j.packet.IpV4Packet
+import org.pcap4j.packet.IpV4Packet.IpV4Header
+import org.pcap4j.packet.IpV6Packet.IpV6Header
 import org.pcap4j.packet.TcpPacket
 import org.pcap4j.packet.namednumber.IpNumber
 import java.net.InetSocketAddress
@@ -26,18 +28,33 @@ class PacketRouterImpl(val dnsServer: ZitiNameserver, val inbound: suspend (b: B
 
     override fun route(b: ByteBuffer) {
 
-        val packet = IpSelector.newPacket(b.array(), b.arrayOffset(), b.limit())
+        val packet = IpSelector.newPacket(b.array(), b.arrayOffset(), b.limit()) as? IpPacket
 
-        if (packet !is IpV4Packet) {
-            Log.w(TAG, "not handling ${packet.header} at this time")
+        if (packet == null) {
+            Log.w(TAG, "unknown packet type")
             return
         }
 
-        if (packet.header.dstAddr in dnsServer.addresses) {
+        val header = packet.header
+        val dstAddr = when (header) {
+            is IpV4Header -> header.dstAddr
+            is IpV6Header -> header.dstAddr
+            else -> {
+                Log.d(TAG, "dropping packet $header")
+                return
+            }
+        }
+
+        if (dstAddr in dnsServer.addresses) {
             dnsServer.process(packet)?.let {
                 runBlocking { inbound(ByteBuffer.wrap(it.rawData)) }
             }
 
+            return
+        }
+
+        if (packet !is IpV4Packet) {
+            Log.w(TAG, "not handling ${packet.header} at this time")
             return
         }
 
