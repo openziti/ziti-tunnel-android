@@ -240,6 +240,7 @@ class ZitiVPNService : VpnService(), CoroutineScope {
                 allowBypass()
 
                 addAddress(ZitiRouteManager.defaultRoute.ip, ZitiRouteManager.defaultRoute.ip.address.size * 8)
+                addAddress(ZitiRouteManager.defaultRoute6.ip, ZitiRouteManager.defaultRoute6.ip.address.size * 8)
 
                 // default route
                 addRoute(ZitiRouteManager.defaultRoute.ip, ZitiRouteManager.defaultRoute.bits)

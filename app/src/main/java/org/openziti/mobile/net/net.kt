@@ -9,6 +9,9 @@ import org.pcap4j.packet.IpV4Rfc1349Tos
 import org.pcap4j.packet.TcpPacket
 import org.pcap4j.packet.namednumber.IpV4TosPrecedence
 import org.pcap4j.packet.namednumber.IpV4TosTos
+import java.net.Inet4Address
+import java.net.Inet6Address
+import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 
@@ -48,3 +51,21 @@ fun rejectTcpConnection(packet: IpV4Packet): TcpPacket.Builder {
             .correctChecksumAtBuild(true)
             .correctLengthAtBuild(true)
 }
+
+
+internal fun mapToIPv6(addr: InetAddress): Inet6Address {
+    return when (addr) {
+        is Inet6Address -> addr
+        is Inet4Address -> {
+            Inet6Address.getByAddress(
+                null,
+                byteArrayOf(*IPv4Prefix, *addr.address),
+                null
+            ) as Inet6Address
+        }
+        else -> error("invalid address = $addr")
+    }
+}
+
+// IPv4 prefix => 0:0:0:0:0:FFFF
+private val IPv4Prefix = byteArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1)

@@ -27,7 +27,8 @@ class ZitiRouteManager: RouteManager {
             CIDRBlock(
                 InetAddress.getByAddress(
                     byteArrayOf(
-                        0xfd.toByte(), *("ziti!".toByteArray(Charsets.US_ASCII)),
+                        0xfd.toByte(), 0,
+                        *("ziti".toByteArray(Charsets.US_ASCII)),
                         0, 0,
                         0, 0, 0, 0,
                         0, 0, 0, 0
