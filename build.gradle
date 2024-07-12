@@ -79,12 +79,12 @@ ext.gitHash = getCommitHash()
 ext.gitBranch = getBranchName()
 ext.versionCode = getVersionCode()
 
-subprojects {
-    repositories {
-        mavenCentral()
-        google()
-    }
-}
+//subprojects {
+//    repositories {
+//        mavenCentral()
+//        google()
+//    }
+//}
 
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
