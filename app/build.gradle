@@ -22,7 +22,8 @@ android {
             storePassword System.getenv('RELEASE_KEYSTORE_PASSWORD')
         }
     }
-    compileSdk = 35
+
+    compileSdk = 34
 
     defaultConfig {
         applicationId "org.openziti.mobile"
