@@ -1,19 +1,19 @@
 [versions]
 # plugins
 android = "8.5.1"
-kotlin = "1.9.0"
+kotlin = "1.9.22"
 dokka = "1.8.20"
 nexus = "1.3.0"
 semver-git = "2.3.7"
 
 # 3rd part deps
 slf4j-android = "2.0.7-0"
-appcompat = "1.6.1"
+appcompat = "1.7.0"
 constraintlayout = "2.1.4"
 lifecycle-extensions = "2.2.0"
-material = "1.9.0"
+material = "1.12.0"
 pcap4j = "1.8.2"
-lifecycle = "2.6.1"
+lifecycle = "2.8.3"
 coroutines = "1.7.3"
 core-ktx = "1.10.1"
 lazysodium-android = "5.1.0"
@@ -28,8 +28,11 @@ ziti-android = "0.30.0"
 # test deps
 hamcrest-core = "2.2"
 junit = "4.13.2"
-test = "1.5.0"
-espresso-core = "3.5.1"
+test = "1.6.1"
+espresso-core = "3.6.1"
+kotlin-gradle-plugin = "1.9.0"
+core-ktx-version = "1.13.1"
+junit-version = "1.2.1"
 
 [libraries]
 slf4j-android = { module = "uk.uuid.slf4j:slf4j-android", version.ref = "slf4j-android" }
@@ -55,6 +58,9 @@ test-rules = { group = "androidx.test", name = "rules", version.ref="test" }
 zxing-android-embedded = { module = "com.journeyapps:zxing-android-embedded", version.ref = "zxing-android-embedded" }
 
 jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
+kotlin-gradle-plugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin-gradle-plugin" }
+core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "core-ktx-version" }
+ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junit-version" }
 
 [plugins]
 android-app = { id = "com.android.application", version.ref = "android" }
