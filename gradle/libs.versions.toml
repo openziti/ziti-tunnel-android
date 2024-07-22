@@ -2,9 +2,6 @@
 # plugins
 android = "8.5.1"
 kotlin = "1.9.22"
-dokka = "1.8.20"
-nexus = "1.3.0"
-semver-git = "2.3.7"
 
 # 3rd part deps
 slf4j-android = "2.0.7-0"
@@ -15,14 +12,10 @@ material = "1.12.0"
 pcap4j = "1.8.2"
 lifecycle = "2.8.3"
 coroutines = "1.7.3"
-core-ktx = "1.10.1"
-lazysodium-android = "5.1.0"
 jna = "5.13.0"
-retrofit = "2.9.0"
 zxing-android-embedded = "4.3.0"
 
 # ziti
-ziti-core = "0.25.1"
 ziti-android = "0.30.0"
 
 # test deps
@@ -30,7 +23,6 @@ hamcrest-core = "2.2"
 junit = "4.13.2"
 test = "1.6.1"
 espresso-core = "3.6.1"
-kotlin-gradle-plugin = "1.9.0"
 core-ktx-version = "1.13.1"
 junit-version = "1.2.1"
 
@@ -45,7 +37,6 @@ lifecycle-extensions = { module = "androidx.lifecycle:lifecycle-extensions", ver
 material = { module = "com.google.android.material:material", version.ref = "material" }
 pcap4j-core = { module = "org.pcap4j:pcap4j-core", version.ref = "pcap4j" }
 pcap4j-packetfactory-static = { module = "org.pcap4j:pcap4j-packetfactory-static", version.ref = "pcap4j" }
-ziti-core = { group = "org.openziti", name="ziti", version.ref="ziti-core" }
 ziti-android = { group = "org.openziti", name="ziti-android", version.ref="ziti-android"}
 kotlin = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlin" }
 coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
@@ -58,17 +49,12 @@ test-rules = { group = "androidx.test", name = "rules", version.ref="test" }
 zxing-android-embedded = { module = "com.journeyapps:zxing-android-embedded", version.ref = "zxing-android-embedded" }
 
 jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
-kotlin-gradle-plugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin-gradle-plugin" }
 core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "core-ktx-version" }
 ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junit-version" }
 
 [plugins]
 android-app = { id = "com.android.application", version.ref = "android" }
-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
-nexus-publish = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "nexus" }
-semver-git = { id = "io.wusa.semver-git-plugin", version.ref = "semver-git" }
 
 [bundles]
 
