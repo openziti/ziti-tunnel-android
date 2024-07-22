@@ -49,7 +49,6 @@ test-rules = { group = "androidx.test", name = "rules", version.ref="test" }
 zxing-android-embedded = { module = "com.journeyapps:zxing-android-embedded", version.ref = "zxing-android-embedded" }
 
 jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
-kotlin-gradle-plugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin-gradle-plugin" }
 core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "core-ktx-version" }
 ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junit-version" }
 
