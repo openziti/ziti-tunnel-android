@@ -54,6 +54,7 @@ ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junit-
 
 [plugins]
 android-app = { id = "com.android.application", version.ref = "android" }
+android-lib = { id = "com.android.library", version.ref = "android" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 
 [bundles]

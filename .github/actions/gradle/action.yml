@@ -47,7 +47,7 @@ runs:
 
     - name: Build Android ${{ inputs.buildType }} Bundle
       shell: bash
-      run: ./gradlew :ziti-mobile-edge:assemble${{ inputs.buildType }} :ziti-mobile-edge:bundle${{ inputs.buildType }}
+      run: ./gradlew assemble${{ inputs.buildType }} bundle${{ inputs.buildType }}
       env:
         RELEASE_KEYSTORE: ${{ runner.workspace }}/ziti-mobile.jks
         RELEASE_KEYSTORE_PASSWORD: ${{ inputs.keystorePassword }}

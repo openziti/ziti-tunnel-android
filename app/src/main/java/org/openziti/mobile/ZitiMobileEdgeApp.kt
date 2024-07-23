@@ -6,13 +6,21 @@ package org.openziti.mobile
 
 import android.app.Application
 import android.content.Intent
+import android.util.Log
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import org.openziti.android.Ziti
+
+import org.openziti.tunnel.Tunnel
 
 /**
  *
  */
 class ZitiMobileEdgeApp: Application() {
+    init {
+        Log.i(this.javaClass.simpleName, "native[tlsuv]: ${Tunnel().tlsuvVersion()}")
+        Log.i(this.javaClass.simpleName, "native[ziti]: ${Tunnel().zitiSdkVersion()}")
+        Log.i(this.javaClass.simpleName, "native[ziti-tunnel]: ${Tunnel().zitiTunnelVersion()}")
+    }
     companion object {
         val ROUTE_CHANGE = "route_change"
         lateinit var app: ZitiMobileEdgeApp

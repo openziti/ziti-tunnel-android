@@ -1,20 +1,33 @@
+import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
+import com.android.build.gradle.internal.tasks.factory.dependsOn
+
 plugins {
-    id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    alias(libs.plugins.android.lib)
+    alias(libs.plugins.kotlin.android)
 }
+
+val localProperties = gradleLocalProperties(parent!!.projectDir, providers)
+
+val zitiSdkDir = localProperties["ziti.dir"]
+println("ziti-sdk = ${zitiSdkDir}")
+
+val cmakeArgs = mutableListOf("-DDEPS_DIR=${project.buildDir.path}/cmake")
+localProperties["ziti.dir"]?.let { cmakeArgs.add("-DZITI_SDK_DIR=$it") }
+localProperties["tlsuv.dir"]?.let { cmakeArgs.add("-Dtlsuv_DIR=$it") }
+localProperties["tunnel.dir"]?.let { cmakeArgs.add("-Dtunnel_DIR=$it")}
 
 android {
     namespace = "org.openziti.tunnel"
     compileSdk = 34
 
     defaultConfig {
-        minSdk = 29
+        minSdk = 26
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
         externalNativeBuild {
             cmake {
-                cppFlags("")
+                arguments(*cmakeArgs.toTypedArray())
             }
         }
     }
@@ -44,7 +57,6 @@ android {
 }
 
 dependencies {
-
     implementation(libs.core.ktx)
     implementation(libs.appcompat)
     implementation(libs.material)
@@ -63,6 +75,5 @@ presets.forEach { triplet ->
     val task = tasks.register<Exec>("build-native-deps-${triplet}") {
         commandLine("cmake", "--preset", triplet)
     }
-
     buildNative.dependsOn(task)
 }
