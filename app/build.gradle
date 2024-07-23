@@ -22,13 +22,12 @@ android {
             storePassword System.getenv('RELEASE_KEYSTORE_PASSWORD')
         }
     }
-    compileSdk = 33
-    ndkVersion "22.1.7171670"
+
+    compileSdk = 34
 
     defaultConfig {
         applicationId "org.openziti.mobile"
         minSdkVersion 26
-        targetSdkVersion 33
         versionCode vc
         versionName "${project.version}"
 
@@ -50,7 +49,7 @@ android {
         }
     }
 
-    lintOptions {
+    lint {
         // Or, if you prefer, you can continue to check for errors in release builds,
         // but continue the build even when errors are found:
         abortOnError false

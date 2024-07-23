@@ -13,6 +13,9 @@ buildscript {
                 ziti: '0.23.11'
         ]
     }
+    dependencies {
+//        classpath libs.kotlin.gradle.plugin
+    }
 }
 
 def getVersionCode = { ->
@@ -78,13 +81,6 @@ group = "org.openziti"
 ext.gitHash = getCommitHash()
 ext.gitBranch = getBranchName()
 ext.versionCode = getVersionCode()
-
-subprojects {
-    repositories {
-        mavenCentral()
-        google()
-    }
-}
 
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
