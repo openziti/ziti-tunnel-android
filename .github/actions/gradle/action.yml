@@ -21,6 +21,13 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: install contemporary cmake
+      uses: lukka/get-cmake@v3.31.0 # pin version to avoid failed glibc dependency on ubuntu 20 runners. go back to @latest when ubuntu 22+ is adopted for runner os.
+
+    - uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgJsonGlob: ./ziti-native-tunnel/vcpkg.json
+
     - name: set up JDK 17
       uses: actions/setup-java@v3
       with:
