@@ -17,23 +17,16 @@ elseif (${ANDROID_ABI} STREQUAL "x86_64")
     set(deps_abi_path "${DEPS_DIR}/x64-android/vcpkg_installed/x64-android")
 endif ()
 
-set(CMAKE_FIND_ROOT_PATH "${deps_abi_path};${CMAKE_FIND_ROOT_PATH}")
+message(NOTICE "deps_abi_path = ${deps_abi_path}")
+
+set(CMAKE_FIND_ROOT_PATH "${deps_abi_path}")
+set(ENV{PKG_CONFIG_PATH} "${deps_abi_path}/lib/pkgconfig")
 
 # Declares the project name. The project name can be accessed via ${ PROJECT_NAME},
 # Since this is the top level CMakeLists.txt, the project name is also accessible
 # with ${CMAKE_PROJECT_NAME} (both CMake variables are in-sync within the top level
 # build script scope).
 project("tunnel")
-
-include(FindPkgConfig)
-find_package(PkgConfig)
-set(CMAKE_FIND_DEBUG_MODE ON)
-pkg_check_modules(pbc IMPORTED_TARGET libprotobuf-c)
-set(CMAKE_FIND_DEBUG_MODE OFF)
-if (pbc_FOUND)
-    message(NOTICE "libprotobuf-c[${pbc_VERSION}] is ${pbc_LINK_LIBRARIES}")
-endif ()
-
 
 set(ZITI_BUILD_TESTS OFF)
 set(ZITI_BUILD_PROGRAMS OFF)
