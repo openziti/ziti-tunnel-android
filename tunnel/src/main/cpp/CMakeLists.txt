@@ -25,26 +25,22 @@ set(CMAKE_FIND_ROOT_PATH "${deps_abi_path};${CMAKE_FIND_ROOT_PATH}")
 # build script scope).
 project("tunnel")
 
+include(FindPkgConfig)
+find_package(PkgConfig)
+set(CMAKE_FIND_DEBUG_MODE ON)
+pkg_check_modules(pbc IMPORTED_TARGET libprotobuf-c)
+set(CMAKE_FIND_DEBUG_MODE OFF)
+if (pbc_FOUND)
+    message(NOTICE "libprotobuf-c[${pbc_VERSION}] is ${pbc_LINK_LIBRARIES}")
+endif ()
+
+
 set(ZITI_BUILD_TESTS OFF)
 set(ZITI_BUILD_PROGRAMS OFF)
 set(ZITI_TUNNEL_BUILD_TESTS OFF)
 set(EXCLUDE_PROGRAMS ON)
 
-# Creates and names a library, sets it as either STATIC
-# or SHARED, and provides the relative paths to its source code.
-# You can define multiple libraries, and CMake builds them for you.
-# Gradle automatically packages shared libraries with your APK.
-#
-# In this top level CMakeLists.txt, ${CMAKE_PROJECT_NAME} is used to define
-# the target library name; in the sub-module's CMakeLists.txt, ${PROJECT_NAME}
-# is preferred for the same purpose.
-#
-# In order to load a library into your app from Java/Kotlin, you must call
-# System.loadLibrary() and pass the name of the library defined here;
-# for GameActivity/NativeActivity derived applications, the same library name must be
-# used in the AndroidManifest.xml file.
 add_library(${CMAKE_PROJECT_NAME} SHARED
-        # List C/C++ source files with relative paths to this CMakeLists.txt.
         tunnel.cpp
 )
 
@@ -52,13 +48,10 @@ target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
         ZITI_LOG_MODULE="${PROJECT_NAME}"
 )
 
-# Specifies libraries CMake should link to your target library. You
-# can link libraries from various origins, such as libraries defined in this
-# build script, prebuilt third-party libraries, or Android system libraries.
 target_link_libraries(${CMAKE_PROJECT_NAME}
-        # List libraries link to the target library
         android
-        log)
+        log
+)
 
 set(ZITI_SDK_VERSION 2.0.0-alpha9)
 if (tunnel_DIR)
