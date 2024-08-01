@@ -3,7 +3,7 @@
 /local.properties
 .DS_Store
 build/
-.cxx/*
+.cxx/
 /captures
 .externalNativeBuild
 

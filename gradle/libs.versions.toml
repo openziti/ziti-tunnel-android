@@ -1,9 +1,10 @@
 [versions]
 # plugins
 android = "8.5.1"
-kotlin = "1.9.22"
+kotlin = "2.0.0"
 
 # 3rd part deps
+kotlinx-serialization-json = "1.7.1"
 slf4j-android = "2.0.7-0"
 appcompat = "1.7.0"
 constraintlayout = "2.1.4"
@@ -27,6 +28,7 @@ core-ktx-version = "1.13.1"
 junit-version = "1.2.1"
 
 [libraries]
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization-json" }
 slf4j-android = { module = "uk.uuid.slf4j:slf4j-android", version.ref = "slf4j-android" }
 appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
 constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintlayout" }
@@ -56,6 +58,7 @@ ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junit-
 android-app = { id = "com.android.application", version.ref = "android" }
 android-lib = { id = "com.android.library", version.ref = "android" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 
 [bundles]
 
