@@ -25,8 +25,10 @@ set(CMAKE_FIND_ROOT_PATH "${deps_abi_path};${CMAKE_FIND_ROOT_PATH}")
 # build script scope).
 project("tunnel")
 
-set(ZITI_BUILD_TESTS off)
-set(ZITI_BUILD_PROGRAMS off)
+set(ZITI_BUILD_TESTS OFF)
+set(ZITI_BUILD_PROGRAMS OFF)
+set(ZITI_TUNNEL_BUILD_TESTS OFF)
+set(EXCLUDE_PROGRAMS ON)
 
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
@@ -43,7 +45,12 @@ set(ZITI_BUILD_PROGRAMS off)
 # used in the AndroidManifest.xml file.
 add_library(${CMAKE_PROJECT_NAME} SHARED
         # List C/C++ source files with relative paths to this CMakeLists.txt.
-        tunnel.cpp)
+        tunnel.cpp
+)
+
+target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
+        ZITI_LOG_MODULE="${PROJECT_NAME}"
+)
 
 # Specifies libraries CMake should link to your target library. You
 # can link libraries from various origins, such as libraries defined in this
@@ -53,13 +60,14 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
         android
         log)
 
+set(ZITI_SDK_VERSION 2.0.0-alpha9)
 if (tunnel_DIR)
     add_subdirectory(${tunnel_DIR} ${CMAKE_CURRENT_BINARY_DIR}/tunnel-sdk)
 else (tunnel_DIR)
     include(FetchContent)
     FetchContent_Declare(tun-sdk
             GIT_REPOSITORY http://github.com/openziti/ziti-tunnel-sdk-c.git
-            GIT_TAG main
+            GIT_TAG v2.0.0-alpha11
     )
     FetchContent_MakeAvailable(tun-sdk)
 endif ()
