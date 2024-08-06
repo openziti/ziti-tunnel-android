@@ -9,10 +9,13 @@
 #include <ziti/ziti_dns.h>
 #include <ziti/ziti_log.h>
 #include <ziti/ziti_tunnel.h>
-#include "ziti/ziti_tunnel_cbs.h"
+#include <ziti/ziti_tunnel_cbs.h>
 
-extern netif_driver android_netif_driver();
+#include "netif.h"
 
+
+static void JNICALL start_netif(JNIEnv *, jobject, jint);
+static void JNICALL stop_netif(JNIEnv *, jobject);
 static void JNICALL init_tunnel(JNIEnv *, jobject, jstring, jstring);
 static void JNICALL setup_ipc(JNIEnv *, jobject, jint, jint);
 static void JNICALL run_tunnel(JNIEnv *env, jobject);
@@ -24,7 +27,11 @@ static void notify_cb(uv_async_t *async);
 static void android_logger(int, const char *loc, const char *msg, size_t msglen);
 static void on_event(const base_event *);
 
+
 struct cmd_entry {
+    netif_cmd netifCmd;
+    uv_os_fd_t netifFd;
+
     tunnel_command cmd;
     jobject ctx;
     TAILQ_ENTRY(cmd_entry) _next;
@@ -69,8 +76,10 @@ JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved) {
             {"zitiSdkVersion",    "()Ljava/lang/String;",                                      (void *) (zitiSdkVersion)},
             {"zitiTunnelVersion", "()Ljava/lang/String;",                                      (void *) (zitiTunnelVersion)},
             {"executeCommand",    "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;)V", (void *) execute_cmd},
-            {"initNative", "(Ljava/lang/String;Ljava/lang/String;)V", (void*) init_tunnel},
-            {"setupIPC", "(II)V", (void*) setup_ipc},
+            {"initNative",        "(Ljava/lang/String;Ljava/lang/String;)V",                   (void *) init_tunnel},
+            {"setupIPC",          "(II)V",                                                     (void *) setup_ipc},
+            {"startNetIf",        "(I)V",                                                      (void *) start_netif},
+            {"stopNetIf",         "()V",                                                       (void *) stop_netif},
     };
     int rc = env->RegisterNatives(c, methods, sizeof(methods) / sizeof(JNINativeMethod));
     if (rc != JNI_OK) return rc;
@@ -79,7 +88,8 @@ JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved) {
     tunnelMethods.delRoute = env->GetMethodID(c, "delRoute", "(Ljava/lang/String;)V");
     tunnelMethods.commitRoutes = env->GetMethodID(c, "commitRoutes", "()V");
     tunnelMethods.onEvent = env->GetMethodID(c, "onEvent", "(Ljava/lang/String;)V");
-    tunnelMethods.onResp = env->GetMethodID(c, "onResponse", "(Ljava/lang/String;Ljava/util/concurrent/CompletableFuture;)V");
+    tunnelMethods.onResp = env->GetMethodID(c, "onResponse",
+                                            "(Ljava/lang/String;Ljava/util/concurrent/CompletableFuture;)V");
     return JNI_VERSION_1_6;
 }
 
@@ -194,7 +204,12 @@ void notify_cb(uv_async_t *a) {
         cmd_entry *cmd = TAILQ_FIRST(&cmd_queue);
         TAILQ_REMOVE(&cmd_queue, cmd, _next);
 
-        CTRL->process(&cmd->cmd, on_cmd_complete, cmd->ctx);
+        if (cmd->netifCmd != netif_None) {
+            android_netif_do(cmd->netifCmd, cmd->netifFd);
+        } else {
+            CTRL->process(&cmd->cmd, on_cmd_complete, cmd->ctx);
+        }
+
         free_tunnel_command(&cmd->cmd);
         free(cmd);
     }
@@ -282,6 +297,28 @@ int tunnel_commit(netif_handle, uv_loop_t *) {
     env->CallVoidMethod(tunnelMethods.tunnel, tunnelMethods.commitRoutes);
     return 0;
 }
+
+void JNICALL start_netif(JNIEnv *, jobject, jint fd) {
+    auto c = (cmd_entry*)calloc(1,sizeof(cmd_entry));
+    c->netifCmd = netif_Start;
+    c->netifFd = fd;
+
+    uv_mutex_lock(&cmd_queue_lock);
+    TAILQ_INSERT_TAIL(&cmd_queue, c, _next);
+    uv_mutex_unlock(&cmd_queue_lock);
+    uv_async_send(&notify);
+}
+
+void JNICALL stop_netif(JNIEnv *, jobject) {
+    auto c = (cmd_entry*)calloc(1,sizeof(cmd_entry));
+    c->netifCmd = netif_Stop;
+
+    uv_mutex_lock(&cmd_queue_lock);
+    TAILQ_INSERT_TAIL(&cmd_queue, c, _next);
+    uv_mutex_unlock(&cmd_queue_lock);
+    uv_async_send(&notify);
+}
+
 
 static void android_logger(int level, const char *loc, const char *msg, size_t msglen) {
     int pri = ANDROID_LOG_DEFAULT;

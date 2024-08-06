@@ -29,18 +29,17 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import org.openziti.android.Ziti
-import org.openziti.api.CIDRBlock
 import org.openziti.mobile.net.PacketRouter
 import org.openziti.mobile.net.PacketRouterImpl
 import org.openziti.mobile.net.TUNNEL_MTU
 import org.openziti.mobile.net.ZitiNameserver
 import org.openziti.mobile.net.ZitiRouteManager
 import org.openziti.net.dns.DNSResolver
-import org.openziti.net.routing.RouteManager
 import java.io.Writer
 import java.nio.ByteBuffer
 import java.time.Duration
 import java.util.concurrent.Executors
+import kotlin.time.toJavaDuration
 
 
 class ZitiVPNService : VpnService(), CoroutineScope {
@@ -59,6 +58,7 @@ class ZitiVPNService : VpnService(), CoroutineScope {
 
     val dnsAddr = "100.64.0.2"
 
+    lateinit var tun: org.openziti.tunnel.Tunnel
     private val peerChannel = Channel<ByteBuffer>(128)
     private var tunnel: Tunnel? = null
     lateinit var packetRouter: PacketRouter
@@ -96,8 +96,6 @@ class ZitiVPNService : VpnService(), CoroutineScope {
     lateinit var addr: String
     var addrPrefix: Int = 32
     lateinit var monitor: Job
-
-    private val allowedApps = mutableSetOf<String>()
 
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -137,6 +135,7 @@ class ZitiVPNService : VpnService(), CoroutineScope {
     override fun onCreate() {
         Log.i(TAG, "onCreate()")
         ZitiMobileEdgeApp.vpnService = this
+        tun = (application as ZitiMobileEdgeApp).tunnel
 
         connMgr = getSystemService(ConnectivityManager::class.java)
         connMgr.registerDefaultNetworkCallback(networkMonitor)
@@ -144,10 +143,6 @@ class ZitiVPNService : VpnService(), CoroutineScope {
         val prefs = getSharedPreferences("ziti-vpn", Context.MODE_PRIVATE)
         addr = prefs.getString("address", "169.254.0.1")!!
         addrPrefix = prefs.getInt("addrPrefix", 32)
-
-        prefs.getStringSet("selected-apps", emptySet())?.let {
-            allowedApps.addAll(it)
-        }
 
         dnsResolver = Ziti.getDnsResolver()
 
@@ -157,6 +152,14 @@ class ZitiVPNService : VpnService(), CoroutineScope {
         }
 
         monitor = launch {
+
+            launch {
+                Log.i(TAG, "monitoring route updates")
+                tun.routes().collect{
+                    restartTunnel()
+                }
+            }
+
             Log.i(TAG, "command monitor started")
             tunnelState.collect { cmd ->
                 Log.i(TAG, "received cmd[$cmd]")
@@ -165,8 +168,7 @@ class ZitiVPNService : VpnService(), CoroutineScope {
                         START -> startTunnel()
                         RESTART -> restartTunnel()
                         STOP -> {
-                            tunnel?.close()
-                            tunnel = null
+                            tun.stopNetworkInterface()
                         }
                         else -> Log.i(TAG, "unsupported command[$cmd]")
                     }
@@ -220,17 +222,15 @@ class ZitiVPNService : VpnService(), CoroutineScope {
     }
 
     private fun restartTunnel() {
-        if (tunnel != null) {
+        if (tun.isActive()) {
             Log.i(TAG, "restarting tunnel")
             startTunnel()
         }
     }
 
     private fun startTunnel() {
-        tunnel?.close()
-        tunnel = null
-
-        val rtm = RouteManager() as ZitiRouteManager
+        val tun = (application as ZitiMobileEdgeApp).tunnel
+        tun.stopNetworkInterface()
 
         Log.i(TAG, "startTunnel()")
         try {
@@ -245,38 +245,27 @@ class ZitiVPNService : VpnService(), CoroutineScope {
                 // default route
                 addRoute(ZitiRouteManager.defaultRoute.ip, ZitiRouteManager.defaultRoute.bits)
 
+                val routes = tun.routes().value
+
                 // DNS
                 for (a in zitiNameserver.addresses) {
                     addDnsServer(a)
-                    rtm.addRoute(CIDRBlock(a, a.address.size * 8))
                 }
 
-                rtm.routes.forEach { route ->
-                    if (route.ip.isAnyLocalAddress)
-                        Log.d(TAG, "skipping local route ${route}")
-                    else {
+                routes.filter { !it.address.isAnyLocalAddress }
+                    .forEach { route ->
                         Log.d(TAG, "adding route $route")
                         route.runCatching {
-                            addRoute(route.cidrAddress, route.bits)
+                            addRoute(route.address, route.bits)
                         }.onFailure {
                             Log.e(TAG, "invalid route[$route]", it)
                         }
                     }
-                }
                 setUnderlyingNetworks(null)
 
                 setMtu(TUNNEL_MTU)
                 setBlocking(true)
-                if (allowedApps.isEmpty()) {
-                    val thisApp = applicationContext.packageName
-                    Log.d(TAG, "excluding $thisApp")
-                    addDisallowedApplication(thisApp)
-                } else {
-                    for (a in allowedApps) {
-                        Log.d(TAG, "adding $a")
-                        addAllowedApplication(a)
-                    }
-                }
+                addDisallowedApplication(applicationContext.packageName)
 
                 setConfigureIntent(
                         PendingIntent.getActivity(applicationContext, 0,
@@ -288,9 +277,7 @@ class ZitiVPNService : VpnService(), CoroutineScope {
             val fd = builder.establish()!!
 
             Log.i(TAG, "starting tunnel for fd=${fd.fileDescriptor}")
-            return Tunnel(fd, packetRouter, peerChannel).let {
-                tunnel = it
-            }
+            tun.startNetworkInterface(fd)
         } catch (ex: Throwable) {
             Log.wtf(TAG, ex)
         }
@@ -303,15 +290,16 @@ class ZitiVPNService : VpnService(), CoroutineScope {
             ZitiVPNBinder()
 
     inner class ZitiVPNBinder: Binder() {
-        fun isVPNActive() = tunnel != null
-        fun getUptime(): Duration? = tunnel?.uptime
+        fun isVPNActive() = tun.isActive()
+        fun getUptime(): Duration = tun.getUptime().toJavaDuration()
     }
 
     fun dump(output: Writer) {
+        val state = if (tun.isActive()) "Running" else "Stopped"
         output.appendLine("""supervisor:  ${coroutineContext.job}""")
         output.appendLine("""monitor:     ${monitor}""")
-        output.appendLine("""tunnelState: ${tunnelState.value}""")
-        output.appendLine("""tunnelUptime:${tunnel?.uptime?.toString() ?: "not running"}""")
+        output.appendLine("""tunnelState: ${state}""")
+        output.appendLine("""tunnelUptime:${tun.getUptime()}""")
     }
 
 }

@@ -7,10 +7,8 @@ package org.openziti.tunnel
 import android.app.Application
 import android.os.ParcelFileDescriptor
 import android.util.Log
-import kotlinx.coroutines.channels.BroadcastChannel
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.ConflatedBroadcastChannel
 import kotlinx.coroutines.channels.onFailure
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,6 +18,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.time.Duration
+import kotlin.time.TimeMark
+import kotlin.time.TimeSource
 
 class Tunnel(app: Application, ): Runnable {
     val TAG = Tunnel::class.simpleName
@@ -27,8 +29,8 @@ class Tunnel(app: Application, ): Runnable {
     val cmdIPC: ParcelFileDescriptor
     val eventIPC: ParcelFileDescriptor
     val events = Channel<String>(capacity = 128, onBufferOverflow = BufferOverflow.DROP_OLDEST)
-    private val routes = mutableMapOf<String, Int>()
-    private val routeData = MutableStateFlow(emptySet<String>())
+    private val routes = mutableMapOf<Route, Int>()
+    private val routeData = MutableStateFlow(emptySet<Route>())
 
     init {
         val pm = app.packageManager
@@ -78,12 +80,12 @@ class Tunnel(app: Application, ): Runnable {
         }
     }.filterNotNull()
 
-    fun routes(): StateFlow<Set<String>> = routeData
+    fun routes(): StateFlow<Set<Route>> = routeData
     fun addRoute(rt: String) {
-        routes.compute(rt){ _, count -> (count ?: 0) + 1 }
+        routes.compute(rt.toRoute()){ _, count -> (count ?: 0) + 1 }
     }
     fun delRoute(rt: String) {
-        routes.compute(rt){ _, count ->
+        routes.compute(rt.toRoute()){ _, count ->
             if (count == null) null
             else if(count - 1 == 0) null
             else count - 1
@@ -100,6 +102,25 @@ class Tunnel(app: Application, ): Runnable {
         }
     }
 
+    private var startTime: TimeMark? = null
+
+    fun getUptime(): Duration =
+        startTime?.elapsedNow() ?: Duration.ZERO
+
+
+    private val active = AtomicBoolean(false)
+    fun isActive() = active.get()
+    fun startNetworkInterface(fd: ParcelFileDescriptor) {
+        if (active.compareAndSet(false, true)) {
+            startTime = TimeSource.Monotonic.markNow()
+            startNetIf(fd.fd)
+        }
+    }
+    fun stopNetworkInterface() {
+        if (active.compareAndSet(true, false)) {
+            stopNetIf()
+        }
+    }
 
     external fun initNative(app: String, version: String)
     external fun setupIPC(cmdFD: Int, eventDF: Int)
@@ -111,4 +132,6 @@ class Tunnel(app: Application, ): Runnable {
 
     external override fun run()
 
+    external fun startNetIf(fd: Int)
+    external fun stopNetIf()
 }
