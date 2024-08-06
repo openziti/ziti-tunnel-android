@@ -41,7 +41,6 @@ import androidx.viewbinding.ViewBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import org.openziti.ZitiContext
 import org.openziti.android.Ziti
 import org.openziti.mobile.databinding.DashboardBinding
 import org.openziti.mobile.debug.DebugInfoActivity
@@ -135,7 +134,7 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
     var log_tunneler = ""
     val version = "${BuildConfig.VERSION_NAME}(${BuildConfig.GIT_COMMIT})"
 
-    lateinit var contextViewModel: ZitiViewModel
+    private lateinit var model: TunnelModel
     internal var vpn: ZitiVPNService.ZitiVPNBinder? = null
     internal val serviceConnection = object: ServiceConnection{
         override fun onServiceDisconnected(name: ComponentName?) {
@@ -457,37 +456,46 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
             toggleSlide(binding.LogPage.root, "logdetails")
         }
 
-        contextViewModel = ViewModelProvider(this).get(ZitiViewModel::class.java)
-        contextViewModel.contexts().observe(this, { contextList ->
-            //IdentityCards.removeAllViews()
+        model = (application as ZitiMobileEdgeApp).model
+        model.identities().observe(this) { contextList ->
             binding.IdentityListing.removeAllViews()
-            // create, remove cards
             var index = 0
             for (ctx in contextList) {
-                val ctxModel = ViewModelProvider(this, ZitiContextModel.Factory(ctx)).get(ctx.name(), ZitiContextModel::class.java)
+                val ctxModel = ViewModelProvider(this, TunnelModel.Factory(ctx)).get(
+                    ctx.id,
+                    TunnelModel.TunnelIdentity::class.java
+                )
                 val identityitem = IdentityItemView(this).apply { setModel(ctxModel) }
-                ctxModel.name().observe(this, { n ->
+                ctxModel.name().observe(this) { n ->
                     IdIdentityDetailName.text = n
-                })
+                }
 
                 identityitem.setOnClickListener {
                     toggleSlide(binding.IdentityDetailsPage.root, "identity")
-                    IdDetailsEnrollment.text = ctxModel.status().value?.toString()
-                    if (ctx.getStatus() == ZitiContext.Status.Active) {
-                        IdOnOffSwitch.isChecked = true
+                    ctx.enabled().observe(this) {
+                        IdOnOffSwitch.isChecked = it
                     }
                     IdOnOffSwitch.setOnCheckedChangeListener { _, state ->
                         ctx.setEnabled(state)
                     }
-                    ctxModel.status().observe(this, { st ->
-                        IdDetailsStatus.text = st.toString()
-                    })
-                    IdDetailsNetwork.text = ctx.controller()
+
+                    ctxModel.status().observe(this) { st ->
+                        IdDetailsStatus.text = st
+                    }
+                    ctx.controller().observe(this) {
+                        IdDetailsNetwork.text = it
+                    }
                     IdDetailsNetwork.setOnClickListener {
-                        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                        val clip = ClipData.newPlainText("Network", IdDetailsNetwork.text.toString())
+                        val clipboard =
+                            getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        val clip =
+                            ClipData.newPlainText("Network", IdDetailsNetwork.text.toString())
                         clipboard.setPrimaryClip(clip)
-                        Toast.makeText(applicationContext,IdDetailsNetwork.text.toString() + " has been copied to your clipboard",Toast.LENGTH_LONG).show()
+                        Toast.makeText(
+                            applicationContext,
+                            IdDetailsNetwork.text.toString() + " has been copied to your clipboard",
+                            Toast.LENGTH_LONG
+                        ).show()
                     }
                     var sCount = 0
                     ctxModel.services().observe(this, Observer { serviceList ->
@@ -507,13 +515,17 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
                         builder.setMessage("Are you sure you want to delete this identity from your device?")
                         builder.setIcon(android.R.drawable.ic_dialog_alert)
 
-                        builder.setPositiveButton("Yes"){_, _ ->
+                        builder.setPositiveButton("Yes") { _, _ ->
                             ctxModel.delete()
-                            Toast.makeText(applicationContext, ctx.name() + " removed", Toast.LENGTH_LONG).show()
+                            Toast.makeText(
+                                applicationContext,
+                                ctx.name().value + " removed",
+                                Toast.LENGTH_LONG
+                            ).show()
                             toggleSlide(IdentityDetailsPage, "identities")
                         }
 
-                        builder.setNeutralButton("Cancel"){_ , _ -> }
+                        builder.setNeutralButton("Cancel") { _, _ -> }
 
                         val alertDialog: AlertDialog = builder.create()
                         alertDialog.setCancelable(false)
@@ -524,7 +536,7 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
                 index++
             }
             //IdentityCount.text = index.toString()
-            if (index==0) {
+            if (index == 0) {
                 TurnOff()
                 //OffButton.getBackground().setAlpha(45)
                 OffButton.isClickable = false
@@ -534,12 +546,12 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
                 OffButton.isClickable = true
                 StateButton.imageAlpha = 255
             }
-        })
+        }
 
-        contextViewModel.stats().observe(this, {
-            setSpeed(it.downRate, DownloadSpeed, DownloadMbps)
-            setSpeed(it.upRate, UploadSpeed, UploadMbps)
-        })
+        model.stats().observe(this) {
+            setSpeed(it.down, DownloadSpeed, DownloadMbps)
+            setSpeed(it.up, UploadSpeed, UploadMbps)
+        }
 
         prefs = getSharedPreferences("ziti-vpn", Context.MODE_PRIVATE)
         //checkAppList()
@@ -554,7 +566,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Ziti.resume()
         bindService(Intent(applicationContext, ZitiVPNService::class.java), serviceConnection, Context.BIND_AUTO_CREATE)
 
         updateTunnelState()

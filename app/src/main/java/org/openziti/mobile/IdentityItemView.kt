@@ -7,7 +7,6 @@ import android.content.Context
 import android.view.LayoutInflater
 import android.widget.RelativeLayout
 import androidx.appcompat.app.AppCompatActivity
-import org.openziti.ZitiContext
 import org.openziti.mobile.databinding.IdentityitemBinding
 
 /**
@@ -17,7 +16,7 @@ class IdentityItemView(context: Context) : RelativeLayout(context) {
 
     private var _count: Int = 0
     private var _isOn: Boolean = false
-    lateinit var ctxModel: ZitiContextModel
+    lateinit var ctxModel: TunnelModel.TunnelIdentity
     val owner = context as AppCompatActivity
     val binding: IdentityitemBinding
 
@@ -36,21 +35,23 @@ class IdentityItemView(context: Context) : RelativeLayout(context) {
         a.recycle()
     }
 
-    fun setModel(ztx: ZitiContextModel) {
+    fun setModel(ztx: TunnelModel.TunnelIdentity) {
         ctxModel = ztx
-        binding.IdentityServer.text = ztx.ctx.controller()
+        ztx.controller().observe(owner) {
+            binding.IdentityServer.text = it
+        }
 
-        ctxModel.name().observe(owner, {
+        ctxModel.name().observe(owner) {
             binding.IdentityName.text = it
-        })
+        }
 
-        ctxModel.services().observe(owner, { binding.ServiceCount.text = it.size.toString() })
-        ctxModel.status().observe(owner, { state ->
-            isOn = state != ZitiContext.Status.Disabled
-        })
+        ctxModel.services().observe(owner) { binding.ServiceCount.text = it.size.toString() }
+        ctxModel.enabled().observe(owner) { state ->
+            isOn = state
+        }
 
         binding.IdToggleSwitch.setOnCheckedChangeListener { _, state ->
-            ctxModel.ctx.setEnabled(state)
+            ctxModel.setEnabled(state)
         }
 
     }

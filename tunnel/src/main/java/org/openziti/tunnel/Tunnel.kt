@@ -7,9 +7,16 @@ package org.openziti.tunnel
 import android.app.Application
 import android.os.ParcelFileDescriptor
 import android.util.Log
+import kotlinx.coroutines.channels.BroadcastChannel
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ConflatedBroadcastChannel
 import kotlinx.coroutines.channels.onFailure
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.consumeAsFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.concurrent.CompletableFuture
@@ -20,6 +27,9 @@ class Tunnel(app: Application, ): Runnable {
     val cmdIPC: ParcelFileDescriptor
     val eventIPC: ParcelFileDescriptor
     val events = Channel<String>(capacity = 128, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    private val routes = mutableMapOf<String, Int>()
+    private val routeData = MutableStateFlow(emptySet<String>())
+
     init {
         val pm = app.packageManager
 
@@ -59,11 +69,29 @@ class Tunnel(app: Application, ): Runnable {
         t.start()
     }
 
-    fun events() = events
+    fun events() = events.consumeAsFlow().map {
+        try {
+            EventsJson.decodeFromString<Event>(it)
+        } catch (ex: Exception) {
+            Log.w("model", ex)
+            null
+        }
+    }.filterNotNull()
 
-    fun addRoute(rt: String) {}
-    fun delRoute(rt: String) {}
-    fun commitRoutes() {}
+    fun routes(): StateFlow<Set<String>> = routeData
+    fun addRoute(rt: String) {
+        routes.compute(rt){ _, count -> (count ?: 0) + 1 }
+    }
+    fun delRoute(rt: String) {
+        routes.compute(rt){ _, count ->
+            if (count == null) null
+            else if(count - 1 == 0) null
+            else count - 1
+        }
+    }
+    fun commitRoutes() {
+        routeData.tryEmit(routes.keys)
+    }
 
     companion object {
         // Used to load the 'tunnel' library on application startup.
