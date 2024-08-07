@@ -29,6 +29,7 @@ enum class CMD {
     StatusChange,
     AddIdentity,
     ExternalAuth,
+    SetUpstreamDNS,
 }
 
 @Serializable data class ZitiID (
@@ -56,7 +57,10 @@ enum class CMD {
     @SerialName("Config") val config: ZitiConfig,
 ): TunnelCommand(CMD.LoadIdentity)
 
-@Serializable data class TunnelCommandWrapper(val command: CMD, val data: TunnelCommand)
+@Serializable data class SetUpstreamDNS(
+    val host: String,
+    val port: Int = 53,
+): TunnelCommand(CMD.SetUpstreamDNS)
 
 @Serializable data class TunnelResult(
     @SerialName("Success") val success: Boolean,

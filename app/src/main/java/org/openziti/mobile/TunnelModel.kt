@@ -28,6 +28,7 @@ import org.openziti.tunnel.Keychain
 import org.openziti.tunnel.LoadIdentity
 import org.openziti.tunnel.Service
 import org.openziti.tunnel.ServiceEvent
+import org.openziti.tunnel.SetUpstreamDNS
 import org.openziti.tunnel.Tunnel
 import org.openziti.tunnel.TunnelResult
 import org.openziti.tunnel.ZitiConfig
@@ -193,6 +194,14 @@ class TunnelModel(
             }
         }
     }
+
+    fun setUpstreamDNS(server: String) {
+        tunnel.processCmd(SetUpstreamDNS(server)).handleAsync { _, ex ->
+            ex?.let { Log.i("model", "failed to set upstream DNS", it)
+            }
+        }
+    }
+
     companion object {
         val defaultDNS = "100.64.0.2"
         val defaultRange = "100.64.0.0/10"
