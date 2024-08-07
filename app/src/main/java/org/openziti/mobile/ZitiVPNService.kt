@@ -29,8 +29,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import org.openziti.android.Ziti
-import org.openziti.mobile.net.PacketRouter
-import org.openziti.mobile.net.PacketRouterImpl
 import org.openziti.mobile.net.TUNNEL_MTU
 import org.openziti.mobile.net.ZitiNameserver
 import org.openziti.mobile.net.ZitiRouteManager
