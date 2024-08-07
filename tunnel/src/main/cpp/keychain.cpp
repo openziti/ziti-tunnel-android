@@ -1,4 +1,6 @@
-
+/*
+ * Copyright (c) 2024 NetFoundry. All rights reserved.
+ */
 
 #include <jni.h>
 #include <string>

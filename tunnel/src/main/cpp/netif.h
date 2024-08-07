@@ -1,6 +1,6 @@
-//
-// Created by Eugene Kobyakov on 8/6/24.
-//
+/*
+ * Copyright (c) 2024 NetFoundry. All rights reserved.
+ */
 
 #ifndef ANDROID_TUNNEL_NETIF_H
 #define ANDROID_TUNNEL_NETIF_H

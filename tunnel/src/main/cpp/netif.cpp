@@ -1,6 +1,6 @@
-//
-// Created by Eugene Kobyakov on 7/27/24.
-//
+/*
+ * Copyright (c) 2024 NetFoundry. All rights reserved.
+ */
 
 #include <ziti/ziti_tunnel.h>
 #include <ziti/ziti_log.h>
