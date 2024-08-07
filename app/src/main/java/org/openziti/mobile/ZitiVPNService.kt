@@ -24,17 +24,15 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
-import org.openziti.android.Ziti
+import kotlinx.coroutines.runBlocking
 import org.openziti.mobile.net.TUNNEL_MTU
-import org.openziti.mobile.net.ZitiNameserver
-import org.openziti.mobile.net.ZitiRouteManager
-import org.openziti.net.dns.DNSResolver
+import org.openziti.tunnel.toRoute
 import java.io.Writer
-import java.nio.ByteBuffer
+import java.net.Inet6Address
 import java.time.Duration
 import java.util.concurrent.Executors
 import kotlin.time.toJavaDuration
@@ -54,13 +52,7 @@ class ZitiVPNService : VpnService(), CoroutineScope {
     }
     override val coroutineContext = SupervisorJob() + exec.asCoroutineDispatcher()
 
-    val dnsAddr = "100.64.0.2"
-
     lateinit var tun: org.openziti.tunnel.Tunnel
-    private val peerChannel = Channel<ByteBuffer>(128)
-    lateinit var dnsResolver: DNSResolver
-    lateinit var zitiNameserver: ZitiNameserver
-
     val tunnelState = MutableStateFlow("stop")
 
     private lateinit var connMgr: ConnectivityManager
@@ -88,9 +80,6 @@ class ZitiVPNService : VpnService(), CoroutineScope {
         return c
     }
 
-    // prefs
-    lateinit var addr: String
-    var addrPrefix: Int = 32
     lateinit var monitor: Job
 
     private val receiver = object : BroadcastReceiver() {
@@ -136,14 +125,6 @@ class ZitiVPNService : VpnService(), CoroutineScope {
         connMgr = getSystemService(ConnectivityManager::class.java)
         connMgr.registerDefaultNetworkCallback(networkMonitor)
 
-        val prefs = getSharedPreferences("ziti-vpn", Context.MODE_PRIVATE)
-        addr = prefs.getString("address", "169.254.0.1")!!
-        addrPrefix = prefs.getInt("addrPrefix", 32)
-
-        dnsResolver = Ziti.getDnsResolver()
-
-        zitiNameserver = ZitiNameserver(dnsResolver)
-
         monitor = launch {
             launch {
                 Log.i(TAG, "monitoring route updates")
@@ -167,7 +148,7 @@ class ZitiVPNService : VpnService(), CoroutineScope {
                         else -> Log.i(TAG, "unsupported command[$cmd]")
                     }
                 }.onSuccess {
-                    Log.i(TAG, "tunnel ${cmd} success")
+                    Log.i(TAG, "tunnel $cmd success")
                 }.onFailure {
                     Log.w(TAG, "exception during tunnel $cmd", it)
                 }
@@ -221,6 +202,7 @@ class ZitiVPNService : VpnService(), CoroutineScope {
 
     private fun startTunnel() {
         val tun = (application as ZitiMobileEdgeApp).tunnel
+        val model = (application as ZitiMobileEdgeApp).model
         tun.stopNetworkInterface()
 
         Log.i(TAG, "startTunnel()")
@@ -230,17 +212,10 @@ class ZitiVPNService : VpnService(), CoroutineScope {
                 allowFamily(OsConstants.AF_INET6)
                 allowBypass()
 
-                addAddress(ZitiRouteManager.defaultRoute.ip, ZitiRouteManager.defaultRoute.ip.address.size * 8)
-                addAddress(ZitiRouteManager.defaultRoute6.ip, ZitiRouteManager.defaultRoute6.ip.address.size * 8)
-
-                // default route
-                addRoute(ZitiRouteManager.defaultRoute.ip, ZitiRouteManager.defaultRoute.bits)
-
-
-                // DNS
-                for (a in zitiNameserver.addresses) {
-                    addDnsServer(a)
-                }
+                val range = runBlocking { model.zitiRange.first().toRoute() }
+                val size = if (range.address is Inet6Address) 128 else 32
+                addAddress(range.address, size)
+                addDnsServer(runBlocking { model.zitiDNS.first() })
 
                 val routes = tun.routes().value
                 routes.filter { !it.address.isAnyLocalAddress }
@@ -288,8 +263,8 @@ class ZitiVPNService : VpnService(), CoroutineScope {
     fun dump(output: Writer) {
         val state = if (tun.isActive()) "Running" else "Stopped"
         output.appendLine("""supervisor:  ${coroutineContext.job}""")
-        output.appendLine("""monitor:     ${monitor}""")
-        output.appendLine("""tunnelState: ${state}""")
+        output.appendLine("""monitor:     $monitor""")
+        output.appendLine("""tunnelState: $state""")
         output.appendLine("""tunnelUptime:${tun.getUptime()}""")
     }
 

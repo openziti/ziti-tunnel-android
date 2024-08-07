@@ -21,6 +21,8 @@
 static void JNICALL start_netif(JNIEnv *, jobject, jint);
 static void JNICALL stop_netif(JNIEnv *, jobject);
 static void JNICALL init_tunnel(JNIEnv *, jobject, jstring, jstring);
+
+static void JNICALL set_dns(JNIEnv *, jobject, jstring, jstring);
 static void JNICALL setup_ipc(JNIEnv *, jobject, jint, jint);
 static void JNICALL run_tunnel(JNIEnv *env, jobject);
 static void JNICALL execute_cmd(JNIEnv *, jobject, jstring, jstring, jobject);
@@ -46,6 +48,7 @@ static uv_mutex_t cmd_queue_lock;
 
 static uv_loop_t *loop;
 static uv_async_t notify;
+static tunneler_context tun_ctx;
 static const ziti_tunnel_ctrl *CTRL;
 static uv_pipe_t cmd_pipe;
 static uv_pipe_t event_pipe;
@@ -75,6 +78,7 @@ JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 
     // Register your class' native methods.
     static const JNINativeMethod methods[] = {
+            {"setDNSrange",       "(Ljava/lang/String;Ljava/lang/String;)V",                   (void *) set_dns},
             {"run",               "()V",                                                       (void *) run_tunnel},
             {"tlsuvVersion",      "()Ljava/lang/String;",                                      (void *) (tlsuvVersion)},
             {"zitiSdkVersion",    "()Ljava/lang/String;",                                      (void *) (zitiSdkVersion)},
@@ -84,6 +88,7 @@ JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved) {
             {"setupIPC",          "(II)V",                                                     (void *) setup_ipc},
             {"startNetIf",        "(I)V",                                                      (void *) start_netif},
             {"stopNetIf",         "()V",                                                       (void *) stop_netif},
+
     };
     int rc = env->RegisterNatives(c, methods, sizeof(methods) / sizeof(JNINativeMethod));
     if (rc != JNI_OK) return rc;
@@ -95,6 +100,14 @@ JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved) {
     tunnelMethods.onResp = env->GetMethodID(c, "onResponse",
                                             "(Ljava/lang/String;Ljava/util/concurrent/CompletableFuture;)V");
     return JNI_VERSION_1_6;
+}
+
+static void JNICALL set_dns(JNIEnv *env, jobject, jstring dns, jstring range) {
+    auto dnsstr = env->GetStringUTFChars(dns, nullptr);
+    auto rangestr = env->GetStringUTFChars(range, nullptr);
+    ziti_dns_setup(tun_ctx, dnsstr, rangestr);
+    env->ReleaseStringUTFChars(dns, dnsstr);
+    env->ReleaseStringUTFChars(range, rangestr);
 }
 
 void init_tunnel(JNIEnv *env, jobject self, jstring app, jstring ver) {
@@ -122,10 +135,9 @@ void init_tunnel(JNIEnv *env, jobject self, jstring app, jstring ver) {
             .ziti_write = ziti_sdk_c_write,
             .ziti_host = ziti_sdk_c_host
     };
-    
-    tunneler_context tun_ctx = ziti_tunneler_init(&tunneler_opts, loop);
+
+    tun_ctx = ziti_tunneler_init(&tunneler_opts, loop);
     CTRL = ziti_tunnel_init_cmd(loop, tun_ctx, on_event);
-    ziti_dns_setup(tun_ctx, "100.64.0.2", "100.64.0.0/10");
 }
 
 static void JNICALL setup_ipc(JNIEnv *, jobject, jint cmd_fd, jint event_fd) {

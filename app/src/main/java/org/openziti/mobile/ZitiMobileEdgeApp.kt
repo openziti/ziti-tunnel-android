@@ -31,8 +31,7 @@ class ZitiMobileEdgeApp: Application() {
         Log.i(this.javaClass.simpleName, "native[ziti]: ${tunnel.zitiSdkVersion()}")
         Log.i(this.javaClass.simpleName, "native[ziti-tunnel]: ${tunnel.zitiTunnelVersion()}")
 
-        tunnel.start()
-        model = TunnelModel(tunnel)
+        model = TunnelModel(tunnel, this)
 
         app = this
     }

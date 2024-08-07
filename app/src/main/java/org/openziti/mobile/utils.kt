@@ -4,8 +4,9 @@
 
 package org.openziti.mobile
 
+import android.app.Application
+import android.content.Intent
 import android.content.res.Resources
-import java.lang.StringBuilder
 import java.time.Duration
 
 fun Int.toDp(): Int = (this / Resources.getSystem().displayMetrics.density).toInt()
@@ -18,3 +19,6 @@ fun Duration.format(): String {
 
     return "%02d:%02d:%02d".format(hours, minutes - hours * 60, seconds - minutes * 60)
 }
+
+fun getEnrollmentIntent(application: Application): Intent =
+    Intent(application, ZitiEnrollmentActivity::class.java)

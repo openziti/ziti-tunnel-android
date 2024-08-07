@@ -30,7 +30,8 @@ class Tunnel(app: Application, ): Runnable {
     val eventIPC: ParcelFileDescriptor
     val events = Channel<String>(capacity = 128, onBufferOverflow = BufferOverflow.DROP_OLDEST)
     private val routes = mutableMapOf<Route, Int>()
-    private val routeData = MutableStateFlow(emptySet<Route>())
+    private val routeData = MutableStateFlow(emptySequence<Route>())
+    private var defaultRoute = "100.64.0.0/10".toRoute()
 
     init {
         val pm = app.packageManager
@@ -80,7 +81,7 @@ class Tunnel(app: Application, ): Runnable {
         }
     }.filterNotNull()
 
-    fun routes(): StateFlow<Set<Route>> = routeData
+    fun routes(): StateFlow<Sequence<Route>> = routeData
     fun addRoute(rt: String) {
         routes.compute(rt.toRoute()){ _, count -> (count ?: 0) + 1 }
     }
@@ -91,11 +92,15 @@ class Tunnel(app: Application, ): Runnable {
             else count - 1
         }
     }
+
     fun commitRoutes() {
-        routeData.tryEmit(routes.keys)
+        val rts = mutableListOf(defaultRoute)
+        rts.addAll(routes.keys.filter { !defaultRoute.includes(it) })
+        routeData.tryEmit(rts.asSequence())
     }
 
     companion object {
+        private val TAG = Tunnel::class.simpleName
         // Used to load the 'tunnel' library on application startup.
         init {
             System.loadLibrary("tunnel")
@@ -116,13 +121,20 @@ class Tunnel(app: Application, ): Runnable {
             startNetIf(fd.detachFd())
         }
     }
+
     fun stopNetworkInterface() {
         if (active.compareAndSet(true, false)) {
             stopNetIf()
         }
     }
 
+    fun setupDNS(dns: String, range: String) {
+        defaultRoute = range.toRoute()
+        setDNSrange(dns, range)
+    }
+
     external fun initNative(app: String, version: String)
+    external fun setDNSrange(dns: String, range: String)
     external fun setupIPC(cmdFD: Int, eventDF: Int)
     external fun tlsuvVersion(): String
     external fun zitiSdkVersion(): String

@@ -4,14 +4,23 @@
 
 package org.openziti.mobile
 
+import android.content.Context
 import android.util.Log
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.openziti.tunnel.APIEvent
 import org.openziti.tunnel.ContextEvent
 import org.openziti.tunnel.Event
@@ -29,8 +38,27 @@ import java.security.KeyStore.PrivateKeyEntry
 import java.security.cert.X509Certificate
 
 class TunnelModel(
-    val tunnel: Tunnel
+    val tunnel: Tunnel,
+    val context: Context
 ): ViewModel() {
+    val Context.prefs: DataStore<Preferences> by preferencesDataStore("tunnel")
+
+    val NAMESERVER = stringPreferencesKey("nameserver")
+    val zitiDNS = context.prefs.data.map {
+        it[NAMESERVER] ?: "100.64.0.2"
+    }
+    val RANGE = stringPreferencesKey("range")
+    val zitiRange = context.prefs.data.map {
+        it[RANGE] ?: "100.64.0.0/10"
+    }
+
+    fun setDNS(server: String?, range: String?) = runBlocking {
+        context.prefs.edit { settings ->
+            settings[NAMESERVER] = server ?: defaultDNS
+            settings[RANGE] = range ?: defaultRange
+        }
+    }
+
     val scope = CoroutineScope(Dispatchers.IO)
 
     data class NetworkStats(val up: Double, val down: Double)
@@ -87,6 +115,13 @@ class TunnelModel(
     }
 
     init {
+        runBlocking {
+            val dns = zitiDNS.first()
+            val range = zitiRange.first()
+            Log.i("tunnel", "setting dns[$dns] and range[$range]")
+            tunnel.setupDNS(dns, range)
+            tunnel.start()
+        }
         scope.launch {
             tunnel.events().collect(this@TunnelModel::processEvent)
         }
@@ -157,5 +192,9 @@ class TunnelModel(
                 Log.i("model", "received event[$ev]")
             }
         }
+    }
+    companion object {
+        val defaultDNS = "100.64.0.2"
+        val defaultRange = "100.64.0.0/10"
     }
 }

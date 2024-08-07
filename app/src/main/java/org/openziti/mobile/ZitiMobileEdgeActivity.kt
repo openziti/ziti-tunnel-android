@@ -357,10 +357,10 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
             launchUrl("https://support.netfoundry.io")
         }
         AddIdentityButton.setOnClickListener {
-            startActivity(Ziti.getEnrollmentIntent())
+            startActivity(getEnrollmentIntent(application))
         }
         AddIdentityLabel.setOnClickListener {
-            startActivity(Ziti.getEnrollmentIntent())
+            startActivity(getEnrollmentIntent(application))
         }
         HamburgerButton.setOnClickListener {
             toggleMenu()
