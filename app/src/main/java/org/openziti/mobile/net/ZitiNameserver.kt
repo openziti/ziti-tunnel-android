@@ -115,7 +115,7 @@ class ZitiNameserver(resolver: DNSResolver) {
             byteArrayOf(
                 0xFDu.toByte(), 0,                             // ULA prefix
                 *("ziti".toByteArray(Charsets.US_ASCII)),
-                0, 0,// uniq Global ID
+                0, 0,// unique Global ID
                 0, 0, 0, 0,
                 0, 0, 0, 2
             )

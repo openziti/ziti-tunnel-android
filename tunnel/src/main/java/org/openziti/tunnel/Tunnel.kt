@@ -113,7 +113,7 @@ class Tunnel(app: Application, ): Runnable {
     fun startNetworkInterface(fd: ParcelFileDescriptor) {
         if (active.compareAndSet(false, true)) {
             startTime = TimeSource.Monotonic.markNow()
-            startNetIf(fd.fd)
+            startNetIf(fd.detachFd())
         }
     }
     fun stopNetworkInterface() {

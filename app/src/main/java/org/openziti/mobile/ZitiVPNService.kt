@@ -60,8 +60,6 @@ class ZitiVPNService : VpnService(), CoroutineScope {
 
     lateinit var tun: org.openziti.tunnel.Tunnel
     private val peerChannel = Channel<ByteBuffer>(128)
-    private var tunnel: Tunnel? = null
-    lateinit var packetRouter: PacketRouter
     lateinit var dnsResolver: DNSResolver
     lateinit var zitiNameserver: ZitiNameserver
 
@@ -147,17 +145,15 @@ class ZitiVPNService : VpnService(), CoroutineScope {
         dnsResolver = Ziti.getDnsResolver()
 
         zitiNameserver = ZitiNameserver(dnsResolver)
-        packetRouter = PacketRouterImpl(zitiNameserver) { buf ->
-            peerChannel.send(buf)
-        }
 
         monitor = launch {
-
             launch {
                 Log.i(TAG, "monitoring route updates")
                 tun.routes().collect{
                     restartTunnel()
                 }
+            }.invokeOnCompletion {
+                Log.i(TAG, "stopped route updates")
             }
 
             Log.i(TAG, "command monitor started")
@@ -191,12 +187,9 @@ class ZitiVPNService : VpnService(), CoroutineScope {
     override fun onDestroy() {
         Log.i(TAG, "onDestroy")
         ZitiMobileEdgeApp.vpnService = null
-
         connMgr.unregisterNetworkCallback(networkMonitor)
         LocalBroadcastManager.getInstance(applicationContext).unregisterReceiver(receiver)
         monitor.cancel()
-        tunnel?.close()
-        packetRouter.stop()
         coroutineContext.cancel()
         exec.runCatching { shutdownNow() }
         super.onDestroy()
@@ -245,13 +238,13 @@ class ZitiVPNService : VpnService(), CoroutineScope {
                 // default route
                 addRoute(ZitiRouteManager.defaultRoute.ip, ZitiRouteManager.defaultRoute.bits)
 
-                val routes = tun.routes().value
 
                 // DNS
                 for (a in zitiNameserver.addresses) {
                     addDnsServer(a)
                 }
 
+                val routes = tun.routes().value
                 routes.filter { !it.address.isAnyLocalAddress }
                     .forEach { route ->
                         Log.d(TAG, "adding route $route")

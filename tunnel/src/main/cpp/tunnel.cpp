@@ -279,6 +279,7 @@ int tunnel_add_route(netif_handle, const char *route) {
     tunnelMethods.vm->GetEnv((void **) &env, JNI_VERSION_1_6);
     jstring evString = env->NewStringUTF(route);
     env->CallVoidMethod(tunnelMethods.tunnel, tunnelMethods.addRoute, evString);
+    env->DeleteLocalRef(evString);
     return 0;
 }
 
