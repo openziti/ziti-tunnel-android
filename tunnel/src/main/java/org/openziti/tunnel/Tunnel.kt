@@ -64,7 +64,8 @@ class Tunnel(app: Application, ): Runnable {
     }
 
     fun processCmd(cmd: TunnelCommand) = CompletableFuture<TunnelResult>().apply {
-        executeCommand(cmd.cmd.name, Json.encodeToString(cmd), this)
+        val data = Json.encodeToString(cmd)
+        executeCommand(cmd.cmd.name, data, this)
     }
 
     fun start() {

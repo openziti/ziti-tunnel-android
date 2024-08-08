@@ -45,6 +45,7 @@ static struct {
     jmethodID keyType;
     jmethodID keyPub;
     jmethodID sign;
+    jmethodID genKey;
 } methods;
 
 extern "C"
@@ -61,9 +62,35 @@ Java_org_openziti_tunnel_Keychain_registerKeychain(JNIEnv *env, jclass clazz, jo
                                       "(Ljava/security/KeyStore$PrivateKeyEntry;)[B");
     methods.sign = env->GetMethodID(clazz, "sign",
                                     "(Ljava/security/KeyStore$PrivateKeyEntry;Ljava/nio/ByteBuffer;)[B");
+    methods.genKey = env->GetMethodID(
+            clazz, "genKey", "(Ljava/lang/String;Ljava/lang/String;)Ljava/security/KeyStore$PrivateKeyEntry;");
 }
 
 int android_gen_key(keychain_key_t *pk, enum keychain_key_type type, const char *name) {
+    if (android_keychain.store == nullptr) return -1;
+
+    JNIEnv *env;
+    android_keychain.vm->GetEnv((void **) &env, JNI_VERSION_1_6);
+
+    jstring t;
+    if (type == keychain_key_rsa) {
+        t = env->NewStringUTF("RSA");
+    } else if (type == keychain_key_ec) {
+        t = env->NewStringUTF("EC");
+    } else {
+        return -1;
+    }
+
+    jstring n = env->NewStringUTF(name);
+    jobject key = env->CallObjectMethod(android_keychain.store, methods.genKey, n, t);
+    env->DeleteLocalRef(n);
+    env->DeleteLocalRef(t);
+
+    if (key != nullptr) {
+        *pk = env->NewGlobalRef(key);
+        return 0;
+    }
+
     return -1;
 }
 

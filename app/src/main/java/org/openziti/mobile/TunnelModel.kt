@@ -6,6 +6,7 @@ package org.openziti.mobile
 
 import android.content.Context
 import android.util.Log
+import android.widget.Toast
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -21,8 +22,11 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromJsonElement
 import org.openziti.tunnel.APIEvent
 import org.openziti.tunnel.ContextEvent
+import org.openziti.tunnel.Enroll
 import org.openziti.tunnel.Event
 import org.openziti.tunnel.Keychain
 import org.openziti.tunnel.LoadIdentity
@@ -129,14 +133,13 @@ class TunnelModel(
 
         val aliases = Keychain.store.aliases().toList()
 
-        val configs = aliases.filter { it.startsWith("ziti://") }
+        aliases.filter { it.startsWith("ziti://") }
             .map { Pair(it, Keychain.store.getEntry(it, null)) }
             .filter { it.second is PrivateKeyEntry }
             .map {
-                val pk = it.second
                 val uri = URI(it.first)
                 val ctrl = "https://${uri.host}:${uri.port}"
-                val id = uri.path.removePrefix("/")
+                val id = uri.userInfo ?: uri.path.removePrefix("/")
 
                 val idCerts = Keychain.store.getCertificateChain(it.first)
                 val pem = idCerts.map { it as X509Certificate }
@@ -144,27 +147,29 @@ class TunnelModel(
                 val caCerts = aliases.filter { it.startsWith("ziti:$id/") }
                     .map { Keychain.store.getCertificate(it) as X509Certificate}
                     .joinToString(transform = X509Certificate::toPEM, separator = "")
-                LoadIdentity(identifier = it.first,
-                    config = ZitiConfig(
-                        controller = ctrl,
-                        controllers = listOf(ctrl),
-                        id = ZitiID(cert = pem, key = "keychain:${it.first}", ca = caCerts)
-                    )
+                it.first to ZitiConfig(
+                    controller = ctrl,
+                    controllers = listOf(ctrl),
+                    id = ZitiID(cert = pem, key = "keychain:${it.first}", ca = caCerts)
                 )
+            }.forEach {
+                loadConfig(it.first, it.second)
             }
+    }
 
-        for (c in configs) {
-            tunnel.processCmd(c).handleAsync { res: TunnelResult?, ex: Throwable? ->
-                ex?.let {
-                    Log.w("model", "failed to execute", it)
+    private fun loadConfig(ident: String, cfg: ZitiConfig) {
+        Log.i("model", "loading identity[$ident]")
+        val cmd = LoadIdentity(ident, cfg)
+        tunnel.processCmd(cmd).handleAsync { res: TunnelResult?, ex: Throwable? ->
+            ex?.let {
+                Log.w("model", "failed to execute", it)
+            }
+            res?.let {
+                if (it.success) {
+                    identities[ident] = TunnelIdentity(ident)
+                    identitiesData.postValue(identities.values.toList())
                 }
-                res?.let {
-                    if (it.success) {
-                        identities[c.identifier] = TunnelIdentity(c.identifier)
-                        identitiesData.postValue(identities.values.toList())
-                    }
-                    Log.i("model", "load result[${c.identifier}]: $it")
-                }
+                Log.i("model", "load result[$ident]: $it")
             }
         }
     }
@@ -198,6 +203,32 @@ class TunnelModel(
     fun setUpstreamDNS(server: String) {
         tunnel.processCmd(SetUpstreamDNS(server)).handleAsync { _, ex ->
             ex?.let { Log.i("model", "failed to set upstream DNS", it)
+            }
+        }
+    }
+
+    fun enroll(jwt: String) {
+        val cmd = Enroll(
+            jwt = jwt,
+            useKeychain = true)
+        tunnel.processCmd(cmd).handleAsync { res, ex ->
+            Log.i("model", "$res")
+            ex?.let {
+                Toast.makeText(context, ex.message, Toast.LENGTH_LONG).show()
+            }
+
+            res?.let {
+                if (!it.success) {
+                    Toast.makeText(context, it.error, Toast.LENGTH_LONG).show()
+                } else {
+                    it.data?.let {
+                        val cfg = Json.decodeFromJsonElement<ZitiConfig>(it)
+                        val keyAlias = cfg.id.key.removePrefix("keychain:")
+                        Keychain.updateKeyEntry(keyAlias, cfg.id.cert, cfg.id.ca)
+                        Toast.makeText(context, "Enrolled Successfully!", Toast.LENGTH_LONG).show()
+                        loadConfig(keyAlias, cfg)
+                    }
+                }
             }
         }
     }

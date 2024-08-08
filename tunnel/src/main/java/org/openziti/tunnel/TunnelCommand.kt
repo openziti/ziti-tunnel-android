@@ -8,6 +8,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.json.JsonObject
+import java.io.StringBufferInputStream
 
 enum class CMD {
     ZitiDump,
@@ -30,6 +31,7 @@ enum class CMD {
     AddIdentity,
     ExternalAuth,
     SetUpstreamDNS,
+    Enroll,
 }
 
 @Serializable data class ZitiID (
@@ -39,8 +41,8 @@ enum class CMD {
 )
 
 @Serializable data class ZitiConfig(
-    @SerialName("ztAPI") val controller: String,
-    @SerialName("ztAPIs") val controllers: List<String>?,
+    @SerialName("ztAPI") val controller: String? = null,
+    @SerialName("ztAPIs") val controllers: List<String>? = null,
     val id: ZitiID,
 )
 
@@ -61,6 +63,13 @@ enum class CMD {
     val host: String,
     val port: Int = 53,
 ): TunnelCommand(CMD.SetUpstreamDNS)
+
+@Serializable data class Enroll(
+    val jwt: String,
+    val key: String? = null,
+    val cert: String? = null,
+    val useKeychain: Boolean = false,
+): TunnelCommand(CMD.Enroll)
 
 @Serializable data class TunnelResult(
     @SerialName("Success") val success: Boolean,
