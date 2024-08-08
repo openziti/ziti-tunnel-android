@@ -50,7 +50,7 @@ else (tunnel_DIR)
     include(FetchContent)
     FetchContent_Declare(tun-sdk
             GIT_REPOSITORY http://github.com/openziti/ziti-tunnel-sdk-c.git
-            GIT_TAG main
+            GIT_TAG tunnel-enroll-cmd
     )
     FetchContent_MakeAvailable(tun-sdk)
 endif ()
