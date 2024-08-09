@@ -8,6 +8,7 @@ import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
@@ -91,6 +92,17 @@ class ZitiEnrollmentActivity : AppCompatActivity() {
 
     fun enroll(jwt: String) {
         (application as ZitiMobileEdgeApp).model.enroll(jwt)
+            .handleAsync { _, ex ->
+                Handler(mainLooper).post {
+                    this.finish()
+                    if (ex != null) {
+                        Toast.makeText(this, ex.localizedMessage, Toast.LENGTH_LONG).show()
+                    } else {
+                        Toast.makeText(this, "enrolled!", Toast.LENGTH_LONG).show()
+                    }
+                }
+
+            }
     }
 
     fun enroll(jwtUri: Uri) {
