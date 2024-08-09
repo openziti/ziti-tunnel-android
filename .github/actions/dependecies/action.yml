@@ -1,0 +1,18 @@
+name: build target dependencies
+description: CMake Composite Action
+
+inputs:
+  target:
+    required: true
+    description: target platform
+
+runs:
+  using: "composite"
+  steps:
+    - name: install contemporary cmake
+      uses: lukka/get-cmake@v3.30.1
+    - uses: lukka/run-vcpkg@v11
+    - name: build ${{ inputs.target }}
+      shell: bash
+      run: |
+        cmake --preset ${{ inputs.target }} ./tunnel
