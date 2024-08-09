@@ -32,6 +32,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.openziti.tunnel.toRoute
 import java.io.Writer
+import java.net.Inet4Address
 import java.net.Inet6Address
 import java.time.Duration
 import java.util.concurrent.Executors
@@ -94,7 +95,9 @@ class ZitiVPNService : VpnService(), CoroutineScope {
 
     private fun setNetworks() {
         val dns  = connMgr.activeNetwork?.let {
-            connMgr.getLinkProperties(it)?.dnsServers?.firstOrNull()?.toString()?.removePrefix("/")
+            // tunneler fails with IPv6 DNS upstream
+            connMgr.getLinkProperties(it)?.dnsServers?.filterIsInstance<Inet4Address>()?.
+            firstOrNull()?.toString()?.removePrefix("/")
         } ?: "1.1.1.1"
 
         Log.i(TAG, "setting upstream DNS[$dns]")

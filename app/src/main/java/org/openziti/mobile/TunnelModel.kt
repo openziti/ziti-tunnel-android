@@ -6,7 +6,6 @@ package org.openziti.mobile
 
 import android.content.Context
 import android.util.Log
-import android.widget.Toast
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -30,6 +29,7 @@ import org.openziti.tunnel.Enroll
 import org.openziti.tunnel.Event
 import org.openziti.tunnel.Keychain
 import org.openziti.tunnel.LoadIdentity
+import org.openziti.tunnel.OnOffCommand
 import org.openziti.tunnel.Service
 import org.openziti.tunnel.ServiceEvent
 import org.openziti.tunnel.SetUpstreamDNS
@@ -41,6 +41,7 @@ import org.openziti.tunnel.toPEM
 import java.net.URI
 import java.security.KeyStore.PrivateKeyEntry
 import java.security.cert.X509Certificate
+import java.util.concurrent.CompletableFuture
 
 class TunnelModel(
     val tunnel: Tunnel,
@@ -80,7 +81,7 @@ class TunnelModel(
         }
     }
 
-    class TunnelIdentity(val id: String): ViewModel() {
+    class TunnelIdentity(val id: String, val tunnelModel: TunnelModel): ViewModel() {
 
         fun name(): LiveData<String> = name
         internal val name = MutableLiveData(id)
@@ -98,12 +99,18 @@ class TunnelModel(
         private val services = MutableLiveData<List<Service>>()
         fun services(): LiveData<List<Service>> = services
 
-        fun setEnabled(enabled: Boolean) {
-            // TODO
+        fun setEnabled(on: Boolean) {
+            tunnelModel.enableIdentity(id, on).thenAccept {
+                enabled.postValue(on)
+                if (on)
+                    status.postValue("Disabled")
+                else
+                    status.postValue("Enabled")
+            }
         }
 
         fun delete() {
-            // TODO
+            tunnelModel.deleteIdentity(id)
         }
 
         internal fun processServiceUpdate(ev: ServiceEvent) {
@@ -166,7 +173,7 @@ class TunnelModel(
             }
             res?.let {
                 if (it.success) {
-                    identities[ident] = TunnelIdentity(ident)
+                    identities[ident] = TunnelIdentity(ident, this)
                     identitiesData.postValue(identities.values.toList())
                 }
                 Log.i("model", "load result[$ident]: $it")
@@ -207,30 +214,49 @@ class TunnelModel(
         }
     }
 
-    fun enroll(jwt: String) {
+    fun enroll(jwt: String): CompletableFuture<ZitiConfig?>  {
         val cmd = Enroll(
             jwt = jwt,
             useKeychain = true)
-        tunnel.processCmd(cmd).handleAsync { res, ex ->
-            Log.i("model", "$res")
-            ex?.let {
-                Toast.makeText(context, ex.message, Toast.LENGTH_LONG).show()
-            }
+        val future = tunnel.processCmd(cmd).thenApply {
+            if (!it.success) throw Exception(it.error)
+            Json.decodeFromJsonElement<ZitiConfig>(it.data!!)
+        }
 
-            res?.let {
-                if (!it.success) {
-                    Toast.makeText(context, it.error, Toast.LENGTH_LONG).show()
-                } else {
-                    it.data?.let {
-                        val cfg = Json.decodeFromJsonElement<ZitiConfig>(it)
-                        val keyAlias = cfg.id.key.removePrefix("keychain:")
-                        Keychain.updateKeyEntry(keyAlias, cfg.id.cert, cfg.id.ca)
-                        Toast.makeText(context, "Enrolled Successfully!", Toast.LENGTH_LONG).show()
-                        loadConfig(keyAlias, cfg)
-                    }
-                }
+        future.thenApply { cfg ->
+            val keyAlias = cfg.id.key.removePrefix("keychain:")
+            loadConfig(keyAlias, cfg)
+        }.exceptionally {
+            Log.e("model", "enrollment failed", it)
+        }
+        return future
+    }
+
+    private fun enableIdentity(id: String, on: Boolean) =
+         tunnel.processCmd(OnOffCommand(id, on)).thenAccept {
+             if (!it.success) throw Exception(it.error)
+         }
+
+    private fun deleteIdentity(identifier: String) {
+        identities.remove(identifier)
+        identitiesData.postValue(identities.values.toList())
+
+        val uri = URI(identifier)
+        val id = uri.userInfo ?: uri.path.removePrefix("/")
+
+        runCatching {
+            Keychain.store.deleteEntry(identifier)
+        }.onFailure {
+            Log.w("model", "failed to remove entry", it)
+        }
+
+        val caCerts = Keychain.store.aliases().toList().filter { it.startsWith("ziti:$id/") }
+        caCerts.forEach {
+            Keychain.store.runCatching {
+                deleteEntry(it)
             }
         }
+
     }
 
     companion object {
