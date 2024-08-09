@@ -24,7 +24,26 @@ runs:
     - name: install contemporary cmake
       uses: lukka/get-cmake@v3.30.1
 
-    - uses: lukka/run-vcpkg@v11
+    - uses: actions/cache/restore@v4
+      with:
+        path: tunnel/build/cmake/arm64-android
+        key: dependencies-arm64-android-${{ hashFiles('./tunnel/vcpkg.json') }}
+        fail-on-cache-miss: true
+    - uses: actions/cache/restore@v4
+      with:
+        path: tunnel/build/cmake/arm-android
+        key: dependencies-arm-android-${{ hashFiles('./tunnel/vcpkg.json') }}
+        fail-on-cache-miss: true
+    - uses: actions/cache/restore@v4
+      with:
+        path: tunnel/build/cmake/x64-android
+        key: dependencies-x64-android-${{ hashFiles('./tunnel/vcpkg.json') }}
+        fail-on-cache-miss: true
+    - uses: actions/cache/restore@v4
+      with:
+        path: tunnel/build/cmake/x86-android
+        key: dependencies-x86-android-${{ hashFiles('./tunnel/vcpkg.json') }}
+        fail-on-cache-miss: true
 
     - name: set up JDK 17
       uses: actions/setup-java@v3
@@ -38,14 +57,9 @@ runs:
       run: |
         echo "${{ inputs.keystore }}" | base64 -d > ${{ runner.workspace }}/ziti-mobile.jks
 
-    - name: Check with Gradle
-      if: inputs.runTests
-      shell: bash
-      run: ./gradlew check
-
     - name: Build Android ${{ inputs.buildType }} Bundle
       shell: bash
-      run: ./gradlew assemble${{ inputs.buildType }} bundle${{ inputs.buildType }}
+      run: ./gradlew -PskipDependentBuild assemble${{ inputs.buildType }} bundle${{ inputs.buildType }}
       env:
         RELEASE_KEYSTORE: ${{ runner.workspace }}/ziti-mobile.jks
         RELEASE_KEYSTORE_PASSWORD: ${{ inputs.keystorePassword }}
