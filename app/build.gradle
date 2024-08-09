@@ -116,7 +116,6 @@ dependencies {
 
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.datastore.prefs)
-    implementation(libs.slf4j.android)
 
     implementation(libs.kotlin)
     implementation(libs.coroutines.android)
