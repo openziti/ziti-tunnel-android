@@ -23,7 +23,6 @@ android {
 
     defaultConfig {
         minSdk = 26
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
         externalNativeBuild {
@@ -72,9 +71,11 @@ val buildNative = tasks.register("build-native-dependencies") {}
 
 tasks.named("preBuild").dependsOn(buildNative)
 
-presets.forEach { triplet ->
-    val task = tasks.register<Exec>("build-native-deps-${triplet}") {
-        commandLine("cmake", "--preset", triplet)
+if (!hasProperty("skipDependentBuild")) {
+    presets.forEach { triplet ->
+        val task = tasks.register<Exec>("build-native-deps-${triplet}") {
+            commandLine("cmake", "--preset", triplet)
+        }
+        buildNative.dependsOn(task)
     }
-    buildNative.dependsOn(task)
 }
