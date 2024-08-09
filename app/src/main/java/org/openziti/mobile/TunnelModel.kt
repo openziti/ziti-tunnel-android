@@ -110,6 +110,7 @@ class TunnelModel(
         }
 
         fun delete() {
+            setEnabled(false)
             tunnelModel.deleteIdentity(id)
         }
 
