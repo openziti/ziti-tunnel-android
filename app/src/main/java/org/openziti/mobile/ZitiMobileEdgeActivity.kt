@@ -41,7 +41,6 @@ import androidx.viewbinding.ViewBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import org.openziti.android.Ziti
 import org.openziti.mobile.databinding.DashboardBinding
 import org.openziti.mobile.debug.DebugInfoActivity
 import java.util.Timer
@@ -351,7 +350,7 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
         }
 
         FeedbackButton.setOnClickListener {
-            startActivity(Intent.createChooser(Ziti.sendFeedbackIntent(), "Send Email"))
+            // TODO startActivity(Intent.createChooser(Ziti.sendFeedbackIntent(), "Send Email"))
         }
         SupportButton.setOnClickListener {
             launchUrl("https://support.netfoundry.io")

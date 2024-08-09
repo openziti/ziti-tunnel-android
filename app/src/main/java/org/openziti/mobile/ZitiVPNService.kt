@@ -30,7 +30,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.openziti.mobile.net.TUNNEL_MTU
 import org.openziti.tunnel.toRoute
 import java.io.Writer
 import java.net.Inet6Address
@@ -245,7 +244,8 @@ class ZitiVPNService : VpnService(), CoroutineScope {
                     }
                 setUnderlyingNetworks(null)
 
-                setMtu(TUNNEL_MTU)
+                // cannot be bigger than netif buffer, see netif.cpp
+                setMtu(32 * 1024)
                 setBlocking(true)
                 addDisallowedApplication(applicationContext.packageName)
 

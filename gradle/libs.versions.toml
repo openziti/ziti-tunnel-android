@@ -10,20 +10,13 @@ appcompat = "1.7.0"
 constraintlayout = "2.1.4"
 lifecycle-extensions = "2.2.0"
 material = "1.12.0"
-pcap4j = "1.8.2"
 lifecycle = "2.8.3"
 coroutines = "1.7.3"
-jna = "5.13.0"
 zxing-android-embedded = "4.3.0"
 datastore = "1.1.1"
 
-# ziti
-ziti-android = "0.30.0"
-
 # test deps
-hamcrest-core = "2.2"
 junit = "4.13.2"
-test = "1.6.1"
 espresso-core = "3.6.1"
 core-ktx-version = "1.13.1"
 junit-version = "1.2.1"
@@ -37,24 +30,17 @@ slf4j-android = { module = "uk.uuid.slf4j:slf4j-android", version.ref = "slf4j-a
 appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
 constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintlayout" }
 espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espresso-core" }
-hamcrest-core = { module = "org.hamcrest:hamcrest-core", version.ref = "hamcrest-core" }
 junit = { module = "junit:junit", version.ref = "junit" }
 lifecycle-extensions = { module = "androidx.lifecycle:lifecycle-extensions", version.ref = "lifecycle-extensions" }
 material = { module = "com.google.android.material:material", version.ref = "material" }
-pcap4j-core = { module = "org.pcap4j:pcap4j-core", version.ref = "pcap4j" }
-pcap4j-packetfactory-static = { module = "org.pcap4j:pcap4j-packetfactory-static", version.ref = "pcap4j" }
-ziti-android = { group = "org.openziti", name="ziti-android", version.ref="ziti-android"}
 kotlin = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlin" }
 coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 
 lifecycle-livedata-ktx = { module = "androidx.lifecycle:lifecycle-livedata-ktx", version.ref = "lifecycle" }
 lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
 
-test-runner = { group = "androidx.test", name = "runner", version.ref="test" }
-test-rules = { group = "androidx.test", name = "rules", version.ref="test" }
 zxing-android-embedded = { module = "com.journeyapps:zxing-android-embedded", version.ref = "zxing-android-embedded" }
 
-jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
 core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "core-ktx-version" }
 ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junit-version" }
 

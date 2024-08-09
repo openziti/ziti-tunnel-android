@@ -114,19 +114,6 @@ dependencies {
     implementation fileTree(include: ["*.jar"], dir: "libs")
     implementation(project(":tunnel"))
 
-    implementation(libs.ziti.android) {
-        transitive = true
-        artifact {
-            type = "aar"
-        }
-        exclude(module: "jna")
-    }
-    implementation(libs.jna) {
-        artifact {
-            type = "aar"
-        }
-    }
-
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.datastore.prefs)
     implementation(libs.slf4j.android)
@@ -134,28 +121,13 @@ dependencies {
     implementation(libs.kotlin)
     implementation(libs.coroutines.android)
 
-
     implementation(libs.material)
     implementation(libs.constraintlayout)
 
     implementation(libs.zxing.android.embedded)
 
-    implementation(libs.pcap4j.core){
-        transitive = false
-        exclude(group: "net.java.dev.jna", module: "jna")
-    }
-    implementation(libs.pcap4j.packetfactory.static) {
-        exclude(group: "net.java.dev.jna", module: "jna")
-    }
-
     implementation(libs.lifecycle.extensions)
     implementation(libs.appcompat)
     implementation(libs.lifecycle.livedata.ktx)
     implementation(libs.lifecycle.viewmodel.ktx)
-
-    testImplementation(libs.hamcrest.core)
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.test.runner)
-    androidTestImplementation(libs.test.rules)
-    androidTestImplementation(libs.espresso.core)
 }
