@@ -43,14 +43,13 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
         log
 )
 
-set(ZITI_SDK_VERSION 2.0.0-alpha11)
 if (tunnel_DIR)
     add_subdirectory(${tunnel_DIR} ${CMAKE_CURRENT_BINARY_DIR}/tunnel-sdk)
 else (tunnel_DIR)
     include(FetchContent)
     FetchContent_Declare(tun-sdk
             GIT_REPOSITORY http://github.com/openziti/ziti-tunnel-sdk-c.git
-            GIT_TAG tunnel-enroll-cmd
+            GIT_TAG main
     )
     FetchContent_MakeAvailable(tun-sdk)
 endif ()
