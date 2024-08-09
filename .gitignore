@@ -3,15 +3,12 @@
 /local.properties
 .DS_Store
 build/
+.cxx/
 /captures
 .externalNativeBuild
 
 .idea/*
-!.idea/vcs.xml
 !.idea/runConfigurations/
 !.idea/copyright/
 libs/
 release/
-tunnel/.idea/
-tunnel/local.properties
-tunnel/gradle/wrapper/

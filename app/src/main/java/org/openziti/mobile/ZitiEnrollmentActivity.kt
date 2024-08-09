@@ -8,7 +8,6 @@ import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
@@ -16,7 +15,6 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.zxing.BarcodeFormat
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
-import org.openziti.android.Ziti
 import org.openziti.mobile.databinding.ActivityZitiEnrollmentBinding
 
 
@@ -53,7 +51,7 @@ class ZitiEnrollmentActivity : AppCompatActivity() {
             if (it.contents == null) {
                 Toast.makeText(this@ZitiEnrollmentActivity, "Cancelled", Toast.LENGTH_LONG).show()
             } else {
-                Ziti.enrollZiti(it.contents.toByteArray())
+                enroll(it.contents)
             }
         }
         binding.QRButtonArea.setOnClickListener { qrEnroll(scanLauncher) }
@@ -91,9 +89,15 @@ class ZitiEnrollmentActivity : AppCompatActivity() {
         scanLauncher.launch(scanOptions)
     }
 
+    fun enroll(jwt: String) {
+        (application as ZitiMobileEdgeApp).model.enroll(jwt)
+    }
+
     fun enroll(jwtUri: Uri) {
-        Log.i(TAG, "enrolling with $jwtUri")
-        Ziti.enrollZiti(jwtUri)
+        application.contentResolver.openInputStream(jwtUri)?.reader()?.use {
+            enroll(it.readText())
+            this.finish()
+        }
     }
 
     override fun onSupportNavigateUp(): Boolean {

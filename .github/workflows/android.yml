@@ -17,20 +17,38 @@ jobs:
       with:
         fetch-depth: '0'
 
-    - name: Build App
+#    - name: Build App
+#      uses: ./.github/actions/gradle
+#      with:
+#        buildType: Debug
+#        runTests: true
+#        keystore: ${{ secrets.RELEASE_KEYSTORE }}
+#        keystorePassword: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+
+    - name: Build App (Release)
       uses: ./.github/actions/gradle
       with:
-        buildType: Debug
-        runTests: true
+        buildType: Release
+        runTests: false
         keystore: ${{ secrets.RELEASE_KEYSTORE }}
         keystorePassword: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
 
-    - uses: actions/upload-artifact@v4
-      with:
-        name: ziti-mobile-edge-debug.aab
-        path: app/build/outputs/bundle/debug/*.aab
+#    - uses: actions/upload-artifact@v4
+#      with:
+#        name: ziti-mobile-edge-debug.aab
+#        path: app/build/outputs/bundle/debug/*.aab
 
     - uses: actions/upload-artifact@v4
       with:
-        name: ziti-mobile-edge-debug.apk
-        path: app/build/outputs/apk/debug/*.apk
+        name: ziti-mobile-edge-release.aab
+        path: app/build/outputs/bundle/release/*.aab
+
+#    - uses: actions/upload-artifact@v4
+#      with:
+#        name: ziti-mobile-edge-debug.apk
+#        path: app/build/outputs/apk/debug/*.apk
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: ziti-mobile-edge-release.apk
+        path: app/build/outputs/apk/release/*.apk

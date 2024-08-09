@@ -8,9 +8,47 @@ plugins {
     alias(libs.plugins.kotlin.android)
 }
 
-version = parent.version
 
-def vc = versionCode
+def getCommitHash = { ->
+    try {
+        def stdout = new ByteArrayOutputStream()
+        exec {
+            commandLine 'git', 'log', '-1', '--format=%h'
+            standardOutput = stdout
+        }
+        return stdout.toString().trim()
+    }
+    catch (ignored) {
+        return null
+    }
+}
+
+def getVersionName = { ->
+    try {
+        def stdout = new ByteArrayOutputStream()
+        exec {
+            commandLine 'git', 'describe', '--tags', '--dirty'
+            standardOutput = stdout
+        }
+        return stdout.toString().trim()
+    }
+    catch (ignored) {
+        return null
+    }
+}
+
+def getVersionCode =  { ->
+    def stdout = new ByteArrayOutputStream()
+    exec {
+        commandLine("git", "rev-list", "--first-parent", "--count", "origin/main")
+        standardOutput = stdout
+    }
+    return Integer.parseInt(stdout.toString().trim())
+}
+
+def gitHash = getCommitHash()
+def gitBranch = getVersionName()
+version = getVersionName()
 
 android {
     namespace = "org.openziti.mobile"
@@ -29,7 +67,7 @@ android {
         applicationId "org.openziti.mobile"
         minSdkVersion 26
         targetSdkVersion 34
-        versionCode vc
+        versionCode getVersionCode()
         versionName "${project.version}"
 
         buildConfigField "String", "GIT_COMMIT", "\"${gitHash}\""
@@ -74,47 +112,22 @@ android {
 
 dependencies {
     implementation fileTree(include: ["*.jar"], dir: "libs")
+    implementation(project(":tunnel"))
 
-    implementation(libs.ziti.android) {
-        transitive = true
-        artifact {
-            type = "aar"
-        }
-        exclude(module: "jna")
-    }
-    implementation(libs.jna) {
-        artifact {
-            type = "aar"
-        }
-    }
-
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.datastore.prefs)
     implementation(libs.slf4j.android)
 
     implementation(libs.kotlin)
     implementation(libs.coroutines.android)
-
 
     implementation(libs.material)
     implementation(libs.constraintlayout)
 
     implementation(libs.zxing.android.embedded)
 
-    implementation(libs.pcap4j.core){
-        transitive = false
-        exclude(group: "net.java.dev.jna", module: "jna")
-    }
-    implementation(libs.pcap4j.packetfactory.static) {
-        exclude(group: "net.java.dev.jna", module: "jna")
-    }
-
     implementation(libs.lifecycle.extensions)
     implementation(libs.appcompat)
     implementation(libs.lifecycle.livedata.ktx)
     implementation(libs.lifecycle.viewmodel.ktx)
-
-    testImplementation(libs.hamcrest.core)
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.test.runner)
-    androidTestImplementation(libs.test.rules)
-    androidTestImplementation(libs.espresso.core)
 }

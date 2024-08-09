@@ -1,0 +1,15 @@
+{
+  "name": "ziti-native-deps",
+  "version-semver": "1.0.0",
+  "dependencies": [
+    "libuv",
+    "openssl",
+    "zlib",
+    "llhttp",
+    "libsodium",
+    "protobuf-c",
+    "json-c"
+  ],
+  "overrides": [],
+  "builtin-baseline": "1de2026f28ead93ff1773e6e680387643e914ea1"
+}
