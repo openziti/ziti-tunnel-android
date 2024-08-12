@@ -127,6 +127,7 @@ void init_tunnel(JNIEnv *env, jobject self, jstring app, jstring ver) {
     loop = uv_loop_new();
     ziti_log_init(loop, DEBUG, android_logger);
     ziti_tunnel_set_logger(ziti_logger);
+    ziti_set_refresh_interval(300);
     uv_async_init(loop, &notify, notify_cb);
     uv_pipe_init(loop, &cmd_pipe, 0);
     uv_pipe_init(loop, &event_pipe, 0);
