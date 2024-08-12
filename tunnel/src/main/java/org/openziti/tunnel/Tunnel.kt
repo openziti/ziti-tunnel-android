@@ -155,4 +155,6 @@ class Tunnel(app: Application, ): Runnable {
 
     external fun startNetIf(fd: Int)
     external fun stopNetIf()
+    external fun getUpRate(): Double
+    external fun getDownRate(): Double
 }

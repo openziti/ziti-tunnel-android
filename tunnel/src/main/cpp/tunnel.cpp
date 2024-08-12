@@ -17,6 +17,8 @@
 
 #include "netif.h"
 
+extern jdouble JNICALL get_up_rate(JNIEnv *, jobject);
+extern jdouble JNICALL get_down_rate(JNIEnv *, jobject);
 
 static void JNICALL start_netif(JNIEnv *, jobject, jint);
 static void JNICALL stop_netif(JNIEnv *, jobject);
@@ -32,7 +34,6 @@ static jstring JNICALL zitiTunnelVersion(JNIEnv *env, jclass );
 static void notify_cb(uv_async_t *async);
 static void android_logger(int, const char *loc, const char *msg, size_t msglen);
 static void on_event(const base_event *);
-
 
 struct cmd_entry {
     netif_cmd netifCmd;
@@ -78,6 +79,8 @@ JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 
     // Register your class' native methods.
     static const JNINativeMethod methods[] = {
+            {"getUpRate",         "()D",                                                       (void *) get_up_rate},
+            {"getDownRate",       "()D",                                                       (void *) get_down_rate},
             {"setDNSrange",       "(Ljava/lang/String;Ljava/lang/String;)V",                   (void *) set_dns},
             {"run",               "()V",                                                       (void *) run_tunnel},
             {"tlsuvVersion",      "()Ljava/lang/String;",                                      (void *) (tlsuvVersion)},
@@ -124,6 +127,7 @@ void init_tunnel(JNIEnv *env, jobject self, jstring app, jstring ver) {
     loop = uv_loop_new();
     ziti_log_init(loop, DEBUG, android_logger);
     ziti_tunnel_set_logger(ziti_logger);
+    ziti_set_refresh_interval(300);
     uv_async_init(loop, &notify, notify_cb);
     uv_pipe_init(loop, &cmd_pipe, 0);
     uv_pipe_init(loop, &event_pipe, 0);

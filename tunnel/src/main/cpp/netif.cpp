@@ -2,8 +2,12 @@
  * Copyright (c) 2024 NetFoundry. All rights reserved.
  */
 
+#include <jni.h>
+
 #include <ziti/ziti_tunnel.h>
 #include <ziti/ziti_log.h>
+#include <ziti/enums.h>
+#include "metrics.h"
 
 #include "netif.h"
 
@@ -13,6 +17,9 @@ struct netif_handle_s {
 
     uv_loop_t *loop;
     uv_pipe_t *if_pipe;
+
+    rate_t up;
+    rate_t down;
 };
 
 static netif_handle_s NETIF;
@@ -21,6 +28,8 @@ static ssize_t netif_write(netif_handle, const void *b, size_t len);
 static int add_route(netif_handle, const char *string1);
 static int del_route(netif_handle, const char *string2);
 static int commit(netif_handle, uv_loop_t *pS);
+
+
 
 
 static netif_driver_t android_netif = {
@@ -43,6 +52,8 @@ static int netif_setup(netif_handle, uv_loop_t *loop, packet_cb on_packet, void 
     NETIF.loop = loop;
     NETIF.on_packet = on_packet;
     NETIF.on_packet_ctx = ctx;
+    metrics_rate_init(&NETIF.up, INSTANT);
+    metrics_rate_init(&NETIF.down, INSTANT);
     return 0;
 }
 
@@ -65,6 +76,7 @@ static int commit(netif_handle h, uv_loop_t *l) {
 static ssize_t netif_write(netif_handle, const void *b, size_t len) {
     if (NETIF.if_pipe) {
         auto buf = uv_buf_init((char*)b, len);
+        metrics_rate_update(&NETIF.down, (long)len);
         return uv_try_write((uv_stream_t *)NETIF.if_pipe, &buf, 1);
     }
     return -1;
@@ -78,9 +90,18 @@ static void netif_alloc(uv_handle_t *, size_t i, uv_buf_t *b) {
 
 static void netif_read(uv_stream_t *, ssize_t len, const uv_buf_t *b) {
     if (len > 0) {
+        metrics_rate_update(&NETIF.up, (long)len);
         NETIF.on_packet(b->base, len, NETIF.on_packet_ctx);
     }
 }
+
+jdouble JNICALL get_up_rate(JNIEnv *, jobject) {
+    return metrics_rate_get(&NETIF.up);
+}
+jdouble JNICALL get_down_rate(JNIEnv *, jobject) {
+    return metrics_rate_get(&NETIF.down);
+}
+
 extern int android_netif_do(netif_cmd cmd, int fd) {
     if (cmd == netif_Start) {
         ZITI_LOG(INFO, "starting android netif");
