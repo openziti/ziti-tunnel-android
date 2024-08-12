@@ -87,7 +87,7 @@ class TunnelModel(
 
         val zitiID: String by lazy {
             with(URI(id)){
-                val str = userInfo ?: query?.removePrefix("/")
+                val str = userInfo ?: path?.removePrefix("/")
                 if (str == null) {
                     Log.w("model", "identity[$id] bad format")
                     id
