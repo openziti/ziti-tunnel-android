@@ -94,15 +94,28 @@ class ZitiVPNService : VpnService(), CoroutineScope {
     }
 
     private fun setNetworks() {
-        val dns  = connMgr.activeNetwork?.let {
-            // tunneler fails with IPv6 DNS upstream
-            connMgr.getLinkProperties(it)?.dnsServers?.filterIsInstance<Inet4Address>()?.
-            firstOrNull()?.toString()?.removePrefix("/")
-        } ?: "1.1.1.1"
+        val props = connMgr.activeNetwork?.let {
+            connMgr.getLinkProperties(it)
+        }
 
-        Log.i(TAG, "setting upstream DNS[$dns]")
-        val model = (application as ZitiMobileEdgeApp).model
-        model.setUpstreamDNS(dns)
+        props?.let {
+            val addresses = it.linkAddresses
+                .map { it.address }
+                .filter { !it.isAnyLocalAddress && !it.isLinkLocalAddress }
+
+            val dns = it.dnsServers
+
+            Log.i(TAG, "link addresses: $addresses")
+            Log.i(TAG, "link nameservers: $dns")
+
+            val upstream = dns.firstOrNull { a ->
+                addresses.first { it.javaClass == a.javaClass } != null }
+
+            upstream?.toString()?.removePrefix("/")?.let {
+                val model = (application as ZitiMobileEdgeApp).model
+                Log.i(TAG, "local upstream DNS[$it]")
+            }
+        }
     }
 
     private val networkMonitor = object : ConnectivityManager.NetworkCallback() {
@@ -216,12 +229,7 @@ class ZitiVPNService : VpnService(), CoroutineScope {
         val model = (application as ZitiMobileEdgeApp).model
         tun.stopNetworkInterface()
 
-        val cm = application.getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
-        val netDns = cm.activeNetwork?.let {
-            cm.getLinkProperties(it)?.dnsServers?.firstOrNull()?.toString()?.removePrefix("/")
-        } ?: "1.1.1.1"
-
-        model.setUpstreamDNS(netDns)
+        model.setUpstreamDNS("1.1.1.1")
 
         Log.i(TAG, "startTunnel()")
         try {
