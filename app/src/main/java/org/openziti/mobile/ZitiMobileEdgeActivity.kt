@@ -42,6 +42,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.openziti.mobile.databinding.DashboardBinding
+import org.openziti.mobile.debug.DebugInfo
 import org.openziti.mobile.debug.DebugInfoActivity
 import java.util.Timer
 import java.util.TimerTask
@@ -350,7 +351,8 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
         }
 
         FeedbackButton.setOnClickListener {
-            // TODO startActivity(Intent.createChooser(Ziti.sendFeedbackIntent(), "Send Email"))
+            startActivity(Intent.createChooser(DebugInfo.feedbackIntent(app = ZitiMobileEdgeApp.app),
+                "Send Email"))
         }
         SupportButton.setOnClickListener {
             launchUrl("https://support.netfoundry.io")
@@ -425,9 +427,9 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
             toggleSlide(LogsPage, "logs")
         }
         PacketLogsButton.setOnClickListener {
-            LogTypeTitle.text = ("Packet Tunnel Logs")
-            LogDetails.text = log_tunneler
-            toggleSlide(LogPage, "logdetails")
+            val intent = Intent(it.context, DebugInfoActivity::class.java)
+            startActivity(intent)
+            true
         }
 
         // Dashboard Buttons

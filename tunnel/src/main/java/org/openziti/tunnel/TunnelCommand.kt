@@ -7,7 +7,7 @@ package org.openziti.tunnel
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonElement
 
 enum class CMD {
     ZitiDump,
@@ -58,6 +58,10 @@ enum class CMD {
     @SerialName("Config") val config: ZitiConfig,
 ): TunnelCommand(CMD.LoadIdentity)
 
+@Serializable data class Dump(
+    @SerialName("Identifier") val identifier: String
+): TunnelCommand(CMD.ZitiDump)
+
 @Serializable data class SetUpstreamDNS(
     val host: String,
     val port: Int = 53,
@@ -74,5 +78,5 @@ enum class CMD {
     @SerialName("Success") val success: Boolean,
     @SerialName("Code") val code: Int,
     @SerialName("Error") val error: String? = null,
-    @SerialName("Data") val data: JsonObject? = null,
+    @SerialName("Data") val data: JsonElement? = null,
 )

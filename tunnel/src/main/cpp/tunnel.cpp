@@ -26,9 +26,9 @@ static void JNICALL set_dns(JNIEnv *, jobject, jstring, jstring);
 static void JNICALL setup_ipc(JNIEnv *, jobject, jint, jint);
 static void JNICALL run_tunnel(JNIEnv *env, jobject);
 static void JNICALL execute_cmd(JNIEnv *, jobject, jstring, jstring, jobject);
-static jstring JNICALL tlsuvVersion(JNIEnv *env, jobject /* this */);
-static jstring JNICALL zitiSdkVersion(JNIEnv *env, jobject self);
-static jstring JNICALL zitiTunnelVersion(JNIEnv *env, jobject self);
+static jstring JNICALL tlsuvVersion(JNIEnv *env, jclass /* this */);
+static jstring JNICALL zitiSdkVersion(JNIEnv *env, jclass );
+static jstring JNICALL zitiTunnelVersion(JNIEnv *env, jclass );
 static void notify_cb(uv_async_t *async);
 static void android_logger(int, const char *loc, const char *msg, size_t msglen);
 static void on_event(const base_event *);
@@ -123,6 +123,7 @@ void init_tunnel(JNIEnv *env, jobject self, jstring app, jstring ver) {
     tunnelMethods.tunnel = env->NewGlobalRef(self);
     loop = uv_loop_new();
     ziti_log_init(loop, DEBUG, android_logger);
+    ziti_tunnel_set_logger(ziti_logger);
     uv_async_init(loop, &notify, notify_cb);
     uv_pipe_init(loop, &cmd_pipe, 0);
     uv_pipe_init(loop, &event_pipe, 0);
@@ -146,15 +147,15 @@ static void JNICALL setup_ipc(JNIEnv *, jobject, jint cmd_fd, jint event_fd) {
 }
 
 
-jstring JNICALL tlsuvVersion(JNIEnv *env, jobject) {
+jstring JNICALL tlsuvVersion(JNIEnv *env, jclass) {
     return env->NewStringUTF(tlsuv_version());
 }
 
-jstring JNICALL zitiSdkVersion(JNIEnv *env, jobject) {
+jstring JNICALL zitiSdkVersion(JNIEnv *env, jclass) {
     return env->NewStringUTF(ziti_get_version()->version);
 }
 
-jstring JNICALL zitiTunnelVersion(JNIEnv *env, jobject) {
+jstring JNICALL zitiTunnelVersion(JNIEnv *env, jclass) {
     return env->NewStringUTF(ziti_tunneler_version());
 }
 

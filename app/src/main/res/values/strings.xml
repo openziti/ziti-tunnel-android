@@ -41,7 +41,7 @@
     <string name="logs">Logs</string>
     <string name="tunnelsub">Advanced tunnel settings that will impact tunnel availability and performance.</string>
     <string name="logssub">Diagnostic logs that help us debug if you are having problems.</string>
-    <string name="logspacket">Packet Tunnel</string>
+    <string name="logspacket">Debug Info</string>
     <string name="logspacketsub">Log messages for the packet tunneling extension</string>
     <string name="logsapplication">Application</string>
     <string name="logsapplicationsub">Log Messages for this application</string>
@@ -57,6 +57,7 @@
 
     <!-- Remove the following once Reskinned -->
     <string name="app_name">Ziti Mobile Edge</string>
+    <string name="supportEmailSubject">OpenZiti Support(Android)</string>
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="main_title">Tap To Connect</string>

@@ -12,8 +12,6 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import org.openziti.mobile.databinding.FragmentDebugInfoBinding
-import java.io.PrintWriter
-import java.io.StringWriter
 
 /**
  * A placeholder fragment containing a simple view.
@@ -30,11 +28,11 @@ class DebugInfoFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        pageViewModel = ViewModelProvider(this).get(PageViewModel::class.java)
-
-        arguments?.getString(SECTION_ARG)?.let {
-            val text = "TODO"
-            pageViewModel.setText(text.toString())
+        pageViewModel = ViewModelProvider(this)[PageViewModel::class.java]
+        val dia = activity as DebugInfoActivity
+        arguments?.getString(SECTION_ARG)?.let { name ->
+            val info = dia.getSectionProvider(name)
+            pageViewModel.setText(info?.dump(name)?.toString() ?: "nothing to see")
         }
     }
 

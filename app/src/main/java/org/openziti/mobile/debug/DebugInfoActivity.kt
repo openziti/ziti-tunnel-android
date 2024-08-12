@@ -12,9 +12,12 @@ import org.openziti.mobile.databinding.ActivityDebugInfoBinding
 
 class DebugInfoActivity : FragmentActivity() {
 
-    internal val contentMap: List<Pair<String, Any>>
+    internal val contentMap: Map<String, DebugInfo>
     init {
-        contentMap = listOf("TODO" to "TODO")
+        val providers = DebugInfo.providers
+        contentMap = providers.flatMap { p ->
+            p.names.map { n -> n to p }
+        }.toMap()
     }
 
     private lateinit var binding: ActivityDebugInfoBinding
@@ -27,7 +30,7 @@ class DebugInfoActivity : FragmentActivity() {
 
         val viewPager = binding.viewPager
         val adapter = SectionsPagerAdapter(this).apply {
-            names = contentMap.map{ it.first }.toList()
+            names = contentMap.keys.toList()
         }
 
         viewPager.adapter = adapter
@@ -39,4 +42,7 @@ class DebugInfoActivity : FragmentActivity() {
         }.attach()
     }
 
+    internal fun getSectionProvider(section: String): DebugInfo? {
+        return contentMap[section]
+    }
 }
