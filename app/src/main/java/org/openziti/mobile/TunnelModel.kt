@@ -5,7 +5,6 @@
 package org.openziti.mobile
 
 import android.content.Context
-import android.net.Uri
 import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -16,8 +15,8 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -70,11 +69,9 @@ class TunnelModel(
         }
     }
 
-    val scope = CoroutineScope(Dispatchers.IO)
-
     data class NetworkStats(val up: Double, val down: Double)
     fun stats(): LiveData<NetworkStats> = stats
-    internal val stats = MutableLiveData(NetworkStats(1.0,1.0))
+    internal val stats = MutableLiveData(NetworkStats(0.0,0.0))
 
     fun identities(): LiveData<List<TunnelIdentity>> = identitiesData
     private val identitiesData = MutableLiveData<List<TunnelIdentity>>()
@@ -146,8 +143,14 @@ class TunnelModel(
             tunnel.setupDNS(dns, range)
             tunnel.start()
         }
-        scope.launch {
+        viewModelScope.launch {
             tunnel.events().collect(this@TunnelModel::processEvent)
+        }
+        viewModelScope.launch {
+            while(true) {
+                delay(1_000)
+                stats.postValue(NetworkStats(tunnel.getUpRate(), tunnel.getDownRate()))
+            }
         }
 
         val aliases = Keychain.store.aliases().toList()
