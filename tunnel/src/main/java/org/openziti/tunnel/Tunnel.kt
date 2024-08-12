@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.time.Duration
@@ -63,9 +64,12 @@ class Tunnel(app: Application, ): Runnable {
         }
     }
 
-    fun processCmd(cmd: TunnelCommand) = CompletableFuture<TunnelResult>().apply {
+    fun processCmd(cmd: TunnelCommand): CompletableFuture<JsonElement?> = CompletableFuture<TunnelResult>().apply {
         val data = Json.encodeToString(cmd)
         executeCommand(cmd.cmd.name, data, this)
+    }.thenApply {
+        if (!it.success) throw Exception(it.error)
+        it.data
     }
 
     fun start() {
@@ -106,6 +110,13 @@ class Tunnel(app: Application, ): Runnable {
         init {
             System.loadLibrary("tunnel")
         }
+        @JvmStatic
+        external fun tlsuvVersion(): String
+        @JvmStatic
+        external fun zitiSdkVersion(): String
+        @JvmStatic
+        external fun zitiTunnelVersion(): String
+
     }
 
     private var startTime: TimeMark? = null
@@ -137,9 +148,6 @@ class Tunnel(app: Application, ): Runnable {
     external fun initNative(app: String, version: String)
     external fun setDNSrange(dns: String, range: String)
     external fun setupIPC(cmdFD: Int, eventDF: Int)
-    external fun tlsuvVersion(): String
-    external fun zitiSdkVersion(): String
-    external fun zitiTunnelVersion(): String
 
     external fun executeCommand(cmd: String, data: String, ctx: Any)
 

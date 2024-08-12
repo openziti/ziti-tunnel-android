@@ -5,6 +5,7 @@
 package org.openziti.mobile
 
 import android.content.Context
+import android.net.Uri
 import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -22,9 +23,14 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.jsonPrimitive
 import org.openziti.tunnel.APIEvent
 import org.openziti.tunnel.ContextEvent
+import org.openziti.tunnel.Dump
 import org.openziti.tunnel.Enroll
 import org.openziti.tunnel.Event
 import org.openziti.tunnel.Keychain
@@ -34,7 +40,6 @@ import org.openziti.tunnel.Service
 import org.openziti.tunnel.ServiceEvent
 import org.openziti.tunnel.SetUpstreamDNS
 import org.openziti.tunnel.Tunnel
-import org.openziti.tunnel.TunnelResult
 import org.openziti.tunnel.ZitiConfig
 import org.openziti.tunnel.ZitiID
 import org.openziti.tunnel.toPEM
@@ -82,6 +87,12 @@ class TunnelModel(
     }
 
     class TunnelIdentity(val id: String, val tunnelModel: TunnelModel): ViewModel() {
+
+        val zitiID: String by lazy {
+            with(URI(id)){
+                userInfo ?: query.removePrefix("/")
+            }
+        }
 
         fun name(): LiveData<String> = name
         internal val name = MutableLiveData(id)
@@ -168,16 +179,13 @@ class TunnelModel(
     private fun loadConfig(ident: String, cfg: ZitiConfig) {
         Log.i("model", "loading identity[$ident]")
         val cmd = LoadIdentity(ident, cfg)
-        tunnel.processCmd(cmd).handleAsync { res: TunnelResult?, ex: Throwable? ->
-            ex?.let {
-                Log.w("model", "failed to execute", it)
-            }
-            res?.let {
-                if (it.success) {
-                    identities[ident] = TunnelIdentity(ident, this)
-                    identitiesData.postValue(identities.values.toList())
-                }
-                Log.i("model", "load result[$ident]: $it")
+        tunnel.processCmd(cmd).handleAsync { json: JsonElement? , ex: Throwable? ->
+            if (ex != null) {
+                Log.w("model", "failed to execute", ex)
+            } else  {
+                identities[ident] = TunnelIdentity(ident, this)
+                identitiesData.postValue(identities.values.toList())
+                Log.i("model", "load result[$ident]: $json")
             }
         }
     }
@@ -208,20 +216,15 @@ class TunnelModel(
         }
     }
 
-    fun setUpstreamDNS(server: String) {
-        tunnel.processCmd(SetUpstreamDNS(server)).handleAsync { _, ex ->
-            ex?.let { Log.i("model", "failed to set upstream DNS", it)
-            }
-        }
-    }
+    fun setUpstreamDNS(server: String): CompletableFuture<Unit> =
+        tunnel.processCmd(SetUpstreamDNS(server)).thenApply {}
 
     fun enroll(jwt: String): CompletableFuture<ZitiConfig?>  {
         val cmd = Enroll(
             jwt = jwt,
             useKeychain = true)
         val future = tunnel.processCmd(cmd).thenApply {
-            if (!it.success) throw Exception(it.error)
-            Json.decodeFromJsonElement<ZitiConfig>(it.data!!)
+            Json.decodeFromJsonElement<ZitiConfig>(it!!)
         }
 
         future.thenApply { cfg ->
@@ -233,10 +236,17 @@ class TunnelModel(
         return future
     }
 
+    fun dumpIdentity(id: String): CompletableFuture<String> =
+        tunnel.processCmd(Dump(id)).thenApply { json ->
+            if (json is JsonObject && json[id] is JsonPrimitive) {
+                json[id]?.jsonPrimitive?.content
+            } else {
+                json?.toString() ?: "no data"
+            }
+        }
+
     private fun enableIdentity(id: String, on: Boolean) =
-         tunnel.processCmd(OnOffCommand(id, on)).thenAccept {
-             if (!it.success) throw Exception(it.error)
-         }
+         tunnel.processCmd(OnOffCommand(id, on)).thenAccept {}
 
     private fun deleteIdentity(identifier: String) {
         identities.remove(identifier)

@@ -8,6 +8,7 @@ import android.app.Application
 import android.content.Intent
 import android.util.Log
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import org.openziti.mobile.debug.DebugInfo
 
 import org.openziti.tunnel.Tunnel
 
@@ -27,13 +28,14 @@ class ZitiMobileEdgeApp: Application() {
     override fun onCreate() {
         super.onCreate()
         tunnel = Tunnel(this)
-        Log.i(this.javaClass.simpleName, "native[tlsuv]: ${tunnel.tlsuvVersion()}")
-        Log.i(this.javaClass.simpleName, "native[ziti]: ${tunnel.zitiSdkVersion()}")
-        Log.i(this.javaClass.simpleName, "native[ziti-tunnel]: ${tunnel.zitiTunnelVersion()}")
+        Log.i(this.javaClass.simpleName, "native[tlsuv]: ${Tunnel.tlsuvVersion()}")
+        Log.i(this.javaClass.simpleName, "native[ziti]: ${Tunnel.zitiSdkVersion()}")
+        Log.i(this.javaClass.simpleName, "native[ziti-tunnel]: ${Tunnel.zitiTunnelVersion()}")
 
         model = TunnelModel(tunnel, this)
 
         app = this
+        DebugInfo.init(this)
     }
 
     internal fun notifyRouteChange() {
