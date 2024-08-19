@@ -33,7 +33,7 @@ jobs:
     - uses: actions/upload-artifact@v4
       with:
         name: ziti-mobile-edge-${{ env.BUILD_TYPE }}.aab
-        path: app/build/outputs/bundle/${{ env.BUILD_TYPE }}/*.aab
+        path: app/build/outputs/bundle/*/*.aab
 
     - uses: actions/upload-artifact@v4
       with:
