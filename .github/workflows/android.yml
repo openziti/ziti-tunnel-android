@@ -12,7 +12,7 @@ jobs:
     uses: ./.github/workflows/build-dependencies.yml
   build:
     env:
-      BUILD_TYPE: ${{ secret.RELEASE_KEYSTORE == '' && 'Debug' || 'Release' }}
+      BUILD_TYPE: ${{ secrets.RELEASE_KEYSTORE == '' && 'Debug' || 'Release' }}
     runs-on: ubuntu-latest
     needs:
       - build-deps
