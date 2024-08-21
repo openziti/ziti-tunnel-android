@@ -147,6 +147,16 @@ class ZitiVPNService : VpnService(), CoroutineScope {
             .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
             .build()
         connMgr.registerNetworkCallback(netReq, networkMonitor)
+        connMgr.addDefaultNetworkActiveListener {
+            val net = connMgr.activeNetwork
+            val cap = connMgr.getNetworkCapabilities(net)
+            val props = connMgr.getLinkProperties(net)
+
+            Log.i(TAG, "active[$net] cap=$cap prop=$props")
+            if (net != null && props != null) {
+                setUpstreamDNS(net, props)
+            }
+        }
 
         monitor = launch {
             launch {
