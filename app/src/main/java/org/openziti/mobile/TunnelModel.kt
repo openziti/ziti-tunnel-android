@@ -35,6 +35,7 @@ import org.openziti.tunnel.Event
 import org.openziti.tunnel.Keychain
 import org.openziti.tunnel.LoadIdentity
 import org.openziti.tunnel.OnOffCommand
+import org.openziti.tunnel.RefreshIdentity
 import org.openziti.tunnel.Service
 import org.openziti.tunnel.ServiceEvent
 import org.openziti.tunnel.SetUpstreamDNS
@@ -111,6 +112,12 @@ class TunnelModel(
         private val serviceMap = mutableMapOf<String, Service>()
         private val services = MutableLiveData<List<Service>>()
         fun services(): LiveData<List<Service>> = services
+
+        fun refresh() {
+            tunnelModel.refreshIdentity(id).handleAsync { _, ex ->
+                Log.w(TAG, "failed refresh", ex)
+            }
+        }
 
         fun setEnabled(on: Boolean) {
             tunnelModel.enableIdentity(id, on).thenAccept {
@@ -253,6 +260,9 @@ class TunnelModel(
             }
         }
 
+    private fun refreshIdentity(id: String) =
+        tunnel.processCmd(RefreshIdentity(id)).thenAccept{}
+
     private fun enableIdentity(id: String, on: Boolean) =
          tunnel.processCmd(OnOffCommand(id, on)).thenAccept {}
 
@@ -266,7 +276,7 @@ class TunnelModel(
         runCatching {
             Keychain.store.deleteEntry(identifier)
         }.onFailure {
-            Log.w("model", "failed to remove entry", it)
+            Log.w(TAG, "failed to remove entry", it)
         }
 
         val caCerts = Keychain.store.aliases().toList().filter { it.startsWith("ziti:$id/") }
@@ -279,6 +289,7 @@ class TunnelModel(
     }
 
     companion object {
+        val TAG = TunnelModel::class.simpleName
         val defaultDNS = "100.64.0.2"
         val defaultRange = "100.64.0.0/10"
     }

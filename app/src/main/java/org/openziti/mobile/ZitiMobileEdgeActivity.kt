@@ -472,6 +472,7 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
                 }
 
                 identityitem.setOnClickListener {
+                    identityitem.ctxModel.refresh()
                     toggleSlide(binding.IdentityDetailsPage.root, "identity")
                     ctx.enabled().observe(this) {
                         IdOnOffSwitch.isChecked = it

@@ -36,6 +36,8 @@ class IdentityItemView(context: Context) : RelativeLayout(context) {
     }
 
     fun setModel(ztx: TunnelModel.TunnelIdentity) {
+        ztx.refresh()
+
         ctxModel = ztx
         ztx.controller().observe(owner) {
             binding.IdentityServer.text = it

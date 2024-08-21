@@ -11,6 +11,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.net.ConnectivityManager
+import android.net.LinkProperties
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
@@ -32,7 +33,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.openziti.tunnel.toRoute
 import java.io.Writer
-import java.net.Inet4Address
 import java.net.Inet6Address
 import java.time.Duration
 import java.util.concurrent.Executors
@@ -93,28 +93,23 @@ class ZitiVPNService : VpnService(), CoroutineScope {
         }
     }
 
-    private fun setNetworks() {
-        val props = connMgr.activeNetwork?.let {
-            connMgr.getLinkProperties(it)
-        }
+    private fun setUpstreamDNS(net: Network, props: LinkProperties) {
+        val addresses = props.linkAddresses
+            .map { it.address }
+            .filter { !it.isAnyLocalAddress && !it.isLinkLocalAddress }
 
-        props?.let {
-            val addresses = it.linkAddresses
-                .map { it.address }
-                .filter { !it.isAnyLocalAddress && !it.isLinkLocalAddress }
+        val dns = props.dnsServers
 
-            val dns = it.dnsServers
+        Log.i(TAG, "link[$net] addresses: $addresses")
+        Log.i(TAG, "link[$net] nameservers: $dns")
 
-            Log.i(TAG, "link addresses: $addresses")
-            Log.i(TAG, "link nameservers: $dns")
+        val upstream = dns.firstOrNull { a ->
+            addresses.first { it.javaClass == a.javaClass } != null }
 
-            val upstream = dns.firstOrNull { a ->
-                addresses.first { it.javaClass == a.javaClass } != null }
-
-            upstream?.toString()?.removePrefix("/")?.let {
-                val model = (application as ZitiMobileEdgeApp).model
-                Log.i(TAG, "local upstream DNS[$it]")
-            }
+        upstream?.toString()?.removePrefix("/")?.let { addr ->
+            val model = (application as ZitiMobileEdgeApp).model
+            Log.i(TAG, "local upstream DNS[$addr]")
+            model.setUpstreamDNS(addr)
         }
     }
 
@@ -122,17 +117,22 @@ class ZitiVPNService : VpnService(), CoroutineScope {
         override fun onAvailable(network: Network) {
             val capabilities = connMgr.getNetworkCapabilities(network)
             Log.i(TAG, "network available: $network, caps:$capabilities")
-            allNetworks += network
+            Log.i(TAG, "active[${connMgr.activeNetwork}]")
         }
 
-        override fun onBlockedStatusChanged(network: Network, blocked: Boolean) {
-            Log.i(TAG, "network: $network is blocked[$blocked]")
-            setNetworks()
+        override fun onLinkPropertiesChanged(network: Network, linkProperties: LinkProperties) {
+            Log.i(TAG, "link change[$network], active[${connMgr.activeNetwork}]")
+            if (network == connMgr.activeNetwork) {
+                setUpstreamDNS(network, linkProperties)
+            }
         }
+
         override fun onLost(network: Network) {
-            Log.i(TAG, "network: $network is lost")
-            allNetworks -= network
-            setNetworks()
+            Log.i(TAG, "network: $network is lost, active[${connMgr.activeNetwork}]")
+        }
+
+        override fun onUnavailable() {
+            Log.i(TAG, "no available network")
         }
     }
 
@@ -147,7 +147,6 @@ class ZitiVPNService : VpnService(), CoroutineScope {
             .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
             .build()
         connMgr.registerNetworkCallback(netReq, networkMonitor)
-        connMgr.addDefaultNetworkActiveListener(this::setNetworks)
 
         monitor = launch {
             launch {
