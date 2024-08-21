@@ -50,21 +50,21 @@ import java.util.concurrent.CompletableFuture
 
 class TunnelModel(
     val tunnel: Tunnel,
-    val context: Context
+    val context: () -> Context
 ): ViewModel() {
     val Context.prefs: DataStore<Preferences> by preferencesDataStore("tunnel")
 
     val NAMESERVER = stringPreferencesKey("nameserver")
-    val zitiDNS = context.prefs.data.map {
+    val zitiDNS = context().prefs.data.map {
         it[NAMESERVER] ?: "100.64.0.2"
     }
     val RANGE = stringPreferencesKey("range")
-    val zitiRange = context.prefs.data.map {
+    val zitiRange = context().prefs.data.map {
         it[RANGE] ?: "100.64.0.0/10"
     }
 
     fun setDNS(server: String?, range: String?) = runBlocking {
-        context.prefs.edit { settings ->
+        context().prefs.edit { settings ->
             settings[NAMESERVER] = server ?: defaultDNS
             settings[RANGE] = range ?: defaultRange
         }
@@ -86,16 +86,11 @@ class TunnelModel(
 
     class TunnelIdentity(val id: String, val tunnelModel: TunnelModel): ViewModel() {
 
-        val zitiID: String by lazy {
+        val zitiID: String =
             with(URI(id)){
-                val str = userInfo ?: path?.removePrefix("/")
-                if (str == null) {
-                    Log.w("model", "identity[$id] bad format")
-                    id
-                } else
-                    str
-            }
-        }
+                userInfo ?: path?.removePrefix("/")
+            } ?: id
+
 
         fun name(): LiveData<String> = name
         internal val name = MutableLiveData(id)
