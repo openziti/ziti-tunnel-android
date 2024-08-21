@@ -25,6 +25,7 @@ enum class CMD {
     UpdateTunIpv4,
     ServiceControl,
     Status,
+    RefreshIdentity,
     RemoveIdentity,
     StatusChange,
     AddIdentity,
@@ -52,6 +53,10 @@ enum class CMD {
     @SerialName("Identifier") val identifier: String,
     val on: Boolean
 ) : TunnelCommand(CMD.IdentityOnOff)
+
+@Serializable data class RefreshIdentity(
+    @SerialName("Identifier") val identifier: String,
+): TunnelCommand(CMD.RefreshIdentity)
 
 @Serializable data class LoadIdentity(
     @SerialName("Identifier") val identifier: String,
