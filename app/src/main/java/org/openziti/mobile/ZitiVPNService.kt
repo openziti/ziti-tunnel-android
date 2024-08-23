@@ -33,6 +33,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.openziti.tunnel.toRoute
 import java.io.Writer
+import java.net.Inet4Address
 import java.net.Inet6Address
 import java.time.Duration
 import java.util.concurrent.Executors
@@ -98,19 +99,19 @@ class ZitiVPNService : VpnService(), CoroutineScope {
             .map { it.address }
             .filter { !it.isAnyLocalAddress && !it.isLinkLocalAddress }
 
-        val dns = props.dnsServers
-
         Log.i(TAG, "link[$net] addresses: $addresses")
-        Log.i(TAG, "link[$net] nameservers: $dns")
+        Log.i(TAG, "link[$net] nameservers: ${props.dnsServers}")
 
-        val upstream = dns.firstOrNull { a ->
-            addresses.first { it.javaClass == a.javaClass } != null }
+        val ipv4only = addresses.filterIsInstance<Inet6Address>().isEmpty()
 
-        upstream?.toString()?.removePrefix("/")?.let { addr ->
-            val model = (application as ZitiMobileEdgeApp).model
-            Log.i(TAG, "local upstream DNS[$addr]")
-            model.setUpstreamDNS(addr)
-        }
+        val dns =
+            if (ipv4only) props.dnsServers.filterIsInstance<Inet4Address>()
+            else props.dnsServers
+
+        val upstream = dns.map { it.toString().removePrefix("/") }.firstOrNull() ?: "1.1.1.1"
+        val model = (application as ZitiMobileEdgeApp).model
+        Log.i(TAG, "set upstream DNS[$upstream]")
+        model.setUpstreamDNS(upstream)
     }
 
     private val networkMonitor = object : ConnectivityManager.NetworkCallback() {
@@ -294,13 +295,5 @@ class ZitiVPNService : VpnService(), CoroutineScope {
     inner class ZitiVPNBinder: Binder() {
         fun isVPNActive() = tun.isActive()
         fun getUptime(): Duration = tun.getUptime().toJavaDuration()
-    }
-
-    fun dump(output: Writer) {
-        val state = if (tun.isActive()) "Running" else "Stopped"
-        output.appendLine("""supervisor:  ${coroutineContext.job}""")
-        output.appendLine("""monitor:     $monitor""")
-        output.appendLine("""tunnelState: $state""")
-        output.appendLine("""tunnelUptime:${tun.getUptime()}""")
     }
 }
