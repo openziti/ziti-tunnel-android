@@ -33,6 +33,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.openziti.tunnel.toRoute
 import java.io.Writer
+import java.net.Inet4Address
 import java.net.Inet6Address
 import java.time.Duration
 import java.util.concurrent.Executors
@@ -98,10 +99,14 @@ class ZitiVPNService : VpnService(), CoroutineScope {
             .map { it.address }
             .filter { !it.isAnyLocalAddress && !it.isLinkLocalAddress }
 
-        val dns = props.dnsServers
-
         Log.i(TAG, "link[$net] addresses: $addresses")
-        Log.i(TAG, "link[$net] nameservers: $dns")
+        Log.i(TAG, "link[$net] nameservers: ${props.dnsServers}")
+
+        val ipv4only = addresses.filterIsInstance<Inet6Address>().isEmpty()
+
+        val dns =
+            if (ipv4only) props.dnsServers.filterIsInstance<Inet4Address>()
+            else props.dnsServers
 
         val upstream = dns.map { it.toString().removePrefix("/") }.firstOrNull() ?: "1.1.1.1"
         val model = (application as ZitiMobileEdgeApp).model
