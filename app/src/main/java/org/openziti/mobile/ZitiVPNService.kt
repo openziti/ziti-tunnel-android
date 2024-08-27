@@ -108,7 +108,7 @@ class ZitiVPNService : VpnService(), CoroutineScope {
             if (ipv4only) props.dnsServers.filterIsInstance<Inet4Address>()
             else props.dnsServers
 
-        val upstream = dns.map { it.toString().removePrefix("/") }.firstOrNull() ?: "1.1.1.1"
+        val upstream = dns.map { it.toString().removePrefix("/") }
         val model = (application as ZitiMobileEdgeApp).model
         Log.i(TAG, "set upstream DNS[$upstream]")
         model.setUpstreamDNS(upstream)
@@ -239,7 +239,11 @@ class ZitiVPNService : VpnService(), CoroutineScope {
         val model = (application as ZitiMobileEdgeApp).model
         tun.stopNetworkInterface()
 
-        model.setUpstreamDNS("1.1.1.1")
+        connMgr.activeNetwork?.let { net ->
+            connMgr.getLinkProperties(net)?.let { props ->
+                setUpstreamDNS(net, props)
+            }
+        }
 
         Log.i(TAG, "startTunnel()")
         try {
