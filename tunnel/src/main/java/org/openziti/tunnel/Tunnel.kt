@@ -64,13 +64,14 @@ class Tunnel(app: Application, ): Runnable {
         }
     }
 
-    fun processCmd(cmd: TunnelCommand): CompletableFuture<JsonElement?> = CompletableFuture<TunnelResult>().apply {
-        val data = Json.encodeToString(cmd)
-        executeCommand(cmd.cmd.name, data, this)
-    }.thenApply {
-        if (!it.success) throw Exception(it.error)
-        it.data
-    }
+    inline fun <reified C: TunnelCommand> processCmd(cmd: C): CompletableFuture<JsonElement?> =
+        CompletableFuture<TunnelResult>().apply {
+            val data = cmd.toJson()
+            executeCommand(cmd.cmd.name, data, this)
+        }.thenApply {
+            if (!it.success) throw Exception(it.error)
+            it.data
+        }
 
     fun start() {
         val t = Thread(this, "native-tunnel")

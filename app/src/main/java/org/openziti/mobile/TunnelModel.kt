@@ -40,6 +40,7 @@ import org.openziti.tunnel.Service
 import org.openziti.tunnel.ServiceEvent
 import org.openziti.tunnel.SetUpstreamDNS
 import org.openziti.tunnel.Tunnel
+import org.openziti.tunnel.Upstream
 import org.openziti.tunnel.ZitiConfig
 import org.openziti.tunnel.ZitiID
 import org.openziti.tunnel.toPEM
@@ -226,8 +227,10 @@ class TunnelModel(
         }
     }
 
-    fun setUpstreamDNS(server: String): CompletableFuture<Unit> =
-        tunnel.processCmd(SetUpstreamDNS(server)).thenApply {}
+    fun setUpstreamDNS(servers: List<String>): CompletableFuture<Unit> {
+        val cmd = SetUpstreamDNS(servers.map { Upstream(it) })
+        return tunnel.processCmd(cmd).thenApply {  }
+    }
 
     fun enroll(jwt: String): CompletableFuture<ZitiConfig?>  {
         val cmd = Enroll(

@@ -4,9 +4,15 @@
 
 package org.openziti.tunnel
 
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 
 enum class CMD {
@@ -67,9 +73,27 @@ enum class CMD {
     @SerialName("Identifier") val identifier: String
 ): TunnelCommand(CMD.ZitiDump)
 
-@Serializable data class SetUpstreamDNS(
+@Serializable data class Upstream(
     val host: String,
-    val port: Int = 53,
+    val port: Int = 53
+)
+
+class SetUpstreamSerializer: KSerializer<SetUpstreamDNS> {
+    private val delegate = ListSerializer(Upstream.serializer())
+    override val descriptor = delegate.descriptor
+    override fun deserialize(decoder: Decoder): SetUpstreamDNS {
+        val upstreams = decoder.decodeSerializableValue(delegate)
+        return SetUpstreamDNS(upstreams)
+    }
+
+    override fun serialize(encoder: Encoder, value: SetUpstreamDNS) {
+        encoder.encodeSerializableValue(delegate, value.upstreams)
+    }
+}
+
+@Serializable(with = SetUpstreamSerializer::class)
+data class SetUpstreamDNS(
+    val upstreams: List<Upstream> = emptyList()
 ): TunnelCommand(CMD.SetUpstreamDNS)
 
 @Serializable data class Enroll(
@@ -85,3 +109,5 @@ enum class CMD {
     @SerialName("Error") val error: String? = null,
     @SerialName("Data") val data: JsonElement? = null,
 )
+
+inline fun <reified C: TunnelCommand> C.toJson() = Json.encodeToString(this)
