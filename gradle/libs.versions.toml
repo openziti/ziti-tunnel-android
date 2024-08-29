@@ -4,7 +4,7 @@ android = "8.5.2"
 kotlin = "2.0.20"
 
 # 3rd part deps
-kotlinx-serialization-json = "1.7.1"
+kotlinx-serialization-json = "1.7.2"
 appcompat = "1.7.0"
 constraintlayout = "2.1.4"
 lifecycle-extensions = "2.2.0"
