@@ -242,6 +242,7 @@ class TunnelModel(
 
         future.thenApply { cfg ->
             val keyAlias = cfg.id.key.removePrefix("keychain:")
+            Keychain.updateKeyEntry(keyAlias, cfg.id.cert, cfg.id.ca)
             loadConfig(keyAlias, cfg)
         }.exceptionally {
             Log.e("model", "enrollment failed", it)
