@@ -1,6 +1,6 @@
 [versions]
 # plugins
-android = "8.6.0"
+android = "8.6.1"
 kotlin = "2.0.20"
 
 # 3rd part deps
