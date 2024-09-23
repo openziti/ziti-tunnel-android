@@ -49,7 +49,7 @@ else (tunnel_DIR)
     include(FetchContent)
     FetchContent_Declare(tun-sdk
             GIT_REPOSITORY http://github.com/openziti/ziti-tunnel-sdk-c.git
-            GIT_TAG v2.0.0-alpha19
+            GIT_TAG v2.0.0-alpha24
     )
     FetchContent_MakeAvailable(tun-sdk)
 endif ()
