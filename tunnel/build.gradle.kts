@@ -7,15 +7,19 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
-val localProperties = gradleLocalProperties(parent!!.projectDir, providers)
+val cmakeArgs = mutableListOf(
+    "-DDEPS_DIR=${project.layout.buildDirectory.get()}/cmake",
+    "-Dtunnel_sdk_VERSION=${libs.versions.ziti.tunnel.sdk.get()}",
+    )
 
-val zitiSdkDir = localProperties["ziti.dir"]
-println("ziti-sdk = ${zitiSdkDir}")
-
-val cmakeArgs = mutableListOf("-DDEPS_DIR=${project.buildDir.path}/cmake")
-localProperties["ziti.dir"]?.let { cmakeArgs.add("-DZITI_SDK_DIR=$it") }
-localProperties["tlsuv.dir"]?.let { cmakeArgs.add("-Dtlsuv_DIR=$it") }
-localProperties["tunnel.dir"]?.let { cmakeArgs.add("-Dtunnel_DIR=$it")}
+// use local checkouts if desired
+// set in local.properties
+// ziti.dir = /home/ziggy/work/ziti-sdk-c
+with(gradleLocalProperties(parent!!.projectDir, providers)) {
+    this["ziti.dir"]?.let { cmakeArgs.add("-DZITI_SDK_DIR=$it") }
+    this["tlsuv.dir"]?.let { cmakeArgs.add("-Dtlsuv_DIR=$it") }
+    this["tunnel.dir"]?.let { cmakeArgs.add("-Dtunnel_DIR=$it") }
+}
 
 android {
     namespace = "org.openziti.tunnel"

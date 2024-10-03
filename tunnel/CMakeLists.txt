@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.20)
 
 project(
         ziti-native-deps
-        DESCRIPTION "OpenZiti tunneler SDK"
-        HOMEPAGE_URL "https://github.com/openziti/ziti-tunneler-sdk-c"
+        DESCRIPTION "OpenZiti Android tunneler dependencies"
+        HOMEPAGE_URL "https://github.com/openziti/ziti-tunnel-android"
         LANGUAGES C CXX
 )
 
