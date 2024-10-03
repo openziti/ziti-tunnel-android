@@ -4,6 +4,7 @@
 
 #include <jni.h>
 #include <string>
+#include <functional>
 
 #include <tlsuv/keychain.h>
 #include <tlsuv/tls_engine.h>
