@@ -78,7 +78,8 @@ tasks.named("preBuild").dependsOn(buildNative)
 if (!hasProperty("skipDependentBuild")) {
     presets.forEach { triplet ->
         val task = tasks.register<Exec>("build-native-deps-${triplet}") {
-            commandLine("cmake", "--preset", triplet)
+            executable("env")
+            args("cmake", "--preset", triplet)
         }
         buildNative.dependsOn(task)
     }
