@@ -47,7 +47,17 @@ static struct {
     jmethodID keyPub;
     jmethodID sign;
     jmethodID genKey;
+    jmethodID delKey;
 } methods;
+
+static bool checkException(JNIEnv *env) {
+    if (env->ExceptionCheck()) {
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+        return true;
+    }
+    return false;
+}
 
 extern "C"
 JNIEXPORT void JNICALL
@@ -65,6 +75,7 @@ Java_org_openziti_tunnel_Keychain_registerKeychain(JNIEnv *env, jclass clazz, jo
                                     "(Ljava/security/KeyStore$PrivateKeyEntry;Ljava/nio/ByteBuffer;)[B");
     methods.genKey = env->GetMethodID(
             clazz, "genKey", "(Ljava/lang/String;Ljava/lang/String;)Ljava/security/KeyStore$PrivateKeyEntry;");
+    methods.delKey = env->GetMethodID(clazz, "deleteKey", "(Ljava/lang/String;)V");
 }
 
 int android_gen_key(keychain_key_t *pk, enum keychain_key_type type, const char *name) {
@@ -84,6 +95,9 @@ int android_gen_key(keychain_key_t *pk, enum keychain_key_type type, const char 
 
     jstring n = env->NewStringUTF(name);
     jobject key = env->CallObjectMethod(android_keychain.store, methods.genKey, n, t);
+    if (checkException(env)) {
+        return -1;
+    }
     env->DeleteLocalRef(n);
     env->DeleteLocalRef(t);
 
@@ -104,7 +118,7 @@ int android_load_key(keychain_key_t *k, const char *name) {
     jobject key = env->CallObjectMethod(android_keychain.store, methods.loadKey,
                                         env->NewStringUTF(name));
 
-    if (key == nullptr) {
+    if (checkException(env) || key == nullptr) {
         return -1;
     }
 
@@ -113,25 +127,52 @@ int android_load_key(keychain_key_t *k, const char *name) {
 }
 
 int android_rem_key(const char *name) {
-    return -1;
+    if (android_keychain.store == nullptr) {
+        return -1;
+    }
+
+    JNIEnv *env;
+    android_keychain.vm->GetEnv((void **) &env, JNI_VERSION_1_6);
+
+    jstring n = env->NewStringUTF(name);
+
+    env->CallObjectMethod(android_keychain.store, methods.delKey, n);
+    if (checkException(env)) {
+        return -1;
+    }
+
+    env->DeleteLocalRef(n);
+    return 0;
 }
 
 enum keychain_key_type android_key_type(keychain_key_t k) {
+    if (k == nullptr) {
+        return keychain_key_invalid;
+    }
     auto key = (jobject) k;
 
     JNIEnv *env;
     android_keychain.vm->GetEnv((void **) &env, JNI_VERSION_1_6);
     auto type = (keychain_key_type) env->CallIntMethod(android_keychain.store, methods.keyType,
                                                        key);
-
+    if (checkException(env)) {
+        return keychain_key_invalid;
+    }
     return type;
 }
 
 int android_key_public(keychain_key_t k, char *buf, size_t *len) {
+    if (k == nullptr) {
+        return -1;
+    }
     auto key = (jobject) k;
     JNIEnv *env;
     android_keychain.vm->GetEnv((void **) &env, JNI_VERSION_1_6);
     auto b = (jbyteArray) env->CallObjectMethod(android_keychain.store, methods.keyPub, key);
+
+    if (checkException(env)) {
+        return -1;
+    }
 
     auto size = env->GetArrayLength(b);
     if (size > *len) {
@@ -147,13 +188,17 @@ int android_key_public(keychain_key_t k, char *buf, size_t *len) {
 
 int android_key_sign(keychain_key_t k, const uint8_t *data, size_t datalen,
                      uint8_t *sig, size_t *siglen, int p) {
+    if (k == nullptr) {
+        return -1;
+    }
+
     auto key = (jobject) k;
     JNIEnv *env;
     android_keychain.vm->GetEnv((void **) &env, JNI_VERSION_1_6);
 
     auto d = env->NewDirectByteBuffer((void *) data, datalen);
     auto s = (jbyteArray) env->CallObjectMethod(android_keychain.store, methods.sign, key, d);
-    if (s == nullptr) {
+    if (checkException(env) || s == nullptr) {
         env->DeleteLocalRef(d);
         return -1;
     }
@@ -167,10 +212,14 @@ int android_key_sign(keychain_key_t k, const uint8_t *data, size_t datalen,
 }
 
 void android_free_key(keychain_key_t k) {
+    if (k == nullptr) {
+        return;
+    }
     auto key = (jobject) k;
     JNIEnv *env;
     android_keychain.vm->GetEnv((void **) &env, JNI_VERSION_1_6);
     env->DeleteGlobalRef(key);
+    checkException(env);
 }
 
 extern "C"

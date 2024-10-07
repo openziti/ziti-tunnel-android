@@ -6,6 +6,7 @@ package org.openziti.tunnel
 
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
+import android.util.Log
 import java.net.URI
 import java.nio.ByteBuffer
 import java.security.KeyPairGenerator
@@ -47,6 +48,15 @@ class Keychain(val store: KeyStore) {
     fun loadKey(name: String): PrivateKeyEntry? {
         val k = store.getEntry(name, null)
         return if (k is PrivateKeyEntry) k else null
+    }
+
+    fun deleteKey(name: String) {
+        val k = store.getEntry(name, null)
+        if (k !is PrivateKeyEntry) {
+            Log.w("keystore", "entry[$name] is not a PrivateKeyEntry")
+            return
+        }
+        store.deleteEntry(name)
     }
 
     fun keyType(ke: PrivateKeyEntry) = runCatching {
