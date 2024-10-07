@@ -130,6 +130,9 @@ int android_rem_key(const char *name) {
 }
 
 enum keychain_key_type android_key_type(keychain_key_t k) {
+    if (k == nullptr) {
+        return keychain_key_invalid;
+    }
     auto key = (jobject) k;
 
     JNIEnv *env;
@@ -141,6 +144,9 @@ enum keychain_key_type android_key_type(keychain_key_t k) {
 }
 
 int android_key_public(keychain_key_t k, char *buf, size_t *len) {
+    if (k == nullptr) {
+        return -1;
+    }
     auto key = (jobject) k;
     JNIEnv *env;
     android_keychain.vm->GetEnv((void **) &env, JNI_VERSION_1_6);
@@ -160,6 +166,10 @@ int android_key_public(keychain_key_t k, char *buf, size_t *len) {
 
 int android_key_sign(keychain_key_t k, const uint8_t *data, size_t datalen,
                      uint8_t *sig, size_t *siglen, int p) {
+    if (k == nullptr) {
+        return -1;
+    }
+
     auto key = (jobject) k;
     JNIEnv *env;
     android_keychain.vm->GetEnv((void **) &env, JNI_VERSION_1_6);
@@ -180,6 +190,9 @@ int android_key_sign(keychain_key_t k, const uint8_t *data, size_t datalen,
 }
 
 void android_free_key(keychain_key_t k) {
+    if (k == nullptr) {
+        return;
+    }
     auto key = (jobject) k;
     JNIEnv *env;
     android_keychain.vm->GetEnv((void **) &env, JNI_VERSION_1_6);
