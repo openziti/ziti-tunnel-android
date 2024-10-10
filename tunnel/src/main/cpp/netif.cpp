@@ -96,10 +96,14 @@ static void netif_read(uv_stream_t *, ssize_t len, const uv_buf_t *b) {
 }
 
 jdouble JNICALL get_up_rate(JNIEnv *, jobject) {
-    return metrics_rate_get(&NETIF.up);
+    double up = 0.0;
+    metrics_rate_get(&NETIF.up, &up);
+    return up;
 }
 jdouble JNICALL get_down_rate(JNIEnv *, jobject) {
-    return metrics_rate_get(&NETIF.down);
+    double down = 0.0;
+    metrics_rate_get(&NETIF.down, &down);
+    return down;
 }
 
 extern int android_netif_do(netif_cmd cmd, int fd) {
