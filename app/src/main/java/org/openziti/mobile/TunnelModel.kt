@@ -8,6 +8,7 @@ import android.content.Context
 import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -66,8 +67,8 @@ class TunnelModel(
 
     fun setDNS(server: String?, range: String?) = runBlocking {
         context().prefs.edit { settings ->
-            settings[NAMESERVER] = server ?: defaultDNS
-            settings[RANGE] = range ?: defaultRange
+            settings[NAMESERVER] = server ?: DEFAULT_DNS
+            settings[RANGE] = range ?: DEFAULT_RANGE
         }
     }
 
@@ -85,7 +86,11 @@ class TunnelModel(
         }
     }
 
-    class TunnelIdentity(val id: String, val tunnelModel: TunnelModel): ViewModel() {
+    class TunnelIdentity(
+        val id: String,
+        private val tunnel: TunnelModel,
+        enable: Boolean = true
+    ): ViewModel() {
 
         val zitiID: String =
             with(URI(id)){
@@ -97,12 +102,12 @@ class TunnelModel(
         internal val name = MutableLiveData(id)
 
         fun status(): LiveData<String> = status
-        internal val status = MutableLiveData<String>("Loading")
+        internal val status = MutableLiveData("Loading")
 
-        internal val controller = MutableLiveData<String>("<controller")
+        internal val controller = MutableLiveData("<controller")
         fun controller() = controller
 
-        private val enabled = MutableLiveData(true)
+        private val enabled = MutableLiveData(enable)
         fun enabled(): LiveData<Boolean> = enabled
 
         private val serviceMap = mutableMapOf<String, Service>()
@@ -110,24 +115,31 @@ class TunnelModel(
         fun services(): LiveData<List<Service>> = services
 
         fun refresh() {
-            tunnelModel.refreshIdentity(id).handleAsync { _, ex ->
-                Log.w(TAG, "failed refresh", ex)
+            tunnel.refreshIdentity(id).handleAsync { _, ex ->
+                ex?.let {
+                    Log.w(TAG, "failed refresh", it)
+                }
             }
         }
 
         fun setEnabled(on: Boolean) {
-            tunnelModel.enableIdentity(id, on).thenAccept {
+            if (on)
+                Log.i(TAG, "enabling[${name.value}]")
+            else
+                Log.i(TAG, "disabling[${name.value}]")
+
+            tunnel.enableIdentity(id, on).thenAccept {
                 enabled.postValue(on)
                 if (on)
-                    status.postValue("Disabled")
-                else
                     status.postValue("Enabled")
+                else
+                    status.postValue("Disabled")
             }
         }
 
         fun delete() {
             setEnabled(false)
-            tunnelModel.deleteIdentity(id)
+            tunnel.deleteIdentity(id)
         }
 
         internal fun processServiceUpdate(ev: ServiceEvent) {
@@ -187,16 +199,23 @@ class TunnelModel(
             }
     }
 
-    private fun loadConfig(ident: String, cfg: ZitiConfig) {
-        Log.i("model", "loading identity[$ident]")
-        val cmd = LoadIdentity(ident, cfg)
+    private fun disabledKey(id: String) = booleanPreferencesKey("$id.disabled")
+
+    private fun loadConfig(id: String, cfg: ZitiConfig) {
+        val disabled = runBlocking {
+            context().prefs.data.map {
+                it[disabledKey(id)] ?: false
+            }.first()
+        }
+        Log.i("model", "loading identity[$id] disabled[$disabled]")
+        val cmd = LoadIdentity(id, cfg, disabled)
         tunnel.processCmd(cmd).handleAsync { json: JsonElement? , ex: Throwable? ->
             if (ex != null) {
                 Log.w("model", "failed to execute", ex)
             } else  {
-                identities[ident] = TunnelIdentity(ident, this)
+                identities[id] = TunnelIdentity(id, this, !disabled)
                 identitiesData.postValue(identities.values.toList())
-                Log.i("model", "load result[$ident]: $json")
+                Log.i("model", "load result[$id]: $json")
             }
         }
     }
@@ -262,8 +281,15 @@ class TunnelModel(
     private fun refreshIdentity(id: String) =
         tunnel.processCmd(RefreshIdentity(id)).thenAccept{}
 
-    private fun enableIdentity(id: String, on: Boolean) =
-         tunnel.processCmd(OnOffCommand(id, on)).thenAccept {}
+    private fun enableIdentity(id: String, on: Boolean): CompletableFuture<Unit> {
+        val disabledKey = disabledKey(id)
+        runBlocking {
+            context().prefs.edit {
+                it[disabledKey] = !on
+            }
+        }
+        return tunnel.processCmd(OnOffCommand(id, on)).thenApply {}
+    }
 
     private fun deleteIdentity(identifier: String) {
         identities.remove(identifier)
@@ -288,8 +314,8 @@ class TunnelModel(
     }
 
     companion object {
-        val TAG = TunnelModel::class.simpleName
-        val defaultDNS = "100.64.0.2"
-        val defaultRange = "100.64.0.0/10"
+        const val TAG = "tunnel-model"
+        const val DEFAULT_DNS = "100.64.0.2"
+        const val DEFAULT_RANGE = "100.64.0.0/10"
     }
 }
