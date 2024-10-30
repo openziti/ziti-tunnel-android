@@ -57,7 +57,7 @@ enum class CMD {
 
 @Serializable data class OnOffCommand(
     @SerialName("Identifier") val identifier: String,
-    val on: Boolean
+    @SerialName("OnOff") val on: Boolean
 ) : TunnelCommand(CMD.IdentityOnOff)
 
 @Serializable data class RefreshIdentity(
@@ -67,6 +67,7 @@ enum class CMD {
 @Serializable data class LoadIdentity(
     @SerialName("Identifier") val identifier: String,
     @SerialName("Config") val config: ZitiConfig,
+    @SerialName("Disabled") val disabled: Boolean,
 ): TunnelCommand(CMD.LoadIdentity)
 
 @Serializable data class Dump(
