@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2024 NetFoundry. All rights reserved.
+ */
+
+
 package org.openziti.mobile.fragments
 
 import android.content.Intent
