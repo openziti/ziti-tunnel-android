@@ -20,7 +20,7 @@ datastore = "1.1.1"
 # test deps
 junit = "4.13.2"
 espresso-core = "3.6.1"
-core-ktx-version = "1.13.1"
+core-ktx-version = "1.15.0"
 junit-version = "1.2.1"
 
 [libraries]
