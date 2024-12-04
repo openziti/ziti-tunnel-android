@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+  ~ Copyright (c) 2024 NetFoundry. All rights reserved.
+  -->
+
+<slide xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="@integer/material_motion_duration_medium_2"
+    android:slideEdge="right"/>

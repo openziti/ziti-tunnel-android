@@ -6,7 +6,8 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:orientation="vertical" android:layout_width="match_parent"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/background">
 
@@ -48,11 +49,11 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="40dp"
+            android:fontFamily="@font/russo_one"
             android:paddingLeft="18dp"
             android:text="@string/about"
             android:textColor="@color/title"
-            android:textSize="26dp"
-            android:fontFamily="@font/russo_one"
+            android:textSize="26sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
@@ -86,7 +87,7 @@
                 android:paddingLeft="18dp"
                 android:text="@string/privacy"
                 android:textColor="@color/title"
-                android:textSize="18dp"
+                android:textSize="18sp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 tools:layout_editor_absoluteX="0dp">
@@ -117,7 +118,7 @@
                 android:paddingLeft="18dp"
                 android:text="@string/terms"
                 android:textColor="@color/title"
-                android:textSize="18dp"
+                android:textSize="18sp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 tools:layout_editor_absoluteX="0dp">
@@ -148,7 +149,7 @@
                 android:paddingLeft="18dp"
                 android:text="@string/thirdparty"
                 android:textColor="@color/title"
-                android:textSize="18dp"
+                android:textSize="18sp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 tools:layout_editor_absoluteX="0dp">
@@ -156,6 +157,7 @@
             </TextView>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
+
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -168,12 +170,12 @@
                 android:layout_width="match_parent"
                 android:layout_height="22dp"
                 android:layout_marginBottom="24dp"
-                android:textColor="@color/subTitle"
-                android:textSize="14dp"
                 android:gravity="center"
                 android:textAlignment="gravity"
+                android:textColor="@color/subTitle"
+                android:textSize="14sp"
                 app:layout_constraintBottom_toBottomOf="parent"
-                tools:layout_editor_absoluteX="50dp"/>
+                tools:layout_editor_absoluteX="50dp" />
         </androidx.constraintlayout.widget.ConstraintLayout>
     </LinearLayout>
 </LinearLayout>
