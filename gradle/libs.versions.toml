@@ -1,7 +1,7 @@
 [versions]
 # plugins
 android = "8.7.3"
-kotlin = "2.0.21"
+kotlin = "2.1.0"
 
 # ziti projects
 ziti-tunnel-sdk = "1.2.5"
