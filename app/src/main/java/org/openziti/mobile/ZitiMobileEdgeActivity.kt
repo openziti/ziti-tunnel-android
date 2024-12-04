@@ -35,6 +35,8 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.commit
+import androidx.fragment.app.add
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.viewbinding.ViewBinding
@@ -44,6 +46,7 @@ import kotlinx.coroutines.launch
 import org.openziti.mobile.databinding.DashboardBinding
 import org.openziti.mobile.debug.DebugInfo
 import org.openziti.mobile.debug.DebugInfoActivity
+import org.openziti.mobile.fragments.AboutFragment
 import java.util.Timer
 import java.util.TimerTask
 
@@ -55,7 +58,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
     private val MainArea by lazy { binding.MainArea }
     private val FrameArea by lazy { binding.FrameArea }
     private val MainMenu by lazy { binding.MainMenu }
-    private val AboutPage by lazy { binding.AboutPage }
     private val AdvancedPage by lazy { binding.AdvancedPage }
     private val ConfigPage by lazy { binding.ConfigPage }
     private val LogsPage by lazy { binding.LogsPage }
@@ -82,12 +84,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
     private val UploadSpeed by lazy { binding.UploadSpeed }
     private val TimeConnected by lazy { binding.TimeConnected }
     private val MainLogo by lazy { binding.MainLogo }
-
-    private val Version by lazy { AboutPage.Version }
-    private val PrivacyButton by lazy { AboutPage.PrivacyButton }
-    private val TermsButton by lazy { AboutPage.TermsButton }
-    private val ThirdButton by lazy { AboutPage.ThirdButton }
-    private val BackButton by lazy { AboutPage.BackButton }
 
     private val BackAdvancedButton by lazy { AdvancedPage.BackAdvancedButton }
     private val LogsButton by lazy { AdvancedPage.LogsButton }
@@ -218,11 +214,13 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
     private fun doBackPress() {
         when (state)  {
             "menu" -> toggleMenu()
-            "about" -> toggleSlide(AboutPage.root, "menu")
             "advanced" -> toggleSlide(AdvancedPage.root, "menu")
             "config" -> toggleSlide(ConfigPage.root, "advanced")
             "identity" -> toggleSlide(ConfigPage.root, "identities")
-            else -> finish()
+            else ->
+                if (!supportFragmentManager.popBackStackImmediate()) {
+                    finish()
+                }
         }
     }
 
@@ -245,24 +243,20 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
 
         offScreenX = getScreenWidth()+50
         offScreenY = getScreenHeight()-370
-        Version.text = "Version: $version"
 
         // Setup Screens
-        AboutPage.root.visibility = View.VISIBLE
         AdvancedPage.root.visibility = View.VISIBLE
         ConfigPage.root.visibility = View.VISIBLE
         LogsPage.root.visibility = View.VISIBLE
         LogPage.root.visibility = View.VISIBLE
         IdentityDetailsPage.root.visibility = View.VISIBLE
         IdentityPage.root.visibility = View.VISIBLE
-        AboutPage.root.alpha = 0f
         AdvancedPage.root.alpha = 0f
         ConfigPage.root.alpha = 0f
         LogsPage.root.alpha = 0f
         LogPage.root.alpha = 0f
         IdentityPage.root.alpha = 0f
         IdentityDetailsPage.root.alpha = 0f
-        AboutPage.root.x = offScreenX.toFloat()
         AdvancedPage.root.x = offScreenX.toFloat()
         ConfigPage.root.x = offScreenX.toFloat()
         LogsPage.root.x = offScreenX.toFloat()
@@ -337,7 +331,11 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
             toggleMenu()
         }
         AboutButton.setOnClickListener {
-            toggleSlide(AboutPage, "about")
+            toggleMenu()
+            supportFragmentManager.commit {
+                add<AboutFragment>(R.id.fragment_container_view, "about")
+                addToBackStack("about")
+            }
         }
         AdvancedButton.setOnClickListener {
             toggleSlide(AdvancedPage, "advanced")
@@ -370,21 +368,7 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
             toggleMenu()
         }
 
-        // About Button Actions
-        PrivacyButton.setOnClickListener {
-            launchUrl("https://netfoundry.io/privacy-policy/")
-        }
-        TermsButton.setOnClickListener {
-            launchUrl("https://netfoundry.io/terms/")
-        }
-        ThirdButton.setOnClickListener {
-            launchUrl("https://netfoundry.io/third-party")
-        }
-
         // Back Buttons
-        BackButton.setOnClickListener {
-            toggleSlide(AboutPage, "menu")
-        }
         BackIdentityButton.setOnClickListener {
             toggleSlide(IdentityPage, "menu")
         }
