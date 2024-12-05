@@ -22,15 +22,9 @@ import org.openziti.mobile.databinding.AboutBinding
  * Use the [AboutFragment.newInstance] factory method to
  * create an instance of this fragment.
  */
-class AboutFragment : Fragment() {
+class AboutFragment : BaseFragment() {
     private var _binding: AboutBinding? = null
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        val inflater = TransitionInflater.from(requireContext())
-        enterTransition = inflater.inflateTransition(R.transition.fade)
-        exitTransition = inflater.inflateTransition(R.transition.slide)
-    }
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?

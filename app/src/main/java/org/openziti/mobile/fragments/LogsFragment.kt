@@ -5,26 +5,17 @@ package org.openziti.mobile.fragments
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.os.bundleOf
 import androidx.fragment.app.add
 import androidx.fragment.app.commit
-import androidx.transition.TransitionInflater
 import org.openziti.mobile.R
 import org.openziti.mobile.databinding.LogsBinding
 import org.openziti.mobile.debug.DebugInfoActivity
 
-class LogsFragment : Fragment() {
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        val inflater = TransitionInflater.from(requireContext())
-        enterTransition = inflater.inflateTransition(R.transition.fade)
-        exitTransition = inflater.inflateTransition(R.transition.slide)
-    }
+class LogsFragment : BaseFragment() {
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -47,8 +38,6 @@ class LogsFragment : Fragment() {
                 addToBackStack("log")
             }
         }
-
-        // Inflate the layout for this fragment
         return b.root
     }
 }

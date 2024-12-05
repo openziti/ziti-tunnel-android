@@ -496,10 +496,6 @@
         <!-- EndFrame -->
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <include android:id="@+id/AdvancedPage" layout="@layout/advanced" android:x="600dp" android:visibility="gone"/>
-    <include android:id="@+id/ConfigPage" layout="@layout/configuration" android:x="600dp" android:visibility="gone"/>
-    <include android:id="@+id/LogsPage" layout="@layout/logs" android:x="600dp" android:visibility="gone"/>
-    <include android:id="@+id/LogPage" layout="@layout/log" android:x="600dp" android:visibility="gone"/>
     <include android:id="@+id/IdentityPage" layout="@layout/identities" android:x="600dp" android:visibility="gone"/>
     <include android:id="@+id/IdentityDetailsPage" layout="@layout/identity" android:x="600dp" android:visibility="gone"/>
 
