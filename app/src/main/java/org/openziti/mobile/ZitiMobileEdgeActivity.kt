@@ -34,12 +34,12 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.add
 import androidx.fragment.app.commit
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.viewbinding.ViewBinding
 import org.openziti.mobile.databinding.DashboardBinding
 import org.openziti.mobile.debug.DebugInfo
 import org.openziti.mobile.fragments.AboutFragment
+import org.openziti.mobile.fragments.ConfigFragment
 import org.openziti.mobile.fragments.LogsFragment
 import java.util.Timer
 import java.util.TimerTask
@@ -53,8 +53,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
     private val FrameArea by lazy { binding.FrameArea }
     private val MainMenu by lazy { binding.MainMenu }
     private val AdvancedPage by lazy { binding.AdvancedPage }
-    private val ConfigPage by lazy { binding.ConfigPage }
-    private val LogsPage by lazy { binding.LogsPage }
     private val IdentityDetailsPage by lazy { binding.IdentityDetailsPage }
     private val IdentityPage by lazy { binding.IdentityPage }
 
@@ -84,13 +82,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
 
     private val BackIdentityButton by lazy { IdentityPage.BackIdentityButton }
 
-    private val IPInput by lazy { ConfigPage.IPInput }
-    private val SubNetInput by lazy { ConfigPage.SubNetInput }
-    private val MTUInput by lazy { ConfigPage.MTUInput }
-    private val DNSInput by lazy { ConfigPage.DNSInput }
-    private val BackConfigButton by lazy { ConfigPage.BackConfigButton }
-    private val BackConfigButton2 by lazy { ConfigPage.BackConfigButton2 }
-
     private val BackIdentityDetailsButton by lazy { IdentityDetailsPage.BackIdentityDetailsButton }
     private val IdIdentityDetailName by lazy { IdentityDetailsPage.IdIdentityDetailName }
     private val IdDetailsEnrollment by lazy { IdentityDetailsPage.IdDetailsEnrollment }
@@ -103,10 +94,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
     lateinit var prefs: SharedPreferences
     var isMenuOpen = false
 
-    var ipAddress = "169.254.0.1"
-    var subnet = "255.255.255.0"
-    var mtu = "4000"
-    var dns = "169.254.0.2"
     var state = "startActivity"
     val version = "${BuildConfig.VERSION_NAME}(${BuildConfig.GIT_COMMIT})"
 
@@ -194,8 +181,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
         when (state)  {
             "menu" -> toggleMenu()
             "advanced" -> toggleSlide(AdvancedPage.root, "menu")
-            "config" -> toggleSlide(ConfigPage.root, "advanced")
-            "identity" -> toggleSlide(ConfigPage.root, "identities")
             else ->
                 if (!supportFragmentManager.popBackStackImmediate()) {
                     finish()
@@ -225,30 +210,16 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
 
         // Setup Screens
         AdvancedPage.root.visibility = View.VISIBLE
-        ConfigPage.root.visibility = View.VISIBLE
-        LogsPage.root.visibility = View.VISIBLE
         IdentityDetailsPage.root.visibility = View.VISIBLE
         IdentityPage.root.visibility = View.VISIBLE
         AdvancedPage.root.alpha = 0f
-        ConfigPage.root.alpha = 0f
-        LogsPage.root.alpha = 0f
         IdentityPage.root.alpha = 0f
         IdentityDetailsPage.root.alpha = 0f
         AdvancedPage.root.x = offScreenX.toFloat()
-        ConfigPage.root.x = offScreenX.toFloat()
-        LogsPage.root.x = offScreenX.toFloat()
         IdentityPage.root.x = offScreenX.toFloat()
         IdentityDetailsPage.root.x = offScreenX.toFloat()
         openY = offScreenY
         this.startPosition = getScreenHeight().toDp()-130.toDp().toFloat()
-
-        //this.startPosition = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, yLoc, getResources().getDisplayMetrics())
-        //IdentityArea.y = 10.toDp().toFloat() //this.startPosition
-
-        IPInput.text = ipAddress
-        SubNetInput.text = subnet
-        MTUInput.text = mtu
-        DNSInput.text = dns
 
         onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
             override fun handleOnBackPressed() = doBackPress()
@@ -344,20 +315,18 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
         BackAdvancedButton.setOnClickListener {
             toggleSlide(AdvancedPage, "menu")
         }
-        BackConfigButton.setOnClickListener {
-            toggleSlide(ConfigPage, "advanced")
-        }
-        BackConfigButton2.setOnClickListener {
-            toggleSlide(ConfigPage, "advanced")
-        }
         BackIdentityDetailsButton.setOnClickListener {
             toggleSlide(IdentityDetailsPage, "identities")
         }
 
         // Advanced Buttons
         TunnelButton.setOnClickListener {
-            toggleSlide(ConfigPage, "config")
+            supportFragmentManager.commit {
+                add<ConfigFragment>(R.id.fragment_container_view, "config")
+                addToBackStack("config")
+            }
         }
+
         LogsButton.setOnClickListener {
             supportFragmentManager.commit {
                 add<LogsFragment>(R.id.fragment_container_view, "logs")
@@ -416,16 +385,16 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
                         ).show()
                     }
                     var sCount = 0
-                    ctxModel.services().observe(this, Observer { serviceList ->
+                    ctxModel.services().observe(this) { serviceList ->
                         IdDetailServicesList.removeAllViews()
                         for (service in serviceList) {
                             sCount++
                             val line = LineView(applicationContext)
                             line.label = service.name
-                            line.value = service.interceptConfig?.toString() ?: ""
+                            line.value = service.interceptConfig
                             IdDetailServicesList.addView(line)
                         }
-                    })
+                    }
                     IdDetailForgetButton.setOnClickListener {
 
                         val builder = AlertDialog.Builder(this)
