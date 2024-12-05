@@ -498,8 +498,6 @@
         <!-- EndFrame -->
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <include android:id="@+id/IdentityDetailsPage" layout="@layout/identity" android:x="600dp" android:visibility="gone"/>
-
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/fragment_container_view"
         android:layout_width="match_parent"
