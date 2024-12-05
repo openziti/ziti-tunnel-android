@@ -19,12 +19,9 @@ import android.net.VpnService
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
-import android.os.Process
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
-import android.text.method.ScrollingMovementMethod
-import android.util.Log
 import android.view.View
 import android.view.WindowManager
 import android.view.animation.DecelerateInterpolator
@@ -35,18 +32,15 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.fragment.app.commit
 import androidx.fragment.app.add
+import androidx.fragment.app.commit
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.viewbinding.ViewBinding
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import org.openziti.mobile.databinding.DashboardBinding
 import org.openziti.mobile.debug.DebugInfo
-import org.openziti.mobile.debug.DebugInfoActivity
 import org.openziti.mobile.fragments.AboutFragment
+import org.openziti.mobile.fragments.LogsFragment
 import java.util.Timer
 import java.util.TimerTask
 
@@ -61,7 +55,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
     private val AdvancedPage by lazy { binding.AdvancedPage }
     private val ConfigPage by lazy { binding.ConfigPage }
     private val LogsPage by lazy { binding.LogsPage }
-    private val LogPage by lazy { binding.LogPage }
     private val IdentityDetailsPage by lazy { binding.IdentityDetailsPage }
     private val IdentityPage by lazy { binding.IdentityPage }
 
@@ -107,17 +100,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
     private val IdDetailServicesList by lazy { IdentityDetailsPage.IdDetailServicesList }
     private val IdDetailForgetButton by lazy { IdentityDetailsPage.IdDetailForgetButton }
 
-    private val LogsLabel by lazy { LogsPage.LogsLabel }
-    private val BackLogsButton by lazy { LogsPage.BackLogsButton }
-    private val PacketLogsButton by lazy { LogsPage.PacketLogsButton }
-    private val ApplicationLogsButton by lazy { LogsPage.ApplicationLogsButton }
-
-    private val BackToLogsButton by lazy { LogPage.BackToLogsButton }
-    private val BackToLogsButton2 by lazy { LogPage.BackToLogsButton2 }
-    private val CopyLogButton by lazy { LogPage.CopyLogButton }
-    private val LogDetails by lazy { LogPage.LogDetails }
-    private val LogTypeTitle by lazy { LogPage.LogTypeTitle }
-
     lateinit var prefs: SharedPreferences
     var isMenuOpen = false
 
@@ -126,8 +108,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
     var mtu = "4000"
     var dns = "169.254.0.2"
     var state = "startActivity"
-    var log_application = ""
-    var log_tunneler = ""
     val version = "${BuildConfig.VERSION_NAME}(${BuildConfig.GIT_COMMIT})"
 
     private lateinit var model: TunnelModel
@@ -154,7 +134,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
     var offScreenX = 0
     var offScreenY = 0
     var openY = 0
-    var isOpen = false
 
     fun getScreenWidth(): Int {
         return Resources.getSystem().displayMetrics.widthPixels
@@ -248,19 +227,16 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
         AdvancedPage.root.visibility = View.VISIBLE
         ConfigPage.root.visibility = View.VISIBLE
         LogsPage.root.visibility = View.VISIBLE
-        LogPage.root.visibility = View.VISIBLE
         IdentityDetailsPage.root.visibility = View.VISIBLE
         IdentityPage.root.visibility = View.VISIBLE
         AdvancedPage.root.alpha = 0f
         ConfigPage.root.alpha = 0f
         LogsPage.root.alpha = 0f
-        LogPage.root.alpha = 0f
         IdentityPage.root.alpha = 0f
         IdentityDetailsPage.root.alpha = 0f
         AdvancedPage.root.x = offScreenX.toFloat()
         ConfigPage.root.x = offScreenX.toFloat()
         LogsPage.root.x = offScreenX.toFloat()
-        LogPage.root.x = offScreenX.toFloat()
         IdentityPage.root.x = offScreenX.toFloat()
         IdentityDetailsPage.root.x = offScreenX.toFloat()
         openY = offScreenY
@@ -341,13 +317,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
             toggleSlide(AdvancedPage, "advanced")
         }
 
-        LogsLabel.isLongClickable = true
-        LogsLabel.setOnLongClickListener {
-            val intent = Intent(it.context, DebugInfoActivity::class.java)
-            startActivity(intent)
-            true
-        }
-
         FeedbackButton.setOnClickListener {
             startActivity(Intent.createChooser(DebugInfo.feedbackIntent(app = ZitiMobileEdgeApp.app),
                 "Send Email"))
@@ -381,26 +350,8 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
         BackConfigButton2.setOnClickListener {
             toggleSlide(ConfigPage, "advanced")
         }
-        BackLogsButton.setOnClickListener {
-            toggleSlide(ConfigPage, "advanced")
-        }
-        BackToLogsButton.setOnClickListener {
-            toggleSlide(LogPage, "logs")
-        }
         BackIdentityDetailsButton.setOnClickListener {
             toggleSlide(IdentityDetailsPage, "identities")
-        }
-        BackToLogsButton2.setOnClickListener {
-            toggleSlide(LogPage, "logs")
-        }
-        BackLogsButton.setOnClickListener {
-            toggleSlide(LogsPage, "advanced")
-        }
-        CopyLogButton.setOnClickListener {
-            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            val clip = ClipData.newPlainText("Logs", LogDetails.text.toString())
-            clipboard.setPrimaryClip(clip)
-            Toast.makeText(applicationContext,"Log has been copied to your clipboard",Toast.LENGTH_LONG).show()
         }
 
         // Advanced Buttons
@@ -408,12 +359,10 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
             toggleSlide(ConfigPage, "config")
         }
         LogsButton.setOnClickListener {
-            toggleSlide(LogsPage, "logs")
-        }
-        PacketLogsButton.setOnClickListener {
-            val intent = Intent(it.context, DebugInfoActivity::class.java)
-            startActivity(intent)
-            true
+            supportFragmentManager.commit {
+                add<LogsFragment>(R.id.fragment_container_view, "logs")
+                addToBackStack("logs")
+            }
         }
 
         // Dashboard Buttons
@@ -423,23 +372,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
         //IdentityCount.setOnClickListener {
         //    toggleSlide(IdentityPage, "identities")
         //}
-
-        LogDetails.movementMethod = ScrollingMovementMethod()
-        ApplicationLogsButton.setOnClickListener {
-            LogTypeTitle.text = ("Application Logs")
-            LogDetails.text = log_application
-            GlobalScope.launch(Dispatchers.IO) {
-                val p = Runtime.getRuntime().exec("logcat -d -t 200 --pid=${Process.myPid()}")
-                val lines = p.inputStream.bufferedReader().readText()
-
-                Log.d("ziti", "log is ${lines.length} bytes")
-
-                LogDetails.post {
-                    LogDetails.text = lines
-                }
-            }
-            toggleSlide(binding.LogPage.root, "logdetails")
-        }
 
         model = (application as ZitiMobileEdgeApp).model
         model.identities().observe(this) { contextList ->
