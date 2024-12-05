@@ -52,7 +52,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
     private val FrameArea by lazy { binding.FrameArea }
     private val MainMenu by lazy { binding.MainMenu }
     private val IdentityDetailsPage by lazy { binding.IdentityDetailsPage }
-    private val IdentityPage by lazy { binding.IdentityPage }
 
     private val OnButton by lazy { binding.OnButton }
     private val OffButton by lazy { binding.OffButton }
@@ -74,11 +73,8 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
     private val TimeConnected by lazy { binding.TimeConnected }
     private val MainLogo by lazy { binding.MainLogo }
 
-    private val BackIdentityButton by lazy { IdentityPage.BackIdentityButton }
-
     private val BackIdentityDetailsButton by lazy { IdentityDetailsPage.BackIdentityDetailsButton }
     private val IdIdentityDetailName by lazy { IdentityDetailsPage.IdIdentityDetailName }
-    private val IdDetailsEnrollment by lazy { IdentityDetailsPage.IdDetailsEnrollment }
     private val IdOnOffSwitch by lazy { IdentityDetailsPage.IdOnOffSwitch }
     private val IdDetailsStatus by lazy { IdentityDetailsPage.IdDetailsStatus }
     private val IdDetailsNetwork by lazy { IdentityDetailsPage.IdDetailsNetwork }
@@ -199,10 +195,7 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
 
         // Setup Screens
         IdentityDetailsPage.root.visibility = View.VISIBLE
-        IdentityPage.root.visibility = View.VISIBLE
-        IdentityPage.root.alpha = 0f
         IdentityDetailsPage.root.alpha = 0f
-        IdentityPage.root.x = offScreenX.toFloat()
         IdentityDetailsPage.root.x = offScreenX.toFloat()
         openY = offScreenY
         this.startPosition = getScreenHeight().toDp()-130.toDp().toFloat()
@@ -299,20 +292,9 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
         }
 
         // Back Buttons
-        BackIdentityButton.setOnClickListener {
-            toggleSlide(IdentityPage, "menu")
-        }
         BackIdentityDetailsButton.setOnClickListener {
             toggleSlide(IdentityDetailsPage, "identities")
         }
-
-        // Dashboard Buttons
-        //IdentityButton.setOnClickListener {
-        //    toggleSlide(IdentityPage, "identities")
-       // }
-        //IdentityCount.setOnClickListener {
-        //    toggleSlide(IdentityPage, "identities")
-        //}
 
         model = (application as ZitiMobileEdgeApp).model
         model.identities().observe(this) { contextList ->

@@ -211,6 +211,7 @@
                 android:layout_marginEnd="24dp"
                 android:background="@drawable/identity"
                 android:clickable="true"
+                android:contentDescription="@string/add_identity"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
@@ -324,6 +325,7 @@
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintHorizontal_bias="0.496"
                         app:layout_constraintStart_toStartOf="parent" />
+
                     <TextView
                         android:id="@+id/StopLabel"
                         android:layout_width="0dp"
@@ -337,7 +339,7 @@
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintHorizontal_bias="0.0"
-                        app:layout_constraintStart_toStartOf="parent"></TextView>
+                        app:layout_constraintStart_toStartOf="parent" />
 
                     <TextView
                         android:id="@+id/TimeConnected"
@@ -349,7 +351,7 @@
                         android:textColor="@color/title"
                         app:layout_constraintBottom_toTopOf="@+id/StopLabel"
                         app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintStart_toStartOf="parent"></TextView>
+                        app:layout_constraintStart_toStartOf="parent" />
                 </androidx.constraintlayout.widget.ConstraintLayout>
                 <androidx.constraintlayout.widget.ConstraintLayout
                     android:id="@+id/OffButton"
@@ -496,7 +498,6 @@
         <!-- EndFrame -->
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <include android:id="@+id/IdentityPage" layout="@layout/identities" android:x="600dp" android:visibility="gone"/>
     <include android:id="@+id/IdentityDetailsPage" layout="@layout/identity" android:x="600dp" android:visibility="gone"/>
 
     <androidx.fragment.app.FragmentContainerView
