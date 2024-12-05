@@ -45,7 +45,7 @@
             android:paddingLeft="18dp"
             android:gravity="center"
             android:textAlignment="gravity"
-            android:text="@string/addidentity"
+            android:text="@string/add_identity"
             android:textColor="@color/title"
             android:textSize="26dp"
             app:layout_constraintBottom_toBottomOf="parent"

@@ -76,7 +76,7 @@
     <string name="qrsubtitle">With Camera or QR App</string>
     <string name="qrimage">Scan Code</string>
     <string name="qraction">Scan Code</string>
-    <string name="addidentity">Add Identity</string>
+    <string name="add_identity">Add Identity</string>
     <string name="title_activity_debug_info">Debug Info</string>
 
 </resources>

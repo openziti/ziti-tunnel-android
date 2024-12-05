@@ -6,8 +6,6 @@ package org.openziti.mobile
 
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -27,20 +25,20 @@ import android.view.WindowManager
 import android.view.animation.DecelerateInterpolator
 import android.view.inputmethod.InputMethodManager
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
-import androidx.appcompat.app.AlertDialog
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.os.ConfigurationCompat
+import androidx.core.os.bundleOf
 import androidx.fragment.app.add
 import androidx.fragment.app.commit
-import androidx.lifecycle.ViewModelProvider
 import androidx.viewbinding.ViewBinding
 import org.openziti.mobile.databinding.DashboardBinding
 import org.openziti.mobile.debug.DebugInfo
 import org.openziti.mobile.fragments.AboutFragment
 import org.openziti.mobile.fragments.AdvancedFragment
+import org.openziti.mobile.fragments.IdentityDetailFragment
 import java.util.Timer
 import java.util.TimerTask
 
@@ -51,8 +49,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
     private val MainArea by lazy { binding.MainArea }
     private val FrameArea by lazy { binding.FrameArea }
     private val MainMenu by lazy { binding.MainMenu }
-    private val IdentityDetailsPage by lazy { binding.IdentityDetailsPage }
-    private val IdentityPage by lazy { binding.IdentityPage }
 
     private val OnButton by lazy { binding.OnButton }
     private val OffButton by lazy { binding.OffButton }
@@ -74,24 +70,14 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
     private val TimeConnected by lazy { binding.TimeConnected }
     private val MainLogo by lazy { binding.MainLogo }
 
-    private val BackIdentityButton by lazy { IdentityPage.BackIdentityButton }
-
-    private val BackIdentityDetailsButton by lazy { IdentityDetailsPage.BackIdentityDetailsButton }
-    private val IdIdentityDetailName by lazy { IdentityDetailsPage.IdIdentityDetailName }
-    private val IdDetailsEnrollment by lazy { IdentityDetailsPage.IdDetailsEnrollment }
-    private val IdOnOffSwitch by lazy { IdentityDetailsPage.IdOnOffSwitch }
-    private val IdDetailsStatus by lazy { IdentityDetailsPage.IdDetailsStatus }
-    private val IdDetailsNetwork by lazy { IdentityDetailsPage.IdDetailsNetwork }
-    private val IdDetailServicesList by lazy { IdentityDetailsPage.IdDetailServicesList }
-    private val IdDetailForgetButton by lazy { IdentityDetailsPage.IdDetailForgetButton }
-
     lateinit var prefs: SharedPreferences
     var isMenuOpen = false
 
     var state = "startActivity"
     val version = "${BuildConfig.VERSION_NAME}(${BuildConfig.GIT_COMMIT})"
 
-    private lateinit var model: TunnelModel
+    private val model: TunnelModel by viewModels { TunnelModel.Factory }
+
     internal var vpn: ZitiVPNService.ZitiVPNBinder? = null
     internal val serviceConnection = object: ServiceConnection{
         override fun onServiceDisconnected(name: ComponentName?) {
@@ -198,12 +184,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
         offScreenY = getScreenHeight()-370
 
         // Setup Screens
-        IdentityDetailsPage.root.visibility = View.VISIBLE
-        IdentityPage.root.visibility = View.VISIBLE
-        IdentityPage.root.alpha = 0f
-        IdentityDetailsPage.root.alpha = 0f
-        IdentityPage.root.x = offScreenX.toFloat()
-        IdentityDetailsPage.root.x = offScreenX.toFloat()
         openY = offScreenY
         this.startPosition = getScreenHeight().toDp()-130.toDp().toFloat()
 
@@ -298,98 +278,20 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
             toggleMenu()
         }
 
-        // Back Buttons
-        BackIdentityButton.setOnClickListener {
-            toggleSlide(IdentityPage, "menu")
-        }
-        BackIdentityDetailsButton.setOnClickListener {
-            toggleSlide(IdentityDetailsPage, "identities")
-        }
-
-        // Dashboard Buttons
-        //IdentityButton.setOnClickListener {
-        //    toggleSlide(IdentityPage, "identities")
-       // }
-        //IdentityCount.setOnClickListener {
-        //    toggleSlide(IdentityPage, "identities")
-        //}
-
-        model = (application as ZitiMobileEdgeApp).model
         model.identities().observe(this) { contextList ->
             binding.IdentityListing.removeAllViews()
             var index = 0
             for (ctx in contextList) {
-                val ctxModel = ViewModelProvider(this, TunnelModel.Factory(ctx)).get(
-                    ctx.id,
-                    TunnelModel.TunnelIdentity::class.java
-                )
-                val identityitem = IdentityItemView(this).apply { setModel(ctxModel) }
-                ctxModel.name().observe(this) { n ->
-                    IdIdentityDetailName.text = n
-                }
+
+                val identityitem = IdentityItemView(this).apply { setModel(ctx) }
 
                 identityitem.setOnClickListener {
-                    identityitem.ctxModel.refresh()
-                    toggleSlide(binding.IdentityDetailsPage.root, "identity")
-                    ctx.enabled().observe(this) {
-                        IdOnOffSwitch.isChecked = it
-                    }
-                    IdOnOffSwitch.setOnCheckedChangeListener { _, state ->
-                        ctx.setEnabled(state)
+                    supportFragmentManager.commit {
+                        add<IdentityDetailFragment>(R.id.fragment_container_view, "identity",
+                            bundleOf(IdentityDetailFragment.ID to ctx.id))
+                        addToBackStack("identity")
                     }
 
-                    ctxModel.status().observe(this) { st ->
-                        IdDetailsStatus.text = st
-                    }
-                    ctx.controller().observe(this) {
-                        IdDetailsNetwork.text = it
-                    }
-                    IdDetailsNetwork.setOnClickListener {
-                        val clipboard =
-                            getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                        val clip =
-                            ClipData.newPlainText("Network", IdDetailsNetwork.text.toString())
-                        clipboard.setPrimaryClip(clip)
-                        Toast.makeText(
-                            applicationContext,
-                            IdDetailsNetwork.text.toString() + " has been copied to your clipboard",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
-                    var sCount = 0
-                    ctxModel.services().observe(this) { serviceList ->
-                        IdDetailServicesList.removeAllViews()
-                        for (service in serviceList) {
-                            sCount++
-                            val line = LineView(applicationContext)
-                            line.label = service.name
-                            line.value = service.interceptConfig
-                            IdDetailServicesList.addView(line)
-                        }
-                    }
-                    IdDetailForgetButton.setOnClickListener {
-
-                        val builder = AlertDialog.Builder(this)
-                        builder.setTitle("Confirm")
-                        builder.setMessage("Are you sure you want to delete this identity from your device?")
-                        builder.setIcon(android.R.drawable.ic_dialog_alert)
-
-                        builder.setPositiveButton("Yes") { _, _ ->
-                            ctxModel.delete()
-                            Toast.makeText(
-                                applicationContext,
-                                ctx.name().value + " removed",
-                                Toast.LENGTH_LONG
-                            ).show()
-                            toggleSlide(IdentityDetailsPage, "identities")
-                        }
-
-                        builder.setNeutralButton("Cancel") { _, _ -> }
-
-                        val alertDialog: AlertDialog = builder.create()
-                        alertDialog.setCancelable(false)
-                        alertDialog.show()
-                    }
                 }
                 IdentityListing.addView(identityitem)
                 index++
