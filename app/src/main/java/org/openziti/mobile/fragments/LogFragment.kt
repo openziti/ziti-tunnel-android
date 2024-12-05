@@ -25,17 +25,8 @@ import org.openziti.mobile.databinding.LogBinding
 
 /**
  * A simple [Fragment] subclass.
- * Use the [LogFragment.newInstance] factory method to
- * create an instance of this fragment.
  */
-class LogFragment : Fragment() {
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        val inflater = TransitionInflater.from(requireContext())
-        enterTransition = inflater.inflateTransition(R.transition.fade)
-        exitTransition = inflater.inflateTransition(R.transition.slide)
-    }
+class LogFragment : BaseFragment() {
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,

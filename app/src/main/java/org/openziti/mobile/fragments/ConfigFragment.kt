@@ -4,24 +4,16 @@
 package org.openziti.mobile.fragments
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.transition.TransitionInflater
-import org.openziti.mobile.R
+import androidx.fragment.app.Fragment
 import org.openziti.mobile.databinding.ConfigurationBinding
 
 /**
  * A simple [Fragment] subclass.
  */
-class ConfigFragment : Fragment() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        val inflater = TransitionInflater.from(requireContext())
-        enterTransition = inflater.inflateTransition(R.transition.fade)
-        exitTransition = inflater.inflateTransition(R.transition.slide)
-    }
+class ConfigFragment : BaseFragment() {
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
