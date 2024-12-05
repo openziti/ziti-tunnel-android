@@ -16,7 +16,9 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.CreationExtras
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -80,11 +82,7 @@ class TunnelModel(
     private val identitiesData = MutableLiveData<List<TunnelIdentity>>()
     private val identities = mutableMapOf<String, TunnelIdentity>()
 
-    class Factory(private val identity: TunnelIdentity): ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return identity as T
-        }
-    }
+    fun identity(id: String): TunnelIdentity? = identities[id]
 
     class TunnelIdentity(
         val id: String,
@@ -317,5 +315,17 @@ class TunnelModel(
         const val TAG = "tunnel-model"
         const val DEFAULT_DNS = "100.64.0.2"
         const val DEFAULT_RANGE = "100.64.0.0/10"
+
+        val Factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(
+                modelClass: Class<T>,
+                extras: CreationExtras
+            ): T {
+                // Get the Application object from extras
+                val application = checkNotNull(extras[APPLICATION_KEY])
+                return (application as ZitiMobileEdgeApp).model as T
+            }
+        }
     }
 }
