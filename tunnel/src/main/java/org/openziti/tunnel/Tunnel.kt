@@ -37,7 +37,7 @@ class Tunnel(app: Application, ): Runnable {
     init {
         val pm = app.packageManager
 
-        val ver = pm.getPackageInfo(app.packageName, 0).versionName
+        val ver = pm.getPackageInfo(app.packageName, 0).versionName ?: "unknown"
         initNative(app.packageName, ver)
 
         val eventPipe = ParcelFileDescriptor.createPipe()
