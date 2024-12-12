@@ -57,6 +57,7 @@ class TunnelModel(
     val context: () -> Context
 ): ViewModel() {
     val Context.prefs: DataStore<Preferences> by preferencesDataStore("tunnel")
+    val identitiesDir = context().getDir("identities", Context.MODE_PRIVATE)
 
     val NAMESERVER = stringPreferencesKey("nameserver")
     val zitiDNS = context().prefs.data.map {
@@ -86,6 +87,7 @@ class TunnelModel(
 
     class TunnelIdentity(
         val id: String,
+        val cfg: ZitiConfig,
         private val tunnel: TunnelModel,
         enable: Boolean = true
     ): ViewModel() {
@@ -137,7 +139,7 @@ class TunnelModel(
 
         fun delete() {
             setEnabled(false)
-            tunnel.deleteIdentity(id)
+            tunnel.deleteIdentity(id, cfg.id.key?.removePrefix("keychain:"))
         }
 
         internal fun processServiceUpdate(ev: ServiceEvent) {
@@ -171,35 +173,65 @@ class TunnelModel(
             }
         }
 
-        val aliases = Keychain.store.aliases().toList()
+        val configs = mutableMapOf<String, ZitiConfig>()
 
-        aliases.filter { it.startsWith("ziti://") }
-            .map { Pair(it, Keychain.store.getEntry(it, null)) }
-            .filter { it.second is PrivateKeyEntry }
-            .map {
-                val uri = URI(it.first)
-                val ctrl = "https://${uri.host}:${uri.port}"
+        val idFiles = identitiesDir.listFiles() ?: emptyArray()
+        idFiles.forEach {
+            Log.i(TAG, "loading identity from file[$it]")
+            val cfg = Json.decodeFromString<ZitiConfig>(it.readText())
+            configs[cfg.identifier] = cfg
+        }
+
+        val loadedKeys = configs.mapNotNull { it.value.id.key?.removePrefix("keychain:") }
+
+        val aliases = Keychain.store.aliases().toList().filter { !loadedKeys.contains(it) }
+
+        for (alias in aliases) {
+            loadConfigFromKeyStore(alias)?.let { cfg ->
+                Log.i(TAG, "migrating identity from keychain[$alias]")
+                val uri = URI(alias)
                 val id = uri.userInfo ?: uri.path.removePrefix("/")
-
-                val idCerts = Keychain.store.getCertificateChain(it.first)
-                val pem = idCerts.map { it as X509Certificate }
-                    .joinToString(transform = X509Certificate::toPEM, separator = "")
-                val caCerts = aliases.filter { it.startsWith("ziti:$id/") }
-                    .map { Keychain.store.getCertificate(it) as X509Certificate}
-                    .joinToString(transform = X509Certificate::toPEM, separator = "")
-                it.first to ZitiConfig(
-                    controller = ctrl,
-                    controllers = listOf(ctrl),
-                    id = ZitiID(cert = pem, key = "keychain:${it.first}", ca = caCerts)
-                )
-            }.forEach {
-                loadConfig(it.first, it.second)
+                val json = Json.encodeToString(ZitiConfig.serializer(), cfg)
+                identitiesDir.resolve(cfg.identifier).outputStream().use {
+                    it.write(json.toByteArray())
+                }
+                configs[id] = cfg
             }
+        }
+
+        for (it in configs) {
+            loadIdentity(it.key, it.value)
+        }
+    }
+
+    private fun loadConfigFromKeyStore(alias: String): ZitiConfig? {
+        if (!Keychain.store.containsAlias(alias)) return null
+        if (!alias.startsWith("ziti://")) return null
+
+        val entry = Keychain.store.getEntry(alias, null)
+        if (entry !is PrivateKeyEntry) return null
+
+        val uri = URI(alias)
+        val ctrl = "https://${uri.host}:${uri.port}"
+        val id = uri.userInfo ?: uri.path.removePrefix("/")
+
+        val idCerts = Keychain.store.getCertificateChain(alias)
+        val pem = idCerts.map { it as X509Certificate }
+            .joinToString(transform = X509Certificate::toPEM, separator = "")
+        val caCerts = Keychain.store.aliases().toList().filter { it.startsWith("ziti:$id/") }
+            .map { Keychain.store.getCertificate(it) as X509Certificate}
+            .joinToString(transform = X509Certificate::toPEM, separator = "")
+
+        return ZitiConfig(
+            controller = ctrl,
+            controllers = listOf(ctrl),
+            id = ZitiID(cert = pem, key = "keychain:${alias}", ca = caCerts)
+        )
     }
 
     private fun disabledKey(id: String) = booleanPreferencesKey("$id.disabled")
 
-    private fun loadConfig(id: String, cfg: ZitiConfig) {
+    private fun loadIdentity(id: String, cfg: ZitiConfig) {
         val disabled = runBlocking {
             context().prefs.data.map {
                 it[disabledKey(id)] ?: false
@@ -211,7 +243,7 @@ class TunnelModel(
             if (ex != null) {
                 Log.w("model", "failed to execute", ex)
             } else  {
-                identities[id] = TunnelIdentity(id, this, !disabled)
+                identities[id] = TunnelIdentity(id, cfg, this, !disabled)
                 identitiesData.postValue(identities.values.toList())
                 Log.i("model", "load result[$id]: $json")
             }
@@ -258,9 +290,12 @@ class TunnelModel(
         }
 
         future.thenApply { cfg ->
-            val keyAlias = cfg.id.key.removePrefix("keychain:")
-            Keychain.updateKeyEntry(keyAlias, cfg.id.cert, cfg.id.ca)
-            loadConfig(keyAlias, cfg)
+            val cfgJson = Json.encodeToString(ZitiConfig.serializer(), cfg)
+            identitiesDir.resolve(cfg.identifier).outputStream().use {
+                it.write(cfgJson.toByteArray())
+            }
+
+            loadIdentity(cfg.identifier, cfg)
         }.exceptionally {
             Log.e("model", "enrollment failed", it)
         }
@@ -289,17 +324,22 @@ class TunnelModel(
         return tunnel.processCmd(OnOffCommand(id, on)).thenApply {}
     }
 
-    private fun deleteIdentity(identifier: String) {
+    private fun deleteIdentity(identifier: String, key: String?) {
         identities.remove(identifier)
         identitiesData.postValue(identities.values.toList())
 
         val uri = URI(identifier)
         val id = uri.userInfo ?: uri.path.removePrefix("/")
 
+        key?.let {
+            runCatching { Keychain.store.deleteEntry(key) }
+                .onFailure { Log.w(TAG, "failed to remove entry", it) }
+        }
+
         runCatching {
-            Keychain.store.deleteEntry(identifier)
+            identitiesDir.resolve(id).delete()
         }.onFailure {
-            Log.w(TAG, "failed to remove entry", it)
+            Log.w(TAG, "failed to remove config", it)
         }
 
         val caCerts = Keychain.store.aliases().toList().filter { it.startsWith("ziti:$id/") }
@@ -309,6 +349,13 @@ class TunnelModel(
             }
         }
 
+        runBlocking {
+            context().prefs.edit {
+                val prefKey = disabledKey(identifier)
+                if (it.contains(prefKey))
+                    it.remove(prefKey)
+            }
+        }
     }
 
     companion object {

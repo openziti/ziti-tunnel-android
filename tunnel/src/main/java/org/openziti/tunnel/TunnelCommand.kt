@@ -14,6 +14,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
+import java.net.URI
 
 enum class CMD {
     ZitiDump,
@@ -41,16 +42,21 @@ enum class CMD {
 }
 
 @Serializable data class ZitiID (
-    val cert: String,
-    val key: String,
+    val cert: String?,
+    val key: String?,
     val ca: String
 )
 
 @Serializable data class ZitiConfig(
-    @SerialName("ztAPI") val controller: String? = null,
+    @SerialName("ztAPI") val controller: String,
     @SerialName("ztAPIs") val controllers: List<String>? = null,
     val id: ZitiID,
-)
+) {
+    val identifier: String = if (id.key != null)
+        URI(id.key.removePrefix("keychain:")).let { it.userInfo ?: it.path.removePrefix("/") }
+    else
+        URI(controller).host.replace(".", "_")
+}
 
 @Serializable sealed class TunnelCommand(@Transient val cmd: CMD = CMD.Status)
 @Serializable data object ListIdentities: TunnelCommand(CMD.ListIdentities)

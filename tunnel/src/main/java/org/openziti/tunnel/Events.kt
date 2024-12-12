@@ -32,8 +32,8 @@ sealed class Event {
 data class ContextEvent(
     override val identifier: String,
     val status: String,
-    val name: String,
-    val controller: String): Event()
+    val name: String?,
+    val controller: String?): Event()
 
 @Serializable @SerialName("APIEvent")
 data class APIEvent(
