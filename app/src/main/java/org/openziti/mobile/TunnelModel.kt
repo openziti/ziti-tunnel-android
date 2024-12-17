@@ -35,6 +35,7 @@ import org.openziti.tunnel.ContextEvent
 import org.openziti.tunnel.Dump
 import org.openziti.tunnel.Enroll
 import org.openziti.tunnel.Event
+import org.openziti.tunnel.ExtJWTEvent
 import org.openziti.tunnel.Keychain
 import org.openziti.tunnel.LoadIdentity
 import org.openziti.tunnel.OnOffCommand
@@ -87,7 +88,7 @@ class TunnelModel(
 
     class TunnelIdentity(
         val id: String,
-        val cfg: ZitiConfig,
+        var cfg: ZitiConfig,
         private val tunnel: TunnelModel,
         enable: Boolean = true
     ): ViewModel() {
@@ -104,8 +105,8 @@ class TunnelModel(
         fun status(): LiveData<String> = status
         internal val status = MutableLiveData("Loading")
 
-        internal val controller = MutableLiveData("<controller")
-        fun controller() = controller
+        private val controllers = MutableLiveData(cfg.controllers?.toList() ?: listOf(cfg.controller))
+        fun controllers() = controllers
 
         private val enabled = MutableLiveData(enable)
         fun enabled(): LiveData<Boolean> = enabled
@@ -140,6 +141,11 @@ class TunnelModel(
         fun delete() {
             setEnabled(false)
             tunnel.deleteIdentity(id, cfg.id.key?.removePrefix("keychain:"))
+        }
+
+        internal fun updateConfig(config: ZitiConfig) {
+            cfg = config
+            controllers.postValue(cfg.controllers?.toList() ?: listOf(cfg.controller))
         }
 
         internal fun processServiceUpdate(ev: ServiceEvent) {
@@ -256,7 +262,6 @@ class TunnelModel(
             is ContextEvent -> {
                 tunnelIdentity?.apply {
                     name.postValue(ev.name)
-                    controller.postValue(ev.controller)
                     if (ev.status == "OK") {
                         tunnelIdentity.status.postValue("Active")
                     } else {
@@ -268,7 +273,14 @@ class TunnelModel(
                 tunnelIdentity?.processServiceUpdate(ev)
             }
             is APIEvent -> {
-
+                tunnelIdentity?.let {
+                    it.updateConfig(ev.config)
+                    val json = Json.encodeToString(ZitiConfig.serializer(), it.cfg)
+                    identitiesDir.resolve(it.id).outputStream().use { out ->
+                        out.write(json.toByteArray())
+                    }
+                }
+                Log.i("model", "received event[$ev]")
             }
             else -> {
                 Log.i("model", "received event[$ev]")

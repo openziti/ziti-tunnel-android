@@ -45,8 +45,8 @@ class IdentityDetailFragment : BaseFragment() {
         model.status().observe(viewLifecycleOwner) { st ->
             IdDetailsStatus.text = st
         }
-        model.controller().observe(viewLifecycleOwner) {
-            IdDetailsNetwork.text = it
+        model.controllers().observe(viewLifecycleOwner) {
+            IdDetailsNetwork.text = it.firstOrNull() ?: "Unknown"
         }
         var sCount = 0
         model.services().observe(viewLifecycleOwner) { serviceList ->

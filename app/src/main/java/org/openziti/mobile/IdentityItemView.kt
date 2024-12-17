@@ -39,15 +39,17 @@ class IdentityItemView(context: Context) : RelativeLayout(context) {
         ztx.refresh()
 
         ctxModel = ztx
-        ztx.controller().observe(owner) {
-            binding.IdentityServer.text = it
+        ztx.controllers().observe(owner) {
+            binding.IdentityServer.text = it.firstOrNull() ?: "unknown"
         }
 
         ctxModel.name().observe(owner) {
             binding.IdentityName.text = it
         }
 
-        ctxModel.services().observe(owner) { binding.ServiceCount.text = it.size.toString() }
+        ctxModel.services().observe(owner) {
+            binding.ServiceCount.text = String.format("%d", it.size)
+        }
         ctxModel.enabled().observe(owner) { state ->
             isOn = state
         }
