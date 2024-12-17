@@ -212,11 +212,13 @@ static void on_cmd_complete(const tunnel_result *res, void *ctx) {
 
     JNIEnv *env;
     tunnelMethods.vm->GetEnv((void**)&env, JNI_VERSION_1_6);
-    auto str = env->NewStringUTF(json);
+    auto jsonStr = env->NewStringUTF(json);
 
     auto o = (jobject)ctx;
-    env->CallVoidMethod(tunnelMethods.tunnel, tunnelMethods.onResp, str, o);
+    env->CallVoidMethod(tunnelMethods.tunnel, tunnelMethods.onResp, jsonStr, o);
     env->DeleteGlobalRef(o);
+    env->DeleteLocalRef(jsonStr);
+    free(json);
 }
 
 void notify_cb(uv_async_t *a) {
@@ -298,18 +300,18 @@ static void on_event(const base_event *ev) {
 int tunnel_add_route(netif_handle, const char *route) {
     JNIEnv *env;
     tunnelMethods.vm->GetEnv((void **) &env, JNI_VERSION_1_6);
-    jstring evString = env->NewStringUTF(route);
-    env->CallVoidMethod(tunnelMethods.tunnel, tunnelMethods.addRoute, evString);
-    env->DeleteLocalRef(evString);
+    jstring rtStr = env->NewStringUTF(route);
+    env->CallVoidMethod(tunnelMethods.tunnel, tunnelMethods.addRoute, rtStr);
+    env->DeleteLocalRef(rtStr);
     return 0;
 }
 
 int tunnel_del_route(netif_handle, const char *route) {
     JNIEnv *env;
     tunnelMethods.vm->GetEnv((void **) &env, JNI_VERSION_1_6);
-    jstring evString = env->NewStringUTF(route);
-    env->CallVoidMethod(tunnelMethods.tunnel, tunnelMethods.delRoute, evString);
-    env->DeleteLocalRef(evString);
+    jstring rtStr = env->NewStringUTF(route);
+    env->CallVoidMethod(tunnelMethods.tunnel, tunnelMethods.delRoute, rtStr);
+    env->DeleteLocalRef(rtStr);
     return 0;
 }
 
