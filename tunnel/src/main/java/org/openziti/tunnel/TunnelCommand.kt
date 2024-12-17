@@ -42,14 +42,14 @@ enum class CMD {
 }
 
 @Serializable data class ZitiID (
-    val cert: String?,
-    val key: String?,
+    val cert: String? = null,
+    val key: String? = null,
     val ca: String
 )
 
 @Serializable data class ZitiConfig(
     @SerialName("ztAPI") val controller: String,
-    @SerialName("ztAPIs") val controllers: List<String>? = null,
+    @SerialName("ztAPIs") val controllers: List<String> = emptyList(),
     val id: ZitiID,
 ) {
     val identifier: String = if (id.key != null)
