@@ -44,7 +44,7 @@ enum class CMD {
 @Serializable data class ZitiID (
     val cert: String? = null,
     val key: String? = null,
-    val ca: String
+    val ca: String,
 )
 
 @Serializable data class ZitiConfig(

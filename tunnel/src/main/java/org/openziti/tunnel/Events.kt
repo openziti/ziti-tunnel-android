@@ -16,6 +16,7 @@ val eventModule = SerializersModule {
         subclass(ContextEvent::class)
         subclass(APIEvent::class)
         subclass(ServiceEvent::class)
+        subclass(ExtJWTEvent::class)
     }
 }
 val EventsJson = Json {
@@ -37,8 +38,22 @@ data class ContextEvent(
 
 @Serializable @SerialName("APIEvent")
 data class APIEvent(
-    override val identifier: String
+    override val identifier: String,
+    val config: ZitiConfig,
 ): Event()
+
+@Serializable @SerialName("ExtJWTEvent")
+data class ExtJWTEvent(
+    override val identifier: String,
+    val status: String,
+    val providers: List<JwtSigner> = emptyList(),
+): Event()
+
+@Serializable
+data class JwtSigner (
+    val name: String,
+    val issuer: String,
+)
 
 @Serializable
 data class Service(
