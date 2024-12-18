@@ -38,6 +38,7 @@ import org.openziti.tunnel.ContextEvent
 import org.openziti.tunnel.Dump
 import org.openziti.tunnel.Enroll
 import org.openziti.tunnel.Event
+import org.openziti.tunnel.ExtJWTEvent
 import org.openziti.tunnel.Keychain
 import org.openziti.tunnel.LoadIdentity
 import org.openziti.tunnel.OnOffCommand
@@ -243,20 +244,22 @@ class TunnelModel(
                 it[disabledKey(id)] ?: false
             }.first()
         }
-        Log.i("model", "loading identity[$id] disabled[$disabled]")
+        Log.i(TAG, "loading identity[$id] disabled[$disabled]")
         val cmd = LoadIdentity(id, cfg, disabled)
         tunnel.processCmd(cmd).handleAsync { json: JsonElement? , ex: Throwable? ->
             if (ex != null) {
-                Log.w("model", "failed to execute", ex)
+                Log.w(TAG, "failed to execute", ex)
             } else  {
                 identities[id] = TunnelIdentity(id, cfg, this, !disabled)
                 identitiesData.postValue(identities.values.toList())
-                Log.i("model", "load result[$id]: $json")
+                Log.i(TAG, "load result[$id]: $json")
             }
         }
     }
 
     private fun processEvent(ev: Event) {
+        Log.d(TAG, "received event[$ev]")
+
         val tunnelIdentity = identities[ev.identifier]
         when(ev) {
             is ContextEvent -> {
@@ -280,10 +283,11 @@ class TunnelModel(
                         out.write(json.toByteArray())
                     }
                 }
-                Log.i("model", "received event[$ev]")
+            }
+            is ExtJWTEvent -> {
             }
             else -> {
-                Log.i("model", "received event[$ev]")
+                Log.w(TAG, "unhandled event[$ev]")
             }
         }
     }
@@ -309,7 +313,7 @@ class TunnelModel(
 
             loadIdentity(cfg.identifier, cfg)
         }.exceptionally {
-            Log.e("model", "enrollment failed", it)
+            Log.e(TAG, "enrollment failed", it)
         }
         return future
     }
@@ -371,7 +375,7 @@ class TunnelModel(
     }
 
     companion object {
-        const val TAG = "tunnel-model"
+        const val TAG = "model"
         const val DEFAULT_DNS = "100.64.0.2"
         const val DEFAULT_RANGE = "100.64.0.0/10"
 

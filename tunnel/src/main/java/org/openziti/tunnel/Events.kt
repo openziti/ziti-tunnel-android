@@ -52,7 +52,7 @@ data class ExtJWTEvent(
 @Serializable
 data class JwtSigner (
     val name: String,
-    val issuer: String,
+    val issuer: String? = null,
 )
 
 @Serializable
