@@ -17,13 +17,16 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.selects.select
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -77,8 +80,12 @@ class TunnelModel(
     }
 
     data class NetworkStats(val up: Double, val down: Double)
-    fun stats(): LiveData<NetworkStats> = stats
-    internal val stats = MutableLiveData(NetworkStats(0.0,0.0))
+    fun stats() = flow {
+        while (true) {
+            emit(NetworkStats(tunnel.getUpRate(), tunnel.getDownRate()))
+            delay(1_000)
+        }
+    }.asLiveData()
 
     fun identities(): LiveData<List<TunnelIdentity>> = identitiesData
     private val identitiesData = MutableLiveData<List<TunnelIdentity>>()
@@ -171,12 +178,6 @@ class TunnelModel(
         }
         viewModelScope.launch {
             tunnel.events().collect(this@TunnelModel::processEvent)
-        }
-        viewModelScope.launch {
-            while(true) {
-                delay(1_000)
-                stats.postValue(NetworkStats(tunnel.getUpRate(), tunnel.getDownRate()))
-            }
         }
 
         val configs = mutableMapOf<String, ZitiConfig>()

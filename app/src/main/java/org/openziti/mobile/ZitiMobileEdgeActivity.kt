@@ -309,10 +309,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
             }
         }
 
-        model.stats().observe(this) {
-            setSpeed(it.down, DownloadSpeed, DownloadMbps)
-            setSpeed(it.up, UploadSpeed, UploadMbps)
-        }
 
         prefs = getSharedPreferences("ziti-vpn", Context.MODE_PRIVATE)
         //checkAppList()
@@ -330,6 +326,12 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
         bindService(Intent(applicationContext, ZitiVPNService::class.java), serviceConnection, Context.BIND_AUTO_CREATE)
 
         updateTunnelState()
+
+        model.stats().observe(this) {
+            setSpeed(it.down, DownloadSpeed, DownloadMbps)
+            setSpeed(it.up, UploadSpeed, UploadMbps)
+        }
+
     }
 
     private fun updateTunnelState() {
