@@ -18,7 +18,7 @@ import androidx.fragment.app.activityViewModels
 import org.openziti.mobile.LineView
 import org.openziti.mobile.model.TunnelModel
 import org.openziti.mobile.databinding.IdentityBinding
-import org.openziti.mobile.model.TunnelIdentity
+import org.openziti.mobile.model.Identity
 
 /**
  * A simple [Fragment] subclass.
@@ -83,7 +83,7 @@ class IdentityDetailFragment : BaseFragment() {
 
     }.root
 
-    private fun forgetIdentity(model: TunnelIdentity) {
+    private fun forgetIdentity(model: Identity) {
         val builder = AlertDialog.Builder(requireContext())
         builder.setTitle("Confirm")
         builder.setMessage("Are you sure you want to delete this identity from your device?")

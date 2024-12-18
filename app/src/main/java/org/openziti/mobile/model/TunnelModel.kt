@@ -82,11 +82,11 @@ class TunnelModel(
         }
     }.asLiveData()
 
-    fun identities(): LiveData<List<TunnelIdentity>> = identitiesData
-    private val identitiesData = MutableLiveData<List<TunnelIdentity>>()
-    private val identities = mutableMapOf<String, TunnelIdentity>()
+    fun identities(): LiveData<List<Identity>> = identitiesData
+    private val identitiesData = MutableLiveData<List<Identity>>()
+    private val identities = mutableMapOf<String, Identity>()
 
-    fun identity(id: String): TunnelIdentity? = identities[id]
+    fun identity(id: String): Identity? = identities[id]
 
     init {
         runBlocking {
@@ -170,7 +170,7 @@ class TunnelModel(
             if (ex != null) {
                 Log.w(TAG, "failed to execute", ex)
             } else  {
-                identities[id] = TunnelIdentity(id, cfg, this, !disabled)
+                identities[id] = Identity(id, cfg, this, !disabled)
                 identitiesData.postValue(identities.values.toList())
                 Log.i(TAG, "load result[$id]: $json")
             }

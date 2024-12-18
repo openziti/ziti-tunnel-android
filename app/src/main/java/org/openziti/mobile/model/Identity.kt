@@ -18,7 +18,7 @@ import org.openziti.tunnel.ServiceEvent
 import org.openziti.tunnel.ZitiConfig
 import java.net.URI
 
-class TunnelIdentity(
+class Identity(
     val id: String,
     var cfg: ZitiConfig,
     private val tunnel: TunnelModel,
