@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.widget.RelativeLayout
 import androidx.appcompat.app.AppCompatActivity
 import org.openziti.mobile.databinding.IdentityitemBinding
+import org.openziti.mobile.model.TunnelModel
 
 /**
  * TODO: document your custom view class.

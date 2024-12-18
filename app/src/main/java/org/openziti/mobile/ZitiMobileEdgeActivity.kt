@@ -39,6 +39,7 @@ import org.openziti.mobile.debug.DebugInfo
 import org.openziti.mobile.fragments.AboutFragment
 import org.openziti.mobile.fragments.AdvancedFragment
 import org.openziti.mobile.fragments.IdentityDetailFragment
+import org.openziti.mobile.model.TunnelModel
 import java.util.Timer
 import java.util.TimerTask
 

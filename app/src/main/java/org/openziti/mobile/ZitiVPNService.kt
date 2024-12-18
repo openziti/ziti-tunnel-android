@@ -28,11 +28,10 @@ import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.openziti.mobile.model.TunnelModel
 import org.openziti.tunnel.toRoute
-import java.io.Writer
 import java.net.Inet4Address
 import java.net.Inet6Address
 import java.time.Duration

@@ -16,7 +16,7 @@ import androidx.core.content.ContextCompat.getSystemService
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import org.openziti.mobile.LineView
-import org.openziti.mobile.TunnelModel
+import org.openziti.mobile.model.TunnelModel
 import org.openziti.mobile.databinding.IdentityBinding
 
 /**

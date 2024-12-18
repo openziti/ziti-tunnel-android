@@ -2,7 +2,7 @@
  * Copyright (c) 2024 NetFoundry. All rights reserved.
  */
 
-package org.openziti.mobile
+package org.openziti.mobile.model
 
 import android.content.Context
 import android.util.Log
@@ -26,19 +26,18 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.selects.select
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.jsonPrimitive
+import org.openziti.mobile.ZitiMobileEdgeApp
 import org.openziti.tunnel.APIEvent
 import org.openziti.tunnel.ContextEvent
 import org.openziti.tunnel.Dump
 import org.openziti.tunnel.Enroll
 import org.openziti.tunnel.Event
-import org.openziti.tunnel.ExtJWTEvent
 import org.openziti.tunnel.Keychain
 import org.openziti.tunnel.LoadIdentity
 import org.openziti.tunnel.OnOffCommand
