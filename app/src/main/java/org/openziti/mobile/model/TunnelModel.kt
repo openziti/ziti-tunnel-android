@@ -33,18 +33,13 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.jsonPrimitive
 import org.openziti.mobile.ZitiMobileEdgeApp
-import org.openziti.tunnel.APIEvent
-import org.openziti.tunnel.ContextEvent
 import org.openziti.tunnel.Dump
 import org.openziti.tunnel.Enroll
 import org.openziti.tunnel.Event
-import org.openziti.tunnel.ExtJWTEvent
 import org.openziti.tunnel.Keychain
 import org.openziti.tunnel.LoadIdentity
 import org.openziti.tunnel.OnOffCommand
 import org.openziti.tunnel.RefreshIdentity
-import org.openziti.tunnel.Service
-import org.openziti.tunnel.ServiceEvent
 import org.openziti.tunnel.SetUpstreamDNS
 import org.openziti.tunnel.Tunnel
 import org.openziti.tunnel.Upstream
@@ -92,81 +87,6 @@ class TunnelModel(
     private val identities = mutableMapOf<String, TunnelIdentity>()
 
     fun identity(id: String): TunnelIdentity? = identities[id]
-
-    class TunnelIdentity(
-        val id: String,
-        var cfg: ZitiConfig,
-        private val tunnel: TunnelModel,
-        enable: Boolean = true
-    ): ViewModel() {
-
-        val zitiID: String =
-            with(URI(id)){
-                userInfo ?: path?.removePrefix("/")
-            } ?: id
-
-
-        fun name(): LiveData<String> = name
-        internal val name = MutableLiveData(id)
-
-        fun status(): LiveData<String> = status
-        internal val status = MutableLiveData("Loading")
-
-        private val controllers = MutableLiveData(cfg.controllers?.toList() ?: listOf(cfg.controller))
-        fun controllers() = controllers
-
-        private val enabled = MutableLiveData(enable)
-        fun enabled(): LiveData<Boolean> = enabled
-
-        private val serviceMap = mutableMapOf<String, Service>()
-        private val services = MutableLiveData<List<Service>>()
-        fun services(): LiveData<List<Service>> = services
-
-        fun refresh() {
-            tunnel.refreshIdentity(id).handleAsync { _, ex ->
-                ex?.let {
-                    Log.w(TAG, "failed refresh", it)
-                }
-            }
-        }
-
-        fun setEnabled(on: Boolean) {
-            if (on)
-                Log.i(TAG, "enabling[${name.value}]")
-            else
-                Log.i(TAG, "disabling[${name.value}]")
-
-            tunnel.enableIdentity(id, on).thenAccept {
-                enabled.postValue(on)
-                if (on)
-                    status.postValue("Enabled")
-                else
-                    status.postValue("Disabled")
-            }
-        }
-
-        fun delete() {
-            setEnabled(false)
-            tunnel.deleteIdentity(id, cfg.id.key?.removePrefix("keychain:"))
-        }
-
-        internal fun updateConfig(config: ZitiConfig) {
-            cfg = config
-            controllers.postValue(cfg.controllers?.toList() ?: listOf(cfg.controller))
-        }
-
-        internal fun processServiceUpdate(ev: ServiceEvent) {
-            for (s in ev.removedServices) {
-                serviceMap.remove(s.id)
-            }
-
-            for (s in ev.addedServices) {
-                serviceMap[s.id] = s
-            }
-
-            services.postValue(serviceMap.values.toList())
-        }
-    }
 
     init {
         runBlocking {
@@ -260,36 +180,8 @@ class TunnelModel(
     private fun processEvent(ev: Event) {
         Log.d(TAG, "received event[$ev]")
 
-        val tunnelIdentity = identities[ev.identifier]
-        when(ev) {
-            is ContextEvent -> {
-                tunnelIdentity?.apply {
-                    name.postValue(ev.name)
-                    if (ev.status == "OK") {
-                        tunnelIdentity.status.postValue("Active")
-                    } else {
-                        tunnelIdentity.status.postValue(ev.status)
-                    }
-                }
-            }
-            is ServiceEvent -> {
-                tunnelIdentity?.processServiceUpdate(ev)
-            }
-            is APIEvent -> {
-                tunnelIdentity?.let {
-                    it.updateConfig(ev.config)
-                    val json = Json.encodeToString(ZitiConfig.serializer(), it.cfg)
-                    identitiesDir.resolve(it.id).outputStream().use { out ->
-                        out.write(json.toByteArray())
-                    }
-                }
-            }
-            is ExtJWTEvent -> {
-            }
-            else -> {
-                Log.w(TAG, "unhandled event[$ev]")
-            }
-        }
+        identities[ev.identifier]?.processEvent(ev)
+            ?: Log.w(TAG, "no identity for event[$ev]")
     }
 
     fun setUpstreamDNS(servers: List<String>): CompletableFuture<Unit> {
@@ -327,10 +219,10 @@ class TunnelModel(
             }
         }
 
-    private fun refreshIdentity(id: String) =
+    internal fun refreshIdentity(id: String) =
         tunnel.processCmd(RefreshIdentity(id)).thenAccept{}
 
-    private fun enableIdentity(id: String, on: Boolean): CompletableFuture<Unit> {
+    internal fun enableIdentity(id: String, on: Boolean): CompletableFuture<Unit> {
         val disabledKey = disabledKey(id)
         runBlocking {
             context().prefs.edit {
@@ -340,7 +232,7 @@ class TunnelModel(
         return tunnel.processCmd(OnOffCommand(id, on)).thenApply {}
     }
 
-    private fun deleteIdentity(identifier: String, key: String?) {
+    internal fun deleteIdentity(identifier: String, key: String?) {
         identities.remove(identifier)
         identitiesData.postValue(identities.values.toList())
 

@@ -8,7 +8,7 @@ import android.view.LayoutInflater
 import android.widget.RelativeLayout
 import androidx.appcompat.app.AppCompatActivity
 import org.openziti.mobile.databinding.IdentityitemBinding
-import org.openziti.mobile.model.TunnelModel
+import org.openziti.mobile.model.TunnelIdentity
 
 /**
  * TODO: document your custom view class.
@@ -17,7 +17,7 @@ class IdentityItemView(context: Context) : RelativeLayout(context) {
 
     private var _count: Int = 0
     private var _isOn: Boolean = false
-    lateinit var ctxModel: TunnelModel.TunnelIdentity
+    lateinit var ctxModel: TunnelIdentity
     val owner = context as AppCompatActivity
     val binding: IdentityitemBinding
 
@@ -36,7 +36,7 @@ class IdentityItemView(context: Context) : RelativeLayout(context) {
         a.recycle()
     }
 
-    fun setModel(ztx: TunnelModel.TunnelIdentity) {
+    fun setModel(ztx: TunnelIdentity) {
         ztx.refresh()
 
         ctxModel = ztx
