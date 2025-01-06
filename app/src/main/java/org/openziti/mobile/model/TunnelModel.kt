@@ -36,6 +36,8 @@ import org.openziti.mobile.ZitiMobileEdgeApp
 import org.openziti.tunnel.Dump
 import org.openziti.tunnel.Enroll
 import org.openziti.tunnel.Event
+import org.openziti.tunnel.ExtAuthResult
+import org.openziti.tunnel.ExternalAuth
 import org.openziti.tunnel.Keychain
 import org.openziti.tunnel.LoadIdentity
 import org.openziti.tunnel.OnOffCommand
@@ -221,6 +223,11 @@ class TunnelModel(
 
     internal fun refreshIdentity(id: String) =
         tunnel.processCmd(RefreshIdentity(id)).thenAccept{}
+
+    internal fun useJWTSigner(id: String, signer: String) =
+        tunnel.processCmd(ExternalAuth(id, signer)).thenApply {
+            Json.decodeFromJsonElement<ExtAuthResult>(it!!)
+        }
 
     internal fun enableIdentity(id: String, on: Boolean): CompletableFuture<Unit> {
         val disabledKey = disabledKey(id)

@@ -8,11 +8,14 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.json.Json
 import org.openziti.tunnel.APIEvent
 import org.openziti.tunnel.ContextEvent
 import org.openziti.tunnel.Event
 import org.openziti.tunnel.ExtJWTEvent
+import org.openziti.tunnel.JwtSigner
 import org.openziti.tunnel.Service
 import org.openziti.tunnel.ServiceEvent
 import org.openziti.tunnel.ZitiConfig
@@ -25,11 +28,19 @@ class Identity(
     enable: Boolean = true
 ): ViewModel() {
 
+    sealed class AuthState(val label: String)
+    data object AuthNone: AuthState("Initial")
+    data object Authenticated: AuthState("Authenticated")
+    data class AuthJWT(val providers: List<JwtSigner>): AuthState("Login with JWT")
+
     val zitiID: String =
         with(URI(id)){
             userInfo ?: path?.removePrefix("/")
         } ?: id
 
+
+    private val authState = MutableStateFlow<AuthState>(AuthNone)
+    fun authState() = authState.asLiveData()
 
     fun name(): LiveData<String> = name
     internal val name = MutableLiveData(id)
@@ -55,6 +66,9 @@ class Identity(
         }
     }
 
+    fun useJWTSigner(signer: String) =
+        tunnel.useJWTSigner(id, signer)
+
     fun setEnabled(on: Boolean) {
         if (on)
             Log.i(TunnelModel.TAG, "enabling[${name.value}]")
@@ -63,10 +77,12 @@ class Identity(
 
         tunnel.enableIdentity(id, on).thenAccept {
             enabled.postValue(on)
-            if (on)
+            if (on) {
                 status.postValue("Enabled")
-            else
+            } else {
+                authState.value = AuthNone
                 status.postValue("Disabled")
+            }
         }
     }
 
@@ -77,7 +93,7 @@ class Identity(
 
     private fun updateConfig(config: ZitiConfig) {
         cfg = config
-        controllers.postValue(cfg.controllers?.toList() ?: listOf(cfg.controller))
+        controllers.postValue(cfg.controllers.toList())
     }
 
     private fun processServiceUpdate(ev: ServiceEvent) {
@@ -92,30 +108,34 @@ class Identity(
         services.postValue(serviceMap.values.toList())
     }
 
-    fun processEvent(ev: Event) {
-        Log.d(TAG, "received event[$ev]")
-        when(ev) {
-            is ContextEvent -> {
-                name.postValue(ev.name)
-                if (ev.status == "OK") {
-                    status.postValue("Active")
-                } else {
-                    status.postValue(ev.status)
-                }
+    fun processEvent(ev: Event):Unit = when (ev) {
+        is ContextEvent -> {
+            name.postValue(ev.name)
+            if (ev.status == "OK") {
+                status.postValue("Active")
+                authState.value = Authenticated
+            } else {
+                status.postValue(ev.status)
             }
-            is ServiceEvent -> processServiceUpdate(ev)
-            is APIEvent -> {
-                updateConfig(ev.config)
-                val json = Json.encodeToString(ZitiConfig.serializer(), cfg)
-                tunnel.identitiesDir.resolve(id).outputStream().use { out ->
-                    out.write(json.toByteArray())
-                }
+        }
+
+        is ServiceEvent -> processServiceUpdate(ev)
+
+        is APIEvent -> {
+            updateConfig(ev.config)
+            val json = Json.encodeToString(ZitiConfig.serializer(), cfg)
+            tunnel.identitiesDir.resolve(id).outputStream().use { out ->
+                out.write(json.toByteArray())
             }
-            is ExtJWTEvent -> {
-            }
-            else -> {
-                Log.w(TAG, "unhandled event[$ev]")
-            }
+        }
+
+        is ExtJWTEvent -> {
+            authState.value = AuthJWT(ev.providers)
+        }
+
+        else -> {
+            Log.w(TAG, "unhandled event[$ev]")
+            Unit
         }
     }
     companion object {
