@@ -161,7 +161,7 @@
                 tools:layout_editor_absoluteX="0dp">
             </TextView>
             <TextView
-                android:id="@+id/IdDetailsEnrollment"
+                android:id="@+id/AuthenticationStatus"
                 android:textAlignment="gravity"
                 android:gravity="right"
                 android:textColor="@color/title"
