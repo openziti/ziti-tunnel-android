@@ -67,8 +67,10 @@ class Tunnel(app: Application, ): Runnable {
     inline fun <reified C: TunnelCommand> processCmd(cmd: C): CompletableFuture<JsonElement?> =
         CompletableFuture<TunnelResult>().apply {
             val data = cmd.toJson()
+            Log.i(TAG, "cmd[${cmd.id}] = $data")
             executeCommand(cmd.cmd.name, data, this)
         }.thenApply {
+            Log.i(TAG, "result[${cmd.id}] = $it")
             if (!it.success) throw Exception(it.error)
             it.data
         }
