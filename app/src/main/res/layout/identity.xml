@@ -25,7 +25,7 @@
             android:background="@drawable/back"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"></ImageView>
+            app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
             android:layout_width="match_parent"
@@ -47,7 +47,7 @@
         android:layout_height="60dp"
         android:background="@color/background">
 
-        <Switch
+        <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/IdOnOffSwitch"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -65,10 +65,10 @@
             android:singleLine="true"
             android:paddingLeft="18dp"
             android:textColor="@color/title"
-            android:textSize="26dp"
+            android:textSize="26sp"
             android:layout_marginEnd="75dp"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintTop_toTopOf="parent"></TextView>
+            app:layout_constraintTop_toTopOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -91,7 +91,7 @@
                 android:paddingLeft="18dp"
                 android:text="@string/network"
                 android:textColor="@color/title"
-                android:textSize="18dp"
+                android:textSize="18sp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 tools:layout_editor_absoluteX="0dp">
@@ -123,7 +123,7 @@
                 android:paddingLeft="18dp"
                 android:text="@string/status"
                 android:textColor="@color/title"
-                android:textSize="18dp"
+                android:textSize="18sp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 tools:layout_editor_absoluteX="0dp">
@@ -153,9 +153,9 @@
                 android:layout_height="22dp"
                 android:lineHeight="22dp"
                 android:paddingLeft="18dp"
-                android:text="@string/enrollment"
+                android:text="@string/auth_status"
                 android:textColor="@color/title"
-                android:textSize="18dp"
+                android:textSize="18sp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 tools:layout_editor_absoluteX="0dp">
@@ -187,10 +187,10 @@
                 android:paddingTop="10dp"
                 android:text="@string/services"
                 android:textColor="@color/title"
-                android:textSize="26dp"
+                android:textSize="26sp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"></TextView>
+                app:layout_constraintTop_toTopOf="parent" />
 
             <Button
                 android:id="@+id/IdDetailForgetButton"
@@ -202,7 +202,7 @@
                 android:text="@string/forget"
                 android:textColor="@color/title"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"></Button>
+                app:layout_constraintTop_toTopOf="parent" />
         </androidx.constraintlayout.widget.ConstraintLayout>
 
         <ScrollView
@@ -217,10 +217,5 @@
                 android:orientation="vertical">
             </LinearLayout>
         </ScrollView>
-
-
-
-
-
     </LinearLayout>
 </LinearLayout>
