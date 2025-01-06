@@ -280,7 +280,10 @@ static void on_event(const base_event *ev) {
             json = api_event_to_json(
                     (const api_event*)ev, MODEL_JSON_COMPACT, nullptr);
             break;
-        // TODO case TunnelEvent_ExtJWTEvent:
+        case TunnelEvent_ExtJWTEvent:
+            json = ext_signer_event_to_json(
+                    (const ext_signer_event*)ev, MODEL_JSON_COMPACT, nullptr);
+            break;
         case TunnelEvent_Unknown:
         default:
             break;

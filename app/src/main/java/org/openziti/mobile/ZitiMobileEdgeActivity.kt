@@ -23,7 +23,6 @@ import android.os.VibratorManager
 import android.view.View
 import android.view.WindowManager
 import android.view.animation.DecelerateInterpolator
-import android.view.inputmethod.InputMethodManager
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
@@ -33,12 +32,12 @@ import androidx.core.os.ConfigurationCompat
 import androidx.core.os.bundleOf
 import androidx.fragment.app.add
 import androidx.fragment.app.commit
-import androidx.viewbinding.ViewBinding
 import org.openziti.mobile.databinding.DashboardBinding
 import org.openziti.mobile.debug.DebugInfo
 import org.openziti.mobile.fragments.AboutFragment
 import org.openziti.mobile.fragments.AdvancedFragment
 import org.openziti.mobile.fragments.IdentityDetailFragment
+import org.openziti.mobile.model.TunnelModel
 import java.util.Timer
 import java.util.TimerTask
 
@@ -97,10 +96,7 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
         startActivity(openURL)
     }
 
-    var duration = 300
-    var offScreenX = 0
-    var offScreenY = 0
-    var openY = 0
+    private var duration = 300
 
     fun getScreenWidth(): Int {
         return Resources.getSystem().displayMetrics.widthPixels
@@ -137,26 +133,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
         isMenuOpen = !isMenuOpen
     }
 
-    private fun toggleSlide(b: ViewBinding, newState: String) = toggleSlide(b.root, newState)
-    private fun toggleSlide(view:View, newState:String) {
-        try {
-            val inputManager:InputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-            inputManager.hideSoftInputFromWindow(currentFocus!!.windowToken, 0)
-        } catch (e:Exception) {}
-        var fader = ObjectAnimator.ofFloat(view, "alpha", 0f, 1f).setDuration(duration.toLong())
-        var animateTo = ObjectAnimator.ofFloat( view,"translationX", offScreenX.toFloat(), 0f ).setDuration(duration.toLong())
-        fader.interpolator = DecelerateInterpolator()
-        animateTo.interpolator = DecelerateInterpolator()
-        state = newState
-        if (view.x==0f) {
-            fader = ObjectAnimator.ofFloat(view, "alpha", 1f, 0f).setDuration(duration.toLong())
-            animateTo = ObjectAnimator.ofFloat( view,"translationX", 0f, offScreenX.toFloat() ).setDuration(duration.toLong())
-        }
-        var animatorSet = AnimatorSet()
-        animatorSet.play( animateTo ).with(fader)
-        animatorSet.start()
-    }
-
     private fun doBackPress() {
         if (!supportFragmentManager.popBackStackImmediate()) {
             if (isMenuOpen) toggleMenu()
@@ -180,11 +156,7 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
         setContentView(binding.root)
         this.window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
 
-        offScreenX = getScreenWidth()+50
-        offScreenY = getScreenHeight()-370
-
         // Setup Screens
-        openY = offScreenY
         this.startPosition = getScreenHeight().toDp()-130.toDp().toFloat()
 
         onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
@@ -309,15 +281,8 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
             }
         }
 
-        model.stats().observe(this) {
-            setSpeed(it.down, DownloadSpeed, DownloadMbps)
-            setSpeed(it.up, UploadSpeed, UploadMbps)
-        }
 
         prefs = getSharedPreferences("ziti-vpn", Context.MODE_PRIVATE)
-        //checkAppList()
-
-        //bindService(Intent(applicationContext, ZitiVPNService::class.java), serviceConnection, Context.BIND_AUTO_CREATE)
     }
 
     override fun onPause() {
@@ -330,6 +295,12 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
         bindService(Intent(applicationContext, ZitiVPNService::class.java), serviceConnection, Context.BIND_AUTO_CREATE)
 
         updateTunnelState()
+
+        model.stats().observe(this) {
+            setSpeed(it.down, DownloadSpeed, DownloadMbps)
+            setSpeed(it.up, UploadSpeed, UploadMbps)
+        }
+
     }
 
     private fun updateTunnelState() {

@@ -15,6 +15,7 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import java.net.URI
+import java.util.concurrent.atomic.AtomicLong
 
 enum class CMD {
     ZitiDump,
@@ -44,7 +45,7 @@ enum class CMD {
 @Serializable data class ZitiID (
     val cert: String? = null,
     val key: String? = null,
-    val ca: String
+    val ca: String,
 )
 
 @Serializable data class ZitiConfig(
@@ -58,7 +59,13 @@ enum class CMD {
         URI(controller).host.replace(".", "_")
 }
 
-@Serializable sealed class TunnelCommand(@Transient val cmd: CMD = CMD.Status)
+@Serializable sealed class TunnelCommand(
+    @Transient val cmd: CMD = CMD.Status,
+    @Transient val id: Long = counter.incrementAndGet()) {
+    companion object {
+        val counter = AtomicLong(0)
+    }
+}
 @Serializable data object ListIdentities: TunnelCommand(CMD.ListIdentities)
 
 @Serializable data class OnOffCommand(
@@ -75,6 +82,16 @@ enum class CMD {
     @SerialName("Config") val config: ZitiConfig,
     @SerialName("Disabled") val disabled: Boolean,
 ): TunnelCommand(CMD.LoadIdentity)
+
+@Serializable data class ExternalAuth(
+    @SerialName("Identifier") val identifier: String,
+    @SerialName("Provider") val provider: String,
+): TunnelCommand(CMD.ExternalAuth)
+
+@Serializable data class ExtAuthResult(
+    val identifier: String,
+    val url: String,
+)
 
 @Serializable data class Dump(
     @SerialName("Identifier") val identifier: String

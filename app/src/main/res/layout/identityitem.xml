@@ -22,7 +22,7 @@
                     android:layout_height="match_parent"
                     android:orientation="vertical">
 
-                        <Switch
+                        <androidx.appcompat.widget.SwitchCompat
                             android:id="@+id/IdToggleSwitch"
                             android:layout_width="55dp"
                             android:layout_height="25dp"
@@ -39,9 +39,10 @@
                             android:layout_height="30dp"
                             android:layout_weight="1"
                             android:gravity="center|top"
-                            android:text="disabled"
-                            android:textSize="14dp"
-                            android:textColor="#FFFFFF"></TextView>
+                            android:text="@string/disabled"
+                            android:textSize="14sp"
+                            android:textColor="#FFFFFF"
+                            />
                 </LinearLayout>
 
                 <LinearLayout
@@ -60,9 +61,7 @@
                             android:lineHeight="15dp"
                             android:text="MyIdName"
                             android:textColor="@color/title"
-                            android:textSize="18dp">
-
-                        </TextView>
+                            android:textSize="18sp"/>
 
                         <TextView
                             android:id="@+id/IdentityServer"
@@ -75,11 +74,8 @@
                             android:lineHeight="55dp"
                             android:text="server:8080"
                             android:textColor="@color/title"
-                            android:textSize="14dp">
-
-                        </TextView>
-
-
+                            android:textSize="14sp"/>
+                        
                 </LinearLayout>
                 <LinearLayout
                     android:layout_weight="0"
@@ -90,42 +86,44 @@
                             android:layout_width="match_parent"
                             android:layout_height="35dp">
 
-
                                 <ImageView
                                     android:id="@+id/ServiceCountBubble"
                                     android:layout_width="match_parent"
                                     android:layout_height="fill_parent"
                                     android:layout_marginTop="8dp"
+                                    android:contentDescription="@string/services"
                                     android:gravity="center"
                                     android:src="@drawable/bubble"
                                     android:textAlignment="gravity"
                                     app:layout_constraintEnd_toEndOf="parent"
-                                    app:layout_constraintTop_toTopOf="parent"></ImageView>
+                                    app:layout_constraintTop_toTopOf="parent" />
+
                                 <TextView
                                     android:id="@+id/ServiceCount"
                                     android:layout_width="match_parent"
                                     android:layout_height="fill_parent"
                                     android:layout_marginTop="8dp"
                                     android:gravity="center"
-                                    android:text="0"
                                     android:textAlignment="gravity"
                                     android:textColor="@color/title"
-                                    android:textSize="12dip"
+                                    android:textSize="12sp"
                                     app:layout_constraintEnd_toEndOf="parent"
-                                    app:layout_constraintTop_toTopOf="parent"></TextView>
+                                    app:layout_constraintTop_toTopOf="parent" />
 
                         </androidx.constraintlayout.widget.ConstraintLayout>
 
                         <TextView
+                            android:id="@+id/ServicesStatus"
                             android:layout_width="85dp"
                             android:layout_height="30dp"
                             android:gravity="center|top"
-                            android:text="services"
+                            android:text="@string/services"
                             android:textAlignment="center"
-                            android:textSize="14dp"
-                            android:textColor="#FFFFFF"></TextView>
+                            android:textSize="14sp"
+                            android:textColor="#FFFFFF" />
 
                 </LinearLayout>
+
                 <ImageView
                     android:layout_weight="0"
                     android:layout_width="12dp"
@@ -134,8 +132,9 @@
                     android:layout_marginTop="18dp"
                     android:background="@drawable/next"
                     android:clickable="true"
+                    android:contentDescription="@string/identity_detail"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"></ImageView>
+                    app:layout_constraintTop_toTopOf="parent" />
         </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

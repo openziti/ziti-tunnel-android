@@ -2,7 +2,7 @@
  * Copyright (c) 2024 NetFoundry. All rights reserved.
  */
 
-package org.openziti.mobile
+package org.openziti.mobile.model
 
 import android.content.Context
 import android.util.Log
@@ -17,10 +17,12 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -30,17 +32,16 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.jsonPrimitive
-import org.openziti.tunnel.APIEvent
-import org.openziti.tunnel.ContextEvent
+import org.openziti.mobile.ZitiMobileEdgeApp
 import org.openziti.tunnel.Dump
 import org.openziti.tunnel.Enroll
 import org.openziti.tunnel.Event
+import org.openziti.tunnel.ExtAuthResult
+import org.openziti.tunnel.ExternalAuth
 import org.openziti.tunnel.Keychain
 import org.openziti.tunnel.LoadIdentity
 import org.openziti.tunnel.OnOffCommand
 import org.openziti.tunnel.RefreshIdentity
-import org.openziti.tunnel.Service
-import org.openziti.tunnel.ServiceEvent
 import org.openziti.tunnel.SetUpstreamDNS
 import org.openziti.tunnel.Tunnel
 import org.openziti.tunnel.Upstream
@@ -76,84 +77,18 @@ class TunnelModel(
     }
 
     data class NetworkStats(val up: Double, val down: Double)
-    fun stats(): LiveData<NetworkStats> = stats
-    internal val stats = MutableLiveData(NetworkStats(0.0,0.0))
-
-    fun identities(): LiveData<List<TunnelIdentity>> = identitiesData
-    private val identitiesData = MutableLiveData<List<TunnelIdentity>>()
-    private val identities = mutableMapOf<String, TunnelIdentity>()
-
-    fun identity(id: String): TunnelIdentity? = identities[id]
-
-    class TunnelIdentity(
-        val id: String,
-        val cfg: ZitiConfig,
-        private val tunnel: TunnelModel,
-        enable: Boolean = true
-    ): ViewModel() {
-
-        val zitiID: String =
-            with(URI(id)){
-                userInfo ?: path?.removePrefix("/")
-            } ?: id
-
-
-        fun name(): LiveData<String> = name
-        internal val name = MutableLiveData(id)
-
-        fun status(): LiveData<String> = status
-        internal val status = MutableLiveData("Loading")
-
-        internal val controller = MutableLiveData("<controller")
-        fun controller() = controller
-
-        private val enabled = MutableLiveData(enable)
-        fun enabled(): LiveData<Boolean> = enabled
-
-        private val serviceMap = mutableMapOf<String, Service>()
-        private val services = MutableLiveData<List<Service>>()
-        fun services(): LiveData<List<Service>> = services
-
-        fun refresh() {
-            tunnel.refreshIdentity(id).handleAsync { _, ex ->
-                ex?.let {
-                    Log.w(TAG, "failed refresh", it)
-                }
-            }
+    fun stats() = flow {
+        while (true) {
+            emit(NetworkStats(tunnel.getUpRate(), tunnel.getDownRate()))
+            delay(1_000)
         }
+    }.asLiveData()
 
-        fun setEnabled(on: Boolean) {
-            if (on)
-                Log.i(TAG, "enabling[${name.value}]")
-            else
-                Log.i(TAG, "disabling[${name.value}]")
+    fun identities(): LiveData<List<Identity>> = identitiesData
+    private val identitiesData = MutableLiveData<List<Identity>>()
+    private val identities = mutableMapOf<String, Identity>()
 
-            tunnel.enableIdentity(id, on).thenAccept {
-                enabled.postValue(on)
-                if (on)
-                    status.postValue("Enabled")
-                else
-                    status.postValue("Disabled")
-            }
-        }
-
-        fun delete() {
-            setEnabled(false)
-            tunnel.deleteIdentity(id, cfg.id.key?.removePrefix("keychain:"))
-        }
-
-        internal fun processServiceUpdate(ev: ServiceEvent) {
-            for (s in ev.removedServices) {
-                serviceMap.remove(s.id)
-            }
-
-            for (s in ev.addedServices) {
-                serviceMap[s.id] = s
-            }
-
-            services.postValue(serviceMap.values.toList())
-        }
-    }
+    fun identity(id: String): Identity? = identities[id]
 
     init {
         runBlocking {
@@ -165,12 +100,6 @@ class TunnelModel(
         }
         viewModelScope.launch {
             tunnel.events().collect(this@TunnelModel::processEvent)
-        }
-        viewModelScope.launch {
-            while(true) {
-                delay(1_000)
-                stats.postValue(NetworkStats(tunnel.getUpRate(), tunnel.getDownRate()))
-            }
         }
 
         val configs = mutableMapOf<String, ZitiConfig>()
@@ -237,43 +166,24 @@ class TunnelModel(
                 it[disabledKey(id)] ?: false
             }.first()
         }
-        Log.i("model", "loading identity[$id] disabled[$disabled]")
+        Log.i(TAG, "loading identity[$id] disabled[$disabled]")
         val cmd = LoadIdentity(id, cfg, disabled)
         tunnel.processCmd(cmd).handleAsync { json: JsonElement? , ex: Throwable? ->
             if (ex != null) {
-                Log.w("model", "failed to execute", ex)
+                Log.w(TAG, "failed to execute", ex)
             } else  {
-                identities[id] = TunnelIdentity(id, cfg, this, !disabled)
+                identities[id] = Identity(id, cfg, this, !disabled)
                 identitiesData.postValue(identities.values.toList())
-                Log.i("model", "load result[$id]: $json")
+                Log.i(TAG, "load result[$id]: $json")
             }
         }
     }
 
     private fun processEvent(ev: Event) {
-        val tunnelIdentity = identities[ev.identifier]
-        when(ev) {
-            is ContextEvent -> {
-                tunnelIdentity?.apply {
-                    name.postValue(ev.name)
-                    controller.postValue(ev.controller)
-                    if (ev.status == "OK") {
-                        tunnelIdentity.status.postValue("Active")
-                    } else {
-                        tunnelIdentity.status.postValue(ev.status)
-                    }
-                }
-            }
-            is ServiceEvent -> {
-                tunnelIdentity?.processServiceUpdate(ev)
-            }
-            is APIEvent -> {
+        Log.d(TAG, "received event[$ev]")
 
-            }
-            else -> {
-                Log.i("model", "received event[$ev]")
-            }
-        }
+        identities[ev.identifier]?.processEvent(ev)
+            ?: Log.w(TAG, "no identity for event[$ev]")
     }
 
     fun setUpstreamDNS(servers: List<String>): CompletableFuture<Unit> {
@@ -297,7 +207,7 @@ class TunnelModel(
 
             loadIdentity(cfg.identifier, cfg)
         }.exceptionally {
-            Log.e("model", "enrollment failed", it)
+            Log.e(TAG, "enrollment failed", it)
         }
         return future
     }
@@ -311,10 +221,15 @@ class TunnelModel(
             }
         }
 
-    private fun refreshIdentity(id: String) =
+    internal fun refreshIdentity(id: String) =
         tunnel.processCmd(RefreshIdentity(id)).thenAccept{}
 
-    private fun enableIdentity(id: String, on: Boolean): CompletableFuture<Unit> {
+    internal fun useJWTSigner(id: String, signer: String) =
+        tunnel.processCmd(ExternalAuth(id, signer)).thenApply {
+            Json.decodeFromJsonElement<ExtAuthResult>(it!!)
+        }
+
+    internal fun enableIdentity(id: String, on: Boolean): CompletableFuture<Unit> {
         val disabledKey = disabledKey(id)
         runBlocking {
             context().prefs.edit {
@@ -324,7 +239,7 @@ class TunnelModel(
         return tunnel.processCmd(OnOffCommand(id, on)).thenApply {}
     }
 
-    private fun deleteIdentity(identifier: String, key: String?) {
+    internal fun deleteIdentity(identifier: String, key: String?) {
         identities.remove(identifier)
         identitiesData.postValue(identities.values.toList())
 
@@ -359,7 +274,7 @@ class TunnelModel(
     }
 
     companion object {
-        const val TAG = "tunnel-model"
+        const val TAG = "model"
         const val DEFAULT_DNS = "100.64.0.2"
         const val DEFAULT_RANGE = "100.64.0.0/10"
 

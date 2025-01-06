@@ -6,6 +6,8 @@ package org.openziti.mobile.fragments
 
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -16,8 +18,10 @@ import androidx.core.content.ContextCompat.getSystemService
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import org.openziti.mobile.LineView
-import org.openziti.mobile.TunnelModel
+import org.openziti.mobile.model.TunnelModel
 import org.openziti.mobile.databinding.IdentityBinding
+import org.openziti.mobile.model.Identity
+import org.openziti.tunnel.JwtSigner
 
 /**
  * A simple [Fragment] subclass.
@@ -42,11 +46,20 @@ class IdentityDetailFragment : BaseFragment() {
         model.enabled().observe(viewLifecycleOwner) {
             IdOnOffSwitch.isChecked = it
         }
+        model.authState().observe(viewLifecycleOwner) { authState ->
+            AuthenticationStatus.text = authState.label
+            if (authState is Identity.AuthJWT) {
+                AuthenticationStatus.setOnClickListener {
+                    showJWTSelect(model, authState.providers)
+                }
+            }
+            else AuthenticationStatus.setOnClickListener(null)
+        }
         model.status().observe(viewLifecycleOwner) { st ->
             IdDetailsStatus.text = st
         }
-        model.controller().observe(viewLifecycleOwner) {
-            IdDetailsNetwork.text = it
+        model.controllers().observe(viewLifecycleOwner) {
+            IdDetailsNetwork.text = it.firstOrNull() ?: "Unknown"
         }
         var sCount = 0
         model.services().observe(viewLifecycleOwner) { serviceList ->
@@ -82,7 +95,7 @@ class IdentityDetailFragment : BaseFragment() {
 
     }.root
 
-    private fun forgetIdentity(model: TunnelModel.TunnelIdentity) {
+    private fun forgetIdentity(model: Identity) {
         val builder = AlertDialog.Builder(requireContext())
         builder.setTitle("Confirm")
         builder.setMessage("Are you sure you want to delete this identity from your device?")
@@ -105,6 +118,21 @@ class IdentityDetailFragment : BaseFragment() {
         alertDialog.show()
     }
 
+    private fun showJWTSelect(identity: Identity, providers: List<JwtSigner>) {
+        val names = providers.map { it.name }.toTypedArray()
+        val builder =
+            AlertDialog.Builder(requireContext())
+                .setTitle("Select External Login")
+                .setIcon(android.R.drawable.ic_dialog_dialer)
+                .setNegativeButton("Cancel") { _, _ -> }
+                .setItems(names) { _, which ->
+                    identity.useJWTSigner(providers[which].name).thenApply {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(it.url))
+                        startActivity(intent)
+                    }
+                }
+        builder.create().show()
+    }
     companion object {
         const val ID = "id"
     }

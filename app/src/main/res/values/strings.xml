@@ -11,7 +11,7 @@
     <string name="speed">Mbps</string>
     <string name="yours">Your Identities</string>
     <string name="details">Details</string>
-    <string name="enrollment">Enrollment</string>
+    <string name="auth_status">Authentication</string>
     <string name="name">Ziti Mobile Edge</string>
     <string name="platform">For Android</string>
     <string name="stop">Stop</string>
@@ -78,5 +78,9 @@
     <string name="qraction">Scan Code</string>
     <string name="add_identity">Add Identity</string>
     <string name="title_activity_debug_info">Debug Info</string>
+    <string name="identity_detail">Identity Detail</string>
+    <string name="offline">Offline</string>
+    <string name="ext_login">Ext Login</string>
+    <string name="disabled">disabled</string>
 
 </resources>
