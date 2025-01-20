@@ -23,6 +23,7 @@
             android:layout_height="20dp"
             android:layout_marginStart="16dp"
             android:background="@drawable/back"
+            android:contentDescription="@string/back"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -34,7 +35,7 @@
             android:paddingLeft="36dp"
             android:text="@string/back"
             android:textColor="@color/link"
-            android:textSize="16dp"
+            android:textSize="16sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
@@ -49,9 +50,9 @@
 
         <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/IdOnOffSwitch"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="15dp"
+            android:layout_width="48dp"
+            android:layout_height="match_parent"
+            android:layout_marginTop="10dp"
             android:layout_marginRight="10dp"
             android:visibility="visible"
             app:layout_constraintEnd_toEndOf="parent"
@@ -148,6 +149,7 @@
             android:gravity="center"
             android:orientation="horizontal"
             android:background="@color/background">
+
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="22dp"
@@ -158,8 +160,7 @@
                 android:textSize="18sp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                tools:layout_editor_absoluteX="0dp">
-            </TextView>
+                tools:layout_editor_absoluteX="0dp" />
             <TextView
                 android:id="@+id/AuthenticationStatus"
                 android:textAlignment="gravity"
@@ -208,7 +209,8 @@
         <ScrollView
             android:layout_width="fill_parent"
             android:minHeight="180dp"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/services">
             <LinearLayout
                 android:id="@+id/IdDetailServicesList"
                 android:layout_width="match_parent"

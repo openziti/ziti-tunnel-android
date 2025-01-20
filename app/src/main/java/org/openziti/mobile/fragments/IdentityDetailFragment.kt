@@ -41,7 +41,9 @@ class IdentityDetailFragment : BaseFragment() {
         }
 
         model.name().observe(viewLifecycleOwner) { n ->
-            IdIdentityDetailName.text = n
+            if (!n.isNullOrEmpty()) {
+                IdIdentityDetailName.text = n
+            }
         }
         model.enabled().observe(viewLifecycleOwner) {
             IdOnOffSwitch.isChecked = it
