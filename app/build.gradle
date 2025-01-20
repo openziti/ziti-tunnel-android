@@ -40,10 +40,23 @@ def getVersionName = { ->
 def getVersionCode =  { ->
     def stdout = new ByteArrayOutputStream()
     exec {
-        commandLine("git", "rev-list", "--first-parent", "--count", "origin/main")
+        commandLine("git", "describe", "--tags", "--match", "v*", "--always")
         standardOutput = stdout
     }
-    return Integer.parseInt(stdout.toString().trim())
+    def version = stdout.toString().trim().replaceAll("^v", "")
+
+    def split = version.split("\\.")
+
+    println("version: $version, ${split.length}")
+    def (major, minor, pat) = split
+
+    def patchSplit = pat.split("-")
+    def patch = patchSplit[0]
+    def tweak = patchSplit.length > 1 ? patchSplit[1] : "0"
+
+    println("major: $major, minor: $minor, patch: $patch, tweak: $tweak")
+    def code = ((Integer.parseInt(major) * 100 + Integer.parseInt(minor)) * 100 + Integer.parseInt(patch)) * 100 + Integer.parseInt(tweak)
+    return code
 }
 
 def gitHash = getCommitHash()
