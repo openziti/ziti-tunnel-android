@@ -14,6 +14,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: setup build
+        shell: bash
+        run: |
+          CI_CACHE=${GITHUB_WORKSPACE}/.ci_cache
+          VCPKG_BINARY_SOURCES="clear;files,${GITHUB_WORKSPACE}/.ci_cache,readwrite"
+          mkdir -p ${CI_CACHE}
+          echo "CI_CACHE=${CI_CACHE}" >> ${GITHUB_ENV}
+          echo "VCPKG_BINARY_SOURCES=${VCPKG_BINARY_SOURCES}" >> ${GITHUB_ENV}
+
       - name: Build App
         uses: ./.github/actions/gradle
         with:
