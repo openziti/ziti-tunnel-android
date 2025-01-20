@@ -60,14 +60,14 @@
         android:id="@+id/MainSelectorLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_marginTop="70dp"
         android:orientation="vertical"
-        android:weightSum="2"
-        android:layout_marginTop="70dp">
+        android:weightSum="2">
 
         <LinearLayout
             android:id="@+id/JWTButton"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_margin="10dp"
             android:layout_weight="1"
             android:background="@drawable/cardskin"
@@ -123,61 +123,61 @@
         </LinearLayout>
 
         <LinearLayout
-                android:id="@+id/QRButtonArea"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:background="@drawable/cardskin"
+            android:id="@+id/QRButtonArea"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_margin="10dp"
+            android:layout_weight="1"
+            android:background="@drawable/cardskin"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="20dp"
+            android:weightSum="10"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="60dp"
+                android:layout_weight="2"
                 android:gravity="center"
-                android:weightSum="10"
-                android:layout_margin="10dp"
-                android:orientation="vertical"
-                android:padding="20dp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent">
+                android:text="@string/qrtitle"
+                android:textAlignment="gravity"
+                android:textColor="@color/label"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                tools:ignore="NestedWeights" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="60dp"
-                    android:gravity="center"
-                    android:text="@string/qrtitle"
-                    android:textAlignment="gravity"
-                    android:layout_weight="2"
-                    android:textColor="@color/label"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    tools:ignore="NestedWeights" />
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="115dp"
+                android:layout_weight="4"
+                android:contentDescription="@string/qrimage"
+                android:gravity="center"
+                android:src="@drawable/qr" />
 
-                <ImageView
-                    android:layout_width="wrap_content"
-                    android:layout_height="115dp"
-                    android:contentDescription="@string/qrimage"
-                    android:layout_weight="4"
-                    android:gravity="center"
-                    android:src="@drawable/qr" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="60dp"
+                android:layout_weight="2"
+                android:gravity="center"
+                android:text="@string/qrsubtitle"
+                android:textAlignment="gravity"
+                android:textColor="@color/label"
+                android:textSize="20sp"
+                android:textStyle="bold" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="60dp"
-                    android:layout_weight="2"
-                    android:gravity="center"
-                    android:text="@string/qrsubtitle"
-                    android:textAlignment="gravity"
-                    android:textColor="@color/label"
-                    android:textSize="20sp"
-                    android:textStyle="bold" />
-
-                <Button
-                    android:id="@+id/QRButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="45dp"
-                    android:layout_weight="2"
-                    android:background="@drawable/buttonskin"
-                    android:paddingLeft="60dp"
-                    android:paddingRight="60dp"
-                    android:text="@string/qraction"
-                    android:textColor="#FFFFFF" />
-            </LinearLayout>
+            <Button
+                android:id="@+id/QRButton"
+                android:layout_width="wrap_content"
+                android:layout_height="45dp"
+                android:layout_weight="2"
+                android:background="@drawable/buttonskin"
+                android:paddingLeft="60dp"
+                android:paddingRight="60dp"
+                android:text="@string/qraction"
+                android:textColor="#FFFFFF" />
+        </LinearLayout>
 
     </LinearLayout>
 

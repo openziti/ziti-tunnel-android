@@ -6,9 +6,12 @@ package org.openziti.mobile
 
 import android.app.Activity
 import android.content.Intent
+import android.hardware.SensorManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
+import android.view.OrientationEventListener
+import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
@@ -72,6 +75,17 @@ class ZitiEnrollmentActivity : AppCompatActivity() {
         binding.CloseIdentityButton.setOnClickListener {
             this.finish()
         }
+
+        val orienter = object: OrientationEventListener(this, SensorManager.SENSOR_DELAY_NORMAL) {
+            override fun onOrientationChanged(orientation: Int) {
+                binding.MainSelectorLayout.orientation =
+                    if ((orientation in 45..134 || orientation in 225..314))
+                        LinearLayout.HORIZONTAL
+                    else
+                        LinearLayout.VERTICAL
+            }
+        }
+        orienter.enable()
     }
 
     fun jwtEnroll(launcher: ActivityResultLauncher<Intent>) {
