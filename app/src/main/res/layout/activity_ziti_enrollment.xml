@@ -28,7 +28,7 @@
             android:adjustViewBounds="true"
             android:scaleType="fitCenter"
             android:src="@drawable/close"
-            android:background="@drawable/globe"
+            android:background="@android:color/transparent"
             android:clickable="true"
             android:contentDescription="@string/esc"
             app:layout_constraintBottom_toBottomOf="parent"
