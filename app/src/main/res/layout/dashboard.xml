@@ -28,21 +28,23 @@
             android:layout_marginTop="0dp"
             android:layout_marginStart="0dp"
             android:background="@drawable/appicon"
-            />
+            android:contentDescription="@string/main_title" />
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="30dp"
             android:text="@string/name"
             android:fontFamily="@font/russo_one"
             android:textColor="@color/title"
-            android:textSize="22sp"></TextView>
+            android:textSize="22sp" />
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="20dp"
             android:layout_marginTop="-10dp"
             android:text="@string/platform"
             android:textColor="@color/subTitle"
-            android:textSize="16sp"></TextView>
+            android:textSize="16sp" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -56,17 +58,20 @@
                 android:layout_height="31dp"
                 android:orientation="horizontal"
                 android:clickable="true">
+
                 <ImageView
                     android:layout_width="30dp"
                     android:layout_height="30dp"
-                    android:background="@drawable/dashboard"></ImageView>
+                    android:background="@drawable/dashboard"
+                    android:contentDescription="@string/dashboard" />
+
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:paddingLeft="20dp"
                     android:text="@string/dashboard"
                     android:textColor="@color/title"
-                    android:textSize="22dp"></TextView>
+                    android:textSize="22sp" />
             </LinearLayout>
 <!--
             <LinearLayout
@@ -96,17 +101,20 @@
                 android:orientation="horizontal"
                 android:clickable="true"
                 android:layout_marginTop="20dp">
+
                 <ImageView
                     android:layout_width="30dp"
                     android:layout_height="30dp"
-                    android:background="@drawable/advanced"></ImageView>
+                    android:contentDescription="@string/advanced"
+                    android:background="@drawable/advanced" />
+
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:paddingLeft="20dp"
                     android:text="@string/advanced"
                     android:textColor="@color/title"
-                    android:textSize="22dp"></TextView>
+                    android:textSize="22sp" />
             </LinearLayout>
 
             <LinearLayout
@@ -116,17 +124,20 @@
                 android:orientation="horizontal"
                 android:clickable="true"
                 android:layout_marginTop="20dp">
+
                 <ImageView
                     android:layout_width="30dp"
                     android:layout_height="30dp"
-                    android:background="@drawable/about"></ImageView>
+                    android:background="@drawable/about"
+                    android:contentDescription="@string/about" />
+
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:paddingLeft="20dp"
                     android:text="@string/about"
                     android:textColor="@color/title"
-                    android:textSize="22dp"></TextView>
+                    android:textSize="22sp" />
             </LinearLayout>
 
             <LinearLayout
@@ -136,17 +147,20 @@
                 android:orientation="horizontal"
                 android:clickable="true"
                 android:layout_marginTop="20dp">
+
                 <ImageView
                     android:layout_width="30dp"
                     android:layout_height="30dp"
-                    android:background="@drawable/feedback"></ImageView>
+                    android:background="@drawable/feedback"
+                    android:contentDescription="@string/feedback" />
+
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:paddingLeft="20dp"
                     android:text="@string/feedback"
                     android:textColor="@color/title"
-                    android:textSize="22dp"></TextView>
+                    android:textSize="22sp" />
             </LinearLayout>
 
             <LinearLayout
@@ -156,17 +170,20 @@
                 android:orientation="horizontal"
                 android:clickable="true"
                 android:layout_marginTop="20dp">
+
                 <ImageView
                     android:layout_width="30dp"
                     android:layout_height="30dp"
-                    android:background="@drawable/support"></ImageView>
+                    android:background="@drawable/support"
+                    android:contentDescription="@string/support" />
+
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:paddingLeft="20dp"
                     android:text="@string/support"
                     android:textColor="@color/title"
-                    android:textSize="22dp"></TextView>
+                    android:textSize="22sp" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
@@ -196,10 +213,15 @@
             app:layout_constraintTop_toTopOf="parent">
             <ImageButton
                 android:id="@+id/HamburgerButton"
-                android:layout_width="28dp"
-                android:layout_height="28dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:contentDescription="@string/mainmenu"
+                android:padding="10dp"
+                android:adjustViewBounds="true"
+                android:scaleType="fitCenter"
                 android:layout_marginStart="24dp"
-                android:background="@drawable/hamburger"
+                android:src="@drawable/hamburger"
+                android:background="@android:color/transparent"
                 android:clickable="true"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -207,10 +229,14 @@
                 app:layout_constraintVertical_bias="0.302" />
             <ImageButton
                 android:id="@+id/AddIdentityButton"
-                android:layout_width="28dp"
-                android:layout_height="28dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:padding="10dp"
+                android:adjustViewBounds="true"
+                android:scaleType="fitCenter"
                 android:layout_marginEnd="24dp"
-                android:background="@drawable/identity"
+                android:src="@drawable/identity"
+                android:background="@android:color/transparent"
                 android:clickable="true"
                 android:contentDescription="@string/add_identity"
                 app:layout_constraintBottom_toBottomOf="parent"
@@ -476,11 +502,12 @@
                 <ScrollView
                     android:layout_width="fill_parent"
                     android:layout_height="0dp"
+                    android:contentDescription="@string/identities"
                     android:layout_weight=".5">
                     <LinearLayout
                         android:id="@+id/IdentityListing"
                         android:layout_width="match_parent"
-                        android:layout_height="fill_parent"
+                        android:layout_height="wrap_content"
                         android:orientation="vertical"
                         android:weightSum="1">
 

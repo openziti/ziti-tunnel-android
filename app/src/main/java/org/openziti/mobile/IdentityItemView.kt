@@ -43,7 +43,9 @@ class IdentityItemView(context: Context) : RelativeLayout(context) {
         }
 
         ctxModel.name().observe(owner) {
-            binding.IdentityName.text = it
+            if (!it.isNullOrEmpty()) {
+                binding.IdentityName.text = it
+            }
         }
 
         ctxModel.authState().observe(owner) {
@@ -74,7 +76,6 @@ class IdentityItemView(context: Context) : RelativeLayout(context) {
         ctxModel.enabled().observe(owner) { state ->
             binding.IdToggleSwitch.isChecked = state
             binding.IdToggleSwitch.text = if(state) "enabled" else "disabled"
-            binding.StatusLabel.text = if(state) "enabled" else "disabled"
         }
 
         binding.IdToggleSwitch.setOnCheckedChangeListener { _, state ->
