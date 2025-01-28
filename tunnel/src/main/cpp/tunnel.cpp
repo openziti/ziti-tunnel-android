@@ -276,9 +276,9 @@ static void on_event(const base_event *ev) {
             json = mfa_event_to_json(
                     (const mfa_event*)ev, MODEL_JSON_COMPACT, nullptr);
             break;
-        case TunnelEvent_APIEvent:
-            json = api_event_to_json(
-                    (const api_event*)ev, MODEL_JSON_COMPACT, nullptr);
+        case TunnelEvent_ConfigEvent:
+            json = config_event_to_json(
+                    (const config_event*)ev, MODEL_JSON_COMPACT, nullptr);
             break;
         case TunnelEvent_ExtJWTEvent:
             json = ext_signer_event_to_json(

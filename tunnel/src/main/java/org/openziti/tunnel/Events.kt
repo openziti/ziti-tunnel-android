@@ -14,7 +14,7 @@ import kotlinx.serialization.modules.subclass
 val eventModule = SerializersModule {
     polymorphic(Event::class) {
         subclass(ContextEvent::class)
-        subclass(APIEvent::class)
+        subclass(ConfigEvent::class)
         subclass(ServiceEvent::class)
         subclass(ExtJWTEvent::class)
     }
@@ -36,8 +36,8 @@ data class ContextEvent(
     val name: String? = null,
     val controller: String? = null,): Event()
 
-@Serializable @SerialName("APIEvent")
-data class APIEvent(
+@Serializable @SerialName("ConfigEvent")
+data class ConfigEvent(
     override val identifier: String,
     val config: ZitiConfig,
 ): Event()
