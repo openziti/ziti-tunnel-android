@@ -52,12 +52,27 @@ val gitHash = getCommitHash()
 val gitBranch = getVersionName()
 version = getVersionName()
 
+
+val wlp = File(rootProject.projectDir, "whitelabel.properties")
+val whitelabel = wlp.isFile
+val wlProperties = Properties()
+
+if (whitelabel) {
+    if (whitelabel) {
+        wlProperties.load(wlp.inputStream())
+    }
+}
+
+val wlAppId = wlProperties["id"]?.toString() ?: "org.openziti.mobile"
+val wlOrg = wlProperties["org"]?.toString() ?: "openziti"
+val wlResources = wlProperties["resourceDir"]?.toString()
+
 android {
     namespace = "org.openziti.mobile"
     signingConfigs {
         create("release") {
-            keyAlias = ("ziti1")
-            keyPassword = System.getenv("RELEASE_KEYSTORE_PASSWORD")
+            keyAlias = (System.getenv("RELEASE_KEY_ALIAS") ?: "ziti1")
+            keyPassword = System.getenv("RELEASE_KEY_PASSWORD") ?: System.getenv("RELEASE_KEYSTORE_PASSWORD")
             storeFile = file(System.getenv("RELEASE_KEYSTORE") ?: "not found")
             storePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD")
         }
@@ -74,6 +89,16 @@ android {
 
         buildConfigField("String", "GIT_COMMIT", "\"${gitHash}\"")
         buildConfigField("String", "GIT_BRANCH", "\"${gitBranch}\"")
+    }
+
+    if (whitelabel) {
+        flavorDimensions += listOf("whitelabel")
+        productFlavors {
+            create(wlOrg) {
+                dimension = "whitelabel"
+                applicationId = wlAppId
+            }
+        }
     }
 
     buildTypes {
@@ -106,6 +131,14 @@ android {
     }
     kotlinOptions {
         jvmTarget = "17"
+    }
+
+    if (whitelabel && wlResources != null) {
+        sourceSets {
+            named(wlOrg) {
+                res.srcDirs(wlResources)
+            }
+        }
     }
 
 }
