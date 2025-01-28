@@ -11,7 +11,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.json.Json
-import org.openziti.tunnel.APIEvent
+import org.openziti.tunnel.ConfigEvent
 import org.openziti.tunnel.ContextEvent
 import org.openziti.tunnel.Event
 import org.openziti.tunnel.ExtJWTEvent
@@ -121,7 +121,7 @@ class Identity(
 
         is ServiceEvent -> processServiceUpdate(ev)
 
-        is APIEvent -> {
+        is ConfigEvent -> {
             updateConfig(ev.config)
             val json = Json.encodeToString(ZitiConfig.serializer(), cfg)
             tunnel.identitiesDir.resolve(id).outputStream().use { out ->
