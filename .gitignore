@@ -13,3 +13,6 @@ build/
 !.idea/copyright/
 libs/
 release/
+
+
+/whitelabel.properties
