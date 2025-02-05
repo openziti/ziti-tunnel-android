@@ -224,7 +224,7 @@ class TunnelModel(
     internal fun refreshIdentity(id: String) =
         tunnel.processCmd(RefreshIdentity(id)).thenAccept{}
 
-    internal fun useJWTSigner(id: String, signer: String) =
+    internal fun useJWTSigner(id: String, signer: String?) =
         tunnel.processCmd(ExternalAuth(id, signer)).thenApply {
             Json.decodeFromJsonElement<ExtAuthResult>(it!!)
         }
