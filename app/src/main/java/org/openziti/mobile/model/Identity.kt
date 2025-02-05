@@ -14,12 +14,14 @@ import kotlinx.serialization.json.Json
 import org.openziti.tunnel.ConfigEvent
 import org.openziti.tunnel.ContextEvent
 import org.openziti.tunnel.Event
+import org.openziti.tunnel.ExtAuthResult
 import org.openziti.tunnel.ExtJWTEvent
 import org.openziti.tunnel.JwtSigner
 import org.openziti.tunnel.Service
 import org.openziti.tunnel.ServiceEvent
 import org.openziti.tunnel.ZitiConfig
 import java.net.URI
+import java.util.concurrent.CompletableFuture
 
 class Identity(
     val id: String,
@@ -66,7 +68,7 @@ class Identity(
         }
     }
 
-    fun useJWTSigner(signer: String) =
+    fun useJWTSigner(signer: String?): CompletableFuture<ExtAuthResult> =
         tunnel.useJWTSigner(id, signer)
 
     fun setEnabled(on: Boolean) {

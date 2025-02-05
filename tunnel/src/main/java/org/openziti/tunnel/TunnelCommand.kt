@@ -85,7 +85,7 @@ enum class CMD {
 
 @Serializable data class ExternalAuth(
     @SerialName("Identifier") val identifier: String,
-    @SerialName("Provider") val provider: String,
+    @SerialName("Provider") val provider: String? = null,
 ): TunnelCommand(CMD.ExternalAuth)
 
 @Serializable data class ExtAuthResult(

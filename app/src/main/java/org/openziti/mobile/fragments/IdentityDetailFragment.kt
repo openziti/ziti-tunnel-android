@@ -51,8 +51,14 @@ class IdentityDetailFragment : BaseFragment() {
         model.authState().observe(viewLifecycleOwner) { authState ->
             AuthenticationStatus.text = authState.label
             if (authState is Identity.AuthJWT) {
-                AuthenticationStatus.setOnClickListener {
-                    showJWTSelect(model, authState.providers)
+                if (authState.providers.size > 1) {
+                    AuthenticationStatus.setOnClickListener {
+                        showJWTSelect(model, authState.providers)
+                    }
+                } else {
+                    AuthenticationStatus.setOnClickListener {
+                        startJwtAuth(model, authState.providers.firstOrNull()?.name)
+                    }
                 }
             }
             else AuthenticationStatus.setOnClickListener(null)
@@ -128,14 +134,18 @@ class IdentityDetailFragment : BaseFragment() {
                 .setIcon(android.R.drawable.ic_dialog_dialer)
                 .setNegativeButton("Cancel") { _, _ -> }
                 .setItems(names) { _, which ->
-                    identity.useJWTSigner(providers[which].name).thenApply {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(it.url))
-                        startActivity(intent)
-                    }
+                    startJwtAuth(identity, providers[which].name)
                 }
         builder.create().show()
     }
     companion object {
         const val ID = "id"
+    }
+
+    private fun startJwtAuth(identity: Identity, provider: String?) {
+        identity.useJWTSigner(provider).thenApply {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(it.url))
+            startActivity(intent)
+        }
     }
 }
