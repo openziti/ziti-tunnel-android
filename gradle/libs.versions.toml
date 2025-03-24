@@ -4,7 +4,7 @@ android = "8.8.1"
 kotlin = "2.1.20"
 
 # ziti projects
-ziti-tunnel-sdk = "v1.5.0"
+ziti-tunnel-sdk = "v1.5.4"
 
 # 3rd part deps
 kotlinx-serialization-json = "1.8.0"
