@@ -7,7 +7,7 @@ kotlin = "2.1.20"
 ziti-tunnel-sdk = "v1.5.7"
 
 # 3rd part deps
-kotlinx-serialization-json = "1.8.0"
+kotlinx-serialization-json = "1.8.1"
 appcompat = "1.7.0"
 constraintlayout = "2.2.1"
 lifecycle-extensions = "2.2.0"
