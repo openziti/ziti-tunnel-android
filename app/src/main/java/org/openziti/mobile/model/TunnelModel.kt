@@ -192,10 +192,12 @@ class TunnelModel(
         return tunnel.processCmd(cmd).thenApply {  }
     }
 
-    fun enroll(jwt: String): CompletableFuture<ZitiConfig?>  {
-        val cmd = Enroll(
-            jwt = jwt,
-            useKeychain = true)
+    fun enroll(jwtOrUrl: String): CompletableFuture<ZitiConfig?>  {
+        val cmd = if (jwtOrUrl.startsWith("https://"))
+            Enroll(url = jwtOrUrl, useKeychain = false)
+        else
+            Enroll(jwt = jwtOrUrl, useKeychain = true)
+
         val future = tunnel.processCmd(cmd).thenApply {
             Json.decodeFromJsonElement<ZitiConfig>(it!!)
         }
