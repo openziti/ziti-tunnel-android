@@ -17,6 +17,8 @@ coroutines = "1.10.2"
 zxing-android-embedded = "4.3.0"
 datastore = "1.1.4"
 fragment = "1.8.6"
+activity-compose = "1.10.1"
+compose-bom = "2025.03.01"
 
 # test deps
 junit = "4.13.2"
@@ -38,9 +40,16 @@ material = { module = "com.google.android.material:material", version.ref = "mat
 kotlin = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlin" }
 coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 
+lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }
 lifecycle-livedata-ktx = { module = "androidx.lifecycle:lifecycle-livedata-ktx", version.ref = "lifecycle" }
 lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
 fragment-ktx = { module = "androidx.fragment:fragment-ktx", version.ref = "fragment" }
+activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activity-compose" }
+compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "compose-bom" }
+ui = { group = "androidx.compose.ui", name = "ui" }
+ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+material3 = { group = "androidx.compose.material3", name = "material3" }
 
 zxing-android-embedded = { module = "com.journeyapps:zxing-android-embedded", version.ref = "zxing-android-embedded" }
 
@@ -52,6 +61,7 @@ android-app = { id = "com.android.application", version.ref = "android" }
 android-lib = { id = "com.android.library", version.ref = "android" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 
 [bundles]
 
