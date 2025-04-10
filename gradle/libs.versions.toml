@@ -21,7 +21,7 @@ fragment = "1.8.6"
 # test deps
 junit = "4.13.2"
 espresso-core = "3.6.1"
-core-ktx-version = "1.15.0"
+core-ktx-version = "1.16.0"
 junit-version = "1.2.1"
 
 [libraries]
