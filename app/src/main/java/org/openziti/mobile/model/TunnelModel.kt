@@ -231,13 +231,17 @@ class TunnelModel(
         }
 
     internal fun enableIdentity(id: String, on: Boolean): CompletableFuture<Unit> {
-        val disabledKey = disabledKey(id)
-        runBlocking {
-            context().prefs.edit {
-                it[disabledKey] = !on
+        if (identities.contains(id)) {
+            val disabledKey = disabledKey(id)
+            runBlocking {
+                context().prefs.edit {
+                    it[disabledKey] = !on
+                }
             }
+            return tunnel.processCmd(OnOffCommand(id, on)).thenApply {}
         }
-        return tunnel.processCmd(OnOffCommand(id, on)).thenApply {}
+
+        return CompletableFuture.completedFuture(Unit)
     }
 
     internal fun deleteIdentity(identifier: String, key: String?) {
