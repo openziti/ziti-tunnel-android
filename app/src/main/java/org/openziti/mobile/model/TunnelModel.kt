@@ -42,6 +42,7 @@ import org.openziti.tunnel.Keychain
 import org.openziti.tunnel.LoadIdentity
 import org.openziti.tunnel.OnOffCommand
 import org.openziti.tunnel.RefreshIdentity
+import org.openziti.tunnel.RemoveIdentity
 import org.openziti.tunnel.SetUpstreamDNS
 import org.openziti.tunnel.Tunnel
 import org.openziti.tunnel.Upstream
@@ -230,45 +231,51 @@ class TunnelModel(
         }
 
     internal fun enableIdentity(id: String, on: Boolean): CompletableFuture<Unit> {
-        val disabledKey = disabledKey(id)
-        runBlocking {
-            context().prefs.edit {
-                it[disabledKey] = !on
+        if (identities.contains(id)) {
+            val disabledKey = disabledKey(id)
+            runBlocking {
+                context().prefs.edit {
+                    it[disabledKey] = !on
+                }
             }
+            return tunnel.processCmd(OnOffCommand(id, on)).thenApply {}
         }
-        return tunnel.processCmd(OnOffCommand(id, on)).thenApply {}
+
+        return CompletableFuture.completedFuture(Unit)
     }
 
     internal fun deleteIdentity(identifier: String, key: String?) {
-        identities.remove(identifier)
-        identitiesData.postValue(identities.values.toList())
+        tunnel.processCmd(RemoveIdentity(identifier)).thenApply {
+            identities.remove(identifier)
+            identitiesData.postValue(identities.values.toList())
 
-        val uri = URI(identifier)
-        val id = uri.userInfo ?: uri.path.removePrefix("/")
+            val uri = URI(identifier)
+            val id = uri.userInfo ?: uri.path.removePrefix("/")
 
-        key?.let {
-            runCatching { Keychain.store.deleteEntry(key) }
-                .onFailure { Log.w(TAG, "failed to remove entry", it) }
-        }
-
-        runCatching {
-            identitiesDir.resolve(id).delete()
-        }.onFailure {
-            Log.w(TAG, "failed to remove config", it)
-        }
-
-        val caCerts = Keychain.store.aliases().toList().filter { it.startsWith("ziti:$id/") }
-        caCerts.forEach {
-            Keychain.store.runCatching {
-                deleteEntry(it)
+            key?.let {
+                runCatching { Keychain.store.deleteEntry(key) }
+                    .onFailure { Log.w(TAG, "failed to remove entry", it) }
             }
-        }
 
-        runBlocking {
-            context().prefs.edit {
-                val prefKey = disabledKey(identifier)
-                if (it.contains(prefKey))
-                    it.remove(prefKey)
+            runCatching {
+                identitiesDir.resolve(id).delete()
+            }.onFailure {
+                Log.w(TAG, "failed to remove config", it)
+            }
+
+            val caCerts = Keychain.store.aliases().toList().filter { it.startsWith("ziti:$id/") }
+            caCerts.forEach {
+                Keychain.store.runCatching {
+                    deleteEntry(it)
+                }
+            }
+
+            runBlocking {
+                context().prefs.edit {
+                    val prefKey = disabledKey(identifier)
+                    if (it.contains(prefKey))
+                        it.remove(prefKey)
+                }
             }
         }
     }

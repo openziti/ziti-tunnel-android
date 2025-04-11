@@ -8,6 +8,7 @@ plugins {
 }
 
 val cmakeArgs = mutableListOf(
+    "-DZITI_SDK_VERSION=1.5.10",
     "-DDEPS_DIR=${project.layout.buildDirectory.get()}/cmake",
     "-Dtunnel_sdk_VERSION=${libs.versions.ziti.tunnel.sdk.get()}",
     )
