@@ -71,11 +71,12 @@
     <string name="keytitle">Select Key File</string>
     <string name="keysubtitle">On Your Phone</string>
     <string name="keyimage">Select JWT Button</string>
-    <string name="keyaction">Select File</string>
+    <string name="keyaction">Select JWT File</string>
     <string name="qrtitle">Scan the QR Code</string>
     <string name="qrsubtitle">With Camera or QR App</string>
     <string name="qrimage">Scan Code</string>
-    <string name="qraction">Scan Code</string>
+    <string name="qraction">Scan QR Code</string>
+    <string name="enroll_with_url">Enter URL</string>
     <string name="add_identity">Add Identity</string>
     <string name="title_activity_debug_info">Debug Info</string>
     <string name="identity_detail">Identity Detail</string>
