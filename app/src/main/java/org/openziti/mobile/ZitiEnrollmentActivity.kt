@@ -10,6 +10,7 @@ import android.hardware.SensorManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
+import android.util.Log
 import android.view.OrientationEventListener
 import android.widget.LinearLayout
 import android.widget.Toast
@@ -19,6 +20,9 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.zxing.BarcodeFormat
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.openziti.mobile.databinding.ActivityZitiEnrollmentBinding
 
 
@@ -88,13 +92,13 @@ class ZitiEnrollmentActivity : AppCompatActivity() {
         orienter.enable()
     }
 
-    fun jwtEnroll(launcher: ActivityResultLauncher<Intent>) {
+    private fun jwtEnroll(launcher: ActivityResultLauncher<Intent>) {
         val intent = Intent(Intent.ACTION_GET_CONTENT)
         intent.type = "*/*"
         launcher.launch(intent)
     }
 
-    fun qrEnroll(scanLauncher: ActivityResultLauncher<ScanOptions>) {
+    private fun qrEnroll(scanLauncher: ActivityResultLauncher<ScanOptions>) {
         val scanOptions = ScanOptions().apply {
             setDesiredBarcodeFormats(BarcodeFormat.QR_CODE.name)
             setPrompt("Scan enrollment code")
@@ -104,9 +108,10 @@ class ZitiEnrollmentActivity : AppCompatActivity() {
         scanLauncher.launch(scanOptions)
     }
 
-    fun enroll(jwt: String) {
+    private fun enroll(jwt: String) {
         (application as ZitiMobileEdgeApp).model.enroll(jwt)
             .handleAsync { _, ex ->
+                Log.i(TAG, "enroll result $ex")
                 Handler(mainLooper).post {
                     this.finish()
                     if (ex != null) {
@@ -119,10 +124,11 @@ class ZitiEnrollmentActivity : AppCompatActivity() {
             }
     }
 
-    fun enroll(jwtUri: Uri) {
-        application.contentResolver.openInputStream(jwtUri)?.reader()?.use {
-            enroll(it.readText())
-            this.finish()
+    private fun enroll(jwtUri: Uri) {
+        CoroutineScope(Dispatchers.IO).launch {
+            application.contentResolver.openInputStream(jwtUri)?.reader()?.use {
+                enroll(it.readText())
+            }
         }
     }
 
