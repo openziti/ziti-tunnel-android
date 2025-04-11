@@ -127,6 +127,10 @@ data class SetUpstreamDNS(
     val useKeychain: Boolean = false,
 ): TunnelCommand(CMD.Enroll)
 
+@Serializable data class RemoveIdentity(
+    @SerialName("Identifier") val identifier: String
+): TunnelCommand(CMD.RemoveIdentity)
+
 @Serializable data class TunnelResult(
     @SerialName("Success") val success: Boolean,
     @SerialName("Code") val code: Int,
