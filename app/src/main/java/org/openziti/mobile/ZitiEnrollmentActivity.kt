@@ -59,6 +59,9 @@ import androidx.compose.ui.window.DialogProperties
 import com.google.zxing.BarcodeFormat
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.openziti.mobile.databinding.ActivityZitiEnrollmentBinding
 import java.net.URL
 
