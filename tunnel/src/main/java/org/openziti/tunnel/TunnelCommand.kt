@@ -121,7 +121,8 @@ data class SetUpstreamDNS(
 ): TunnelCommand(CMD.SetUpstreamDNS)
 
 @Serializable data class Enroll(
-    val jwt: String,
+    val url: String? = null,
+    val jwt: String? = null,
     val key: String? = null,
     val cert: String? = null,
     val useKeychain: Boolean = false,
