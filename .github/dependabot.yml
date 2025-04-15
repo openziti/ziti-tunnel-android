@@ -5,6 +5,13 @@ updates:
     directory: "."
     schedule:
       interval: daily
+
+  - package-ecosystem: github-actions
+    directories:
+      - ".github/workflows"
+      - ".github/actions"
+    schedule:
+      interval: weekly
     groups:
       actions:
         applies-to: version-updates
