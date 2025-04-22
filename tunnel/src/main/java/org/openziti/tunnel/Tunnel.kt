@@ -146,6 +146,7 @@ class Tunnel(app: Application, ): Runnable {
     fun setupDNS(dns: String, range: String) {
         defaultRoute = range.toRoute()
         setDNSrange(dns, range)
+        commitRoutes()
     }
 
     external fun initNative(app: String, version: String)
