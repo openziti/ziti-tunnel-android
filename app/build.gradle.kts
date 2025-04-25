@@ -79,12 +79,11 @@ android {
         }
     }
 
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "org.openziti.mobile"
         minSdk = 28
-        targetSdk = 35
         versionCode = getVersionCode()
         versionName = "${project.version}"
 
