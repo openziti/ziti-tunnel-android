@@ -23,7 +23,7 @@ with(gradleLocalProperties(parent!!.projectDir, providers)) {
 
 android {
     namespace = "org.openziti.tunnel"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 26
