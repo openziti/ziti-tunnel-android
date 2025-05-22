@@ -100,7 +100,13 @@ class TunnelModel(
             tunnel.start()
         }
         viewModelScope.launch {
-            tunnel.events().collect(this@TunnelModel::processEvent)
+            tunnel.events().collect { ev ->
+                runCatching {
+                    processEvent(ev)
+                }.onFailure {
+                    Log.e(TAG, "failed to process event[$ev]", it)
+                }
+            }
         }
 
         val configs = mutableMapOf<String, ZitiConfig>()
