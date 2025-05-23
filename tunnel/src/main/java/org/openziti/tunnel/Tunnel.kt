@@ -12,10 +12,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.onFailure
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.consumeAsFlow
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.map
-import kotlinx.serialization.encodeToString
+import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import java.util.concurrent.CompletableFuture
@@ -49,7 +46,7 @@ class Tunnel(app: Application, ): Runnable {
     fun onEvent(json: String) {
         Log.i(TAG, "event: $json")
         events.trySend(json).onFailure {
-            Log.w(TAG, "failed to queue event")
+            Log.w(TAG, "failed to queue event", it)
         }
     }
 
@@ -80,14 +77,14 @@ class Tunnel(app: Application, ): Runnable {
         t.start()
     }
 
-    fun events() = events.consumeAsFlow().map {
-        try {
-            EventsJson.decodeFromString<Event>(it)
-        } catch (ex: Exception) {
-            Log.w(TAG, ex)
-            null
+    fun events() = flow {
+        val ev = events.receive()
+        runCatching {
+            emit(EventsJson.decodeFromString<Event>(ev))
+        }.onFailure {
+            Log.w(TAG, "failed to parse event: $ev", it)
         }
-    }.filterNotNull()
+    }
 
     fun routes(): StateFlow<Sequence<Route>> = routeData
     fun addRoute(rt: String) {
