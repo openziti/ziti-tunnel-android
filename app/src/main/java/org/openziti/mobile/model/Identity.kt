@@ -50,7 +50,7 @@ class Identity(
     fun status(): LiveData<String> = status
     internal val status = MutableLiveData("Loading")
 
-    private val controllers = MutableLiveData(cfg.controllers?.toList() ?: listOf(cfg.controller))
+    private val controllers = MutableLiveData(cfg.controllers.toList())
     fun controllers() = controllers
 
     private val enabled = MutableLiveData(enable)
@@ -61,9 +61,11 @@ class Identity(
     fun services(): LiveData<List<Service>> = services
 
     fun refresh() {
-        tunnel.refreshIdentity(id).handleAsync { _, ex ->
-            ex?.let {
-                Log.w(TunnelModel.TAG, "failed refresh", it)
+        if (status.value == "Active") {
+            tunnel.refreshIdentity(id).handleAsync { _, ex ->
+                ex?.let {
+                    Log.w(TunnelModel.TAG, "failed refresh", it)
+                }
             }
         }
     }
