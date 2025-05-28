@@ -46,7 +46,7 @@ class Tunnel(app: Application, ): Runnable {
     fun onEvent(json: String) {
         Log.i(TAG, "event: $json")
         events.trySend(json).onFailure {
-            Log.w(TAG, "failed to queue event", it)
+            Log.w(TAG, "failed to queue event$json", it)
         }
     }
 
@@ -78,11 +78,13 @@ class Tunnel(app: Application, ): Runnable {
     }
 
     fun events() = flow {
-        val ev = events.receive()
-        runCatching {
-            emit(EventsJson.decodeFromString<Event>(ev))
-        }.onFailure {
-            Log.w(TAG, "failed to parse event: $ev", it)
+        while(true) {
+            val ev = events.receive()
+            runCatching {
+                emit(EventsJson.decodeFromString<Event>(ev))
+            }.onFailure {
+                Log.w(TAG, "failed to parse event: $ev", it)
+            }
         }
     }
 
