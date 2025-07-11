@@ -1,6 +1,6 @@
 [versions]
 # plugins
-android = "8.11.0"
+android = "8.11.1"
 kotlin = "2.2.0"
 
 # ziti projects
