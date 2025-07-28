@@ -127,14 +127,6 @@ android {
         compose = true
     }
 
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-
     if (whitelabel && wlResources != null) {
         sourceSets {
             named(wlOrg) {
@@ -142,7 +134,10 @@ android {
             }
         }
     }
+}
 
+kotlin {
+    jvmToolchain(17)
 }
 
 dependencies {
