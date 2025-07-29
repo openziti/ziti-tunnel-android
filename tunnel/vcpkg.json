@@ -1,6 +1,8 @@
 {
   "name": "ziti-native-deps",
   "version-semver": "1.0.0",
+  "description": "only used to build dependencies using baseline tag 2025.07.25",
+  "builtin-baseline": "dd3097e305afa53f7b4312371f62058d2e665320",
   "dependencies": [
     "libuv",
     "openssl",
@@ -10,6 +12,5 @@
     "protobuf-c",
     "json-c"
   ],
-  "overrides": [],
-  "builtin-baseline": "b02e341c927f16d991edbd915d8ea43eac52096c"
+  "overrides": []
 }

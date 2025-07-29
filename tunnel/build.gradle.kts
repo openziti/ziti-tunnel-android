@@ -24,9 +24,12 @@ with(gradleLocalProperties(parent!!.projectDir, providers)) {
 android {
     namespace = "org.openziti.tunnel"
     compileSdk = 36
+    ndkVersion = "27.3.13750724"
 
     defaultConfig {
-        minSdk = 26
+        // VCPKG default triplets target 28 (as of 2025.04.09)
+        minSdk = 28
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
         externalNativeBuild {
@@ -51,13 +54,14 @@ android {
             version = properties["cmake.version"].toString()
         }
     }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
-    }
-    kotlinOptions {
-        jvmTarget = "1.8"
-    }
+//    compileOptions {
+//        sourceCompatibility = JavaVersion.VERSION_1_8
+//        targetCompatibility = JavaVersion.VERSION_1_8
+//    }
+}
+
+kotlin {
+    jvmToolchain(17)
 }
 
 dependencies {
