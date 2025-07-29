@@ -80,6 +80,7 @@ android {
     }
 
     compileSdk = 36
+    ndkVersion = libs.versions.ndk.get()
 
     defaultConfig {
         applicationId = "org.openziti.mobile"

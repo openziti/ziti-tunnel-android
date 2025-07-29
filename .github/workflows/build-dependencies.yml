@@ -28,6 +28,9 @@ jobs:
           mkdir -p ${CI_CACHE}
           echo "CI_CACHE=${CI_CACHE}" >> ${GITHUB_ENV}
           echo "VCPKG_BINARY_SOURCES=${VCPKG_BINARY_SOURCES}" >> ${GITHUB_ENV}
+          ndk_ver=$(awk -F=' ' '/^ndk =/{ gsub(/"/, ""); print $2}' gradle/libs.versions.toml)
+          echo "using NDK version = $ndk_ver"
+          echo "ANDROID_NDK_ROOT=${ANDROID_SDK_ROOT}/ndk/$ndk_ver" >> ${GITHUB_ENV}
 
       - name: Cache ${{ matrix.target }} dependencies
         id: cache
