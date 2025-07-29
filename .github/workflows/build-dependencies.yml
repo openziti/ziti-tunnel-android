@@ -9,6 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     name: build dependencies[${{ matrix.target }}]
     strategy:
+      fail-fast: false
       matrix:
         target:
           - arm-android
