@@ -7,6 +7,8 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+val ndk = libs.versions.ndk.get()
+
 val cmakeArgs = mutableListOf(
     "-DDEPS_DIR=${project.layout.buildDirectory.get()}/cmake",
     "-Dtunnel_sdk_VERSION=${libs.versions.ziti.tunnel.sdk.get()}",
@@ -24,7 +26,7 @@ with(gradleLocalProperties(parent!!.projectDir, providers)) {
 android {
     namespace = "org.openziti.tunnel"
     compileSdk = 36
-    ndkVersion = "27.3.13750724"
+    ndkVersion = ndk
 
     defaultConfig {
         // VCPKG default triplets target 28 (as of 2025.04.09)
@@ -80,10 +82,16 @@ val buildNative = tasks.register("build-native-dependencies") {}
 tasks.named("preBuild").dependsOn(buildNative)
 
 if (!hasProperty("skipDependentBuild")) {
+    val androidHome = System.getenv("ANDROID_SDK_ROOT") ?: """${System.getenv("HOME")}/Android/Sdk"""
+    val ndkRoot = """$androidHome/ndk/${ndk}"""
+    require(File(ndkRoot).isDirectory) {
+        """NDK[$ndk] not found in ANDROID_HOME[$androidHome]"""
+    }
+    println("using NDK: $ndkRoot")
     presets.forEach { triplet ->
         val task = tasks.register<Exec>("build-native-deps-${triplet}") {
             executable("env")
-            args("cmake", "--preset", triplet)
+            args("ANDROID_NDK_ROOT=${ndkRoot}", "cmake", "--preset", triplet)
         }
         buildNative.dependsOn(task)
     }

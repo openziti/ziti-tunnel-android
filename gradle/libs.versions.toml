@@ -2,6 +2,7 @@
 # plugins
 android = "8.11.1"
 kotlin = "2.2.0"
+ndk = "28.2.13676358"
 
 # ziti projects
 ziti-tunnel-sdk = "v1.6.0"
