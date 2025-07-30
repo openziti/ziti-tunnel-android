@@ -27,6 +27,7 @@ class IdentityItemView(context: Context) : RelativeLayout(context) {
     init {
         val a = context.obtainStyledAttributes(null, R.styleable.IdentityItemView, 0, 0)
         binding = IdentityitemBinding.inflate(LayoutInflater.from(context), this, true)
+        binding.IdToggleSwitch.isSaveEnabled = false
 
         offline = ResourcesCompat.getDrawable(context.resources, R.drawable.offline, null)!!
         bubble = ResourcesCompat.getDrawable(context.resources, R.drawable.bubble, null)!!
@@ -73,6 +74,10 @@ class IdentityItemView(context: Context) : RelativeLayout(context) {
         ctxModel.services().observe(owner) {
             binding.ServiceCount.text = String.format("%d", it.size)
         }
+
+        val enabled = ctxModel.enabled().value ?: false
+        binding.IdToggleSwitch.isChecked = enabled
+
         ctxModel.enabled().observe(owner) { state ->
             binding.IdToggleSwitch.isChecked = state
             binding.IdToggleSwitch.text = if(state) "enabled" else "disabled"
