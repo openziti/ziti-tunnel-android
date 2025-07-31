@@ -23,7 +23,7 @@ compose-bom = "2025.07.00"
 
 # test deps
 junit = "4.13.2"
-espresso-core = "3.6.1"
+espresso-core = "3.7.0"
 core-ktx-version = "1.16.0"
 junit-version = "1.2.1"
 
