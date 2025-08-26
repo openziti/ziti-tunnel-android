@@ -3,6 +3,21 @@ version: 2
 updates:
   - package-ecosystem: "gradle"
     directory: "."
+    groups:
+      android:
+        patterns:
+          - "com.android:*"
+          - "com.google.android:*"
+      androidx:
+        patterns:
+          - "androidx.*"
+      kotlin:
+        patterns:
+          - "org.jetbrains.kotlin:*"
+          - "org.jetbrains.kotlinx:*"
+      others:
+        patterns:
+          - "*"
     schedule:
       interval: daily
 
