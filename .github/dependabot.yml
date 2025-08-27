@@ -6,15 +6,15 @@ updates:
     groups:
       android:
         patterns:
-          - "com.android:*"
-          - "com.google.android:*"
+          - "com.android.*"
+          - "com.google.android.*"
       androidx:
         patterns:
           - "androidx.*"
       kotlin:
         patterns:
-          - "org.jetbrains.kotlin:*"
-          - "org.jetbrains.kotlinx:*"
+          - "org.jetbrains.kotlin.*"
+          - "org.jetbrains.kotlinx.*"
       others:
         patterns:
           - "*"
