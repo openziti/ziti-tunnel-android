@@ -5,12 +5,9 @@
 package org.openziti.mobile
 
 import android.app.Application
-import android.content.Intent
 import android.util.Log
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import org.openziti.mobile.debug.DebugInfo
 import org.openziti.mobile.model.TunnelModel
-
 import org.openziti.tunnel.Tunnel
 
 /**
@@ -21,7 +18,6 @@ class ZitiMobileEdgeApp: Application() {
     lateinit var model: TunnelModel
 
     companion object {
-        val ROUTE_CHANGE = "route_change"
         lateinit var app: ZitiMobileEdgeApp
         var vpnService: ZitiVPNService? = null
     }
@@ -37,9 +33,5 @@ class ZitiMobileEdgeApp: Application() {
 
         app = this
         DebugInfo.init(this)
-    }
-
-    internal fun notifyRouteChange() {
-        LocalBroadcastManager.getInstance(this).sendBroadcast(Intent(ROUTE_CHANGE))
     }
 }

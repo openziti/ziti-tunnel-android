@@ -6,10 +6,7 @@ package org.openziti.mobile
 
 import android.app.PendingIntent
 import android.app.Service
-import android.content.BroadcastReceiver
-import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.net.ConnectivityManager
 import android.net.LinkProperties
 import android.net.Network
@@ -20,7 +17,6 @@ import android.os.Binder
 import android.os.IBinder
 import android.system.OsConstants
 import android.util.Log
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -83,15 +79,6 @@ class ZitiVPNService : VpnService(), CoroutineScope {
     }
 
     lateinit var monitor: Job
-
-    private val receiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            intent?.action?.let {
-                Log.i(TAG, "restarting tunnel due to $intent")
-                tunnelState.value = RESTART
-            }
-        }
-    }
 
     private fun setUpstreamDNS(net: Network, props: LinkProperties) {
         val addresses = props.linkAddresses
@@ -191,16 +178,12 @@ class ZitiVPNService : VpnService(), CoroutineScope {
         monitor.invokeOnCompletion {
             Log.i(TAG, "monitor stopped", it)
         }
-
-        LocalBroadcastManager.getInstance(applicationContext).registerReceiver(receiver,
-                IntentFilter(ZitiMobileEdgeApp.ROUTE_CHANGE))
     }
 
     override fun onDestroy() {
         Log.i(TAG, "onDestroy")
         ZitiMobileEdgeApp.vpnService = null
         connMgr.unregisterNetworkCallback(networkMonitor)
-        LocalBroadcastManager.getInstance(applicationContext).unregisterReceiver(receiver)
         monitor.cancel()
         coroutineContext.cancel()
         exec.runCatching { shutdownNow() }
