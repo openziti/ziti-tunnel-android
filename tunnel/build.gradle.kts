@@ -82,11 +82,7 @@ val buildNative = tasks.register("build-native-dependencies") {}
 tasks.named("preBuild").dependsOn(buildNative)
 
 if (!hasProperty("skipDependentBuild")) {
-    val androidHome = System.getenv("ANDROID_SDK_ROOT") ?: """${System.getenv("HOME")}/Android/Sdk"""
-    val ndkRoot = """$androidHome/ndk/${ndk}"""
-    require(File(ndkRoot).isDirectory) {
-        """NDK[$ndk] not found in ANDROID_HOME[$androidHome]"""
-    }
+    val ndkRoot = android.ndkDirectory.absolutePath
     println("using NDK: $ndkRoot")
     presets.forEach { triplet ->
         val task = tasks.register<Exec>("build-native-deps-${triplet}") {
