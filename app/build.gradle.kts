@@ -13,7 +13,7 @@ plugins {
 
 fun getCommitHash() = runCatching {
     val stdout = ByteArrayOutputStream()
-    exec {
+    providers.exec {
         commandLine("git", "log", "-1", "--format=%h")
         standardOutput = stdout
     }
@@ -22,7 +22,7 @@ fun getCommitHash() = runCatching {
 
 fun getVersionName() = runCatching {
     val stdout = ByteArrayOutputStream()
-    exec {
+    providers.exec {
         commandLine("git", "describe", "--tags", "--dirty")
         standardOutput = stdout
     }
@@ -31,7 +31,7 @@ fun getVersionName() = runCatching {
 
 fun getVersionCode() =  runCatching {
     val stdout = ByteArrayOutputStream()
-    exec {
+    providers.exec {
         commandLine("git", "describe", "--tags", "--match", "v*", "--always")
         standardOutput = stdout
     }
