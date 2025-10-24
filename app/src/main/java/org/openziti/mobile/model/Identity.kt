@@ -4,12 +4,23 @@
 
 package org.openziti.mobile.model
 
+import android.content.Context
 import android.util.Log
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import org.openziti.tunnel.ConfigEvent
 import org.openziti.tunnel.ContextEvent
@@ -29,6 +40,7 @@ class Identity(
     private val tunnel: TunnelModel,
     enable: Boolean = true
 ): ViewModel() {
+    val Context.prefs: DataStore<Preferences> by preferencesDataStore(id)
 
     sealed class AuthState(val label: String)
     data object AuthNone: AuthState("Initial")
@@ -59,6 +71,40 @@ class Identity(
     private val serviceMap = mutableMapOf<String, Service>()
     private val services = MutableLiveData<List<Service>>()
     fun services(): LiveData<List<Service>> = services
+
+    private val nameObserver = Observer { newName: String? ->
+        if (newName.isNullOrBlank())
+            return@Observer
+
+        runBlocking {
+            with(tunnel.context()) {
+                val curr = prefs.data.first()[nameKey]
+                if (curr != newName) {
+                    prefs.edit {
+                        it[nameKey] = newName
+                    }
+                }
+            }
+        }
+    }
+
+    init {
+        runCatching {
+            runBlocking(Dispatchers.Main) {
+                tunnel.context().prefs.data.first().asMap()[nameKey]?.let {
+                    name.postValue(it.toString())
+                }
+                name.observeForever(nameObserver)
+            }
+        }.onFailure {
+            Log.w(TunnelModel.TAG, "failed to read name from prefs", it)
+        }
+    }
+
+    override fun onCleared() {
+        name.removeObserver(nameObserver)
+        super.onCleared()
+    }
 
     fun refresh() {
         if (status.value == "Active") {
@@ -92,6 +138,7 @@ class Identity(
 
     fun delete() {
         setEnabled(false)
+        tunnel.context().preferencesDataStoreFile(id).delete()
         tunnel.deleteIdentity(id, cfg.id.key?.removePrefix("keychain:"))
     }
 
@@ -144,5 +191,6 @@ class Identity(
     }
     companion object {
         const val TAG = "model"
+        private val nameKey = stringPreferencesKey("name")
     }
 }
