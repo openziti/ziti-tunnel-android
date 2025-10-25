@@ -12,30 +12,22 @@ plugins {
 }
 
 fun getCommitHash() = runCatching {
-    val stdout = ByteArrayOutputStream()
     providers.exec {
         commandLine("git", "log", "-1", "--format=%h")
-        standardOutput = stdout
-    }
-    stdout.toString().trim()
+    }.standardOutput.asText.get().trim()
 }.getOrNull()
 
 fun getVersionName() = runCatching {
-    val stdout = ByteArrayOutputStream()
     providers.exec {
         commandLine("git", "describe", "--tags", "--dirty")
-        standardOutput = stdout
-    }
-    stdout.toString().trim()
+    }.standardOutput.asText.get().trim()
 }.getOrElse{ "0.0.0-local" }
 
 fun getVersionCode() =  runCatching {
-    val stdout = ByteArrayOutputStream()
-    providers.exec {
+    val output = providers.exec {
         commandLine("git", "describe", "--tags", "--match", "v*", "--always")
-        standardOutput = stdout
-    }
-    val version = stdout.toString().trim().replace(Regex("^v"), "")
+    }.standardOutput.asText.get().trim()
+    val version = output.replace(Regex("^v"), "")
 
     val split = version.split(".")
 
@@ -53,6 +45,10 @@ val gitHash = getCommitHash()
 val gitBranch = getVersionName()
 version = getVersionName()
 
+println("version:   ${project.version}")
+println("code:      ${getVersionCode()}")
+println("gitHash:   $gitHash")
+println("gitBranch: $gitBranch")
 
 val wlp = File(rootProject.projectDir, "whitelabel.properties")
 val whitelabel = wlp.isFile
