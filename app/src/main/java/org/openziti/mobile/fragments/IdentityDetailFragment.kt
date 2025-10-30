@@ -6,21 +6,22 @@ package org.openziti.mobile.fragments
 
 import android.content.ClipData
 import android.content.ClipboardManager
-import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.browser.auth.AuthTabIntent
 import androidx.core.content.ContextCompat.getSystemService
+import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import org.openziti.mobile.LineView
-import org.openziti.mobile.model.TunnelModel
 import org.openziti.mobile.databinding.IdentityBinding
 import org.openziti.mobile.model.Identity
+import org.openziti.mobile.model.TunnelModel
 import org.openziti.tunnel.JwtSigner
 
 /**
@@ -142,10 +143,26 @@ class IdentityDetailFragment : BaseFragment() {
         const val ID = "id"
     }
 
+    private val launcher = AuthTabIntent.registerActivityResultLauncher(this, this::onAuthResult)
+    private fun onAuthResult(result: AuthTabIntent.AuthResult) {
+        Log.i(this.javaClass.simpleName, "external auth completed: result[${result.resultCode}]")
+        val message = when (result.resultCode) {
+            AuthTabIntent.RESULT_OK -> "Received auth result."
+            // ziti auth page closes on success
+            AuthTabIntent.RESULT_CANCELED -> "AuthTab completed."
+            AuthTabIntent.RESULT_VERIFICATION_FAILED -> "Verification failed."
+            AuthTabIntent.RESULT_VERIFICATION_TIMED_OUT -> "Verification timed out."
+            else -> "Unknown result code: ${result.resultCode}"
+        }
+
+        Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
+    }
+
     private fun startJwtAuth(identity: Identity, provider: String?) {
         identity.useJWTSigner(provider).thenApply {
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(it.url))
-            startActivity(intent)
+            AuthTabIntent.Builder().build().apply {
+                launch(launcher, it.url.toUri(), "ziti+auth")
+            }
         }
     }
 }
