@@ -67,8 +67,9 @@ class Identity(
     private val controllers = MutableLiveData(cfg.controllers.toList())
     fun controllers() = controllers
 
-    private val routers = MutableLiveData<Map<String, RouterEvent>>(emptyMap())
-    fun routers(): LiveData<Map<String, RouterEvent>> = routers
+    private val routers = mutableMapOf<String, RouterEvent>()
+    private val rtData = MutableLiveData<Map<String, RouterEvent>>(routers)
+    fun routers(): LiveData<Map<String, RouterEvent>> = rtData
 
     private val enabled = MutableLiveData(enable)
     fun enabled(): LiveData<Boolean> = enabled
@@ -178,7 +179,8 @@ class Identity(
 
                 if (ev.status == "ziti context is disabled") {
                     authState.value = AuthNone
-                    routers.postValue(emptyMap())
+                    routers.clear()
+                    rtData.postValue(routers)
                 }
             }
 
@@ -198,13 +200,12 @@ class Identity(
 
             is RouterEvent -> {
                 Log.i(TAG, "router event: ${ev.identifier} status=${ev.status}")
-                val current = routers.value?.toMutableMap() ?: mutableMapOf()
                 if (ev.status == RouterStatus.REMOVED) {
-                    current.remove(ev.name)
+                    routers.remove(ev.name)
                 } else {
-                    current[ev.name] = ev
+                    routers[ev.name] = ev
                 }
-                routers.postValue(current)
+                rtData.postValue(routers)
             }
         }
     }
