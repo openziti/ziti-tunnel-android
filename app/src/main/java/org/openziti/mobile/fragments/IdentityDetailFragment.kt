@@ -4,8 +4,6 @@
 
 package org.openziti.mobile.fragments
 
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -14,27 +12,57 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.browser.auth.AuthTabIntent
-import androidx.core.content.ContextCompat.getSystemService
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import org.openziti.mobile.LineView
+import org.openziti.mobile.R
 import org.openziti.mobile.databinding.IdentityBinding
 import org.openziti.mobile.model.Identity
 import org.openziti.mobile.model.TunnelModel
 import org.openziti.tunnel.JwtSigner
+import org.openziti.tunnel.RouterEvent
+import org.openziti.tunnel.RouterStatus
 
 /**
  * A simple [Fragment] subclass.
  */
 class IdentityDetailFragment : BaseFragment() {
     private val tunnel: TunnelModel by activityViewModels()
+    val showRouters = mutableStateOf(false)
+    lateinit var model: Identity
+
+    override fun onResume() {
+        super.onResume()
+        model.refresh()
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View = IdentityBinding.inflate(inflater, container, false).apply {
-        val model = tunnel.identity(requireArguments().getString(ID)!!)!!
+        model = tunnel.identity(requireArguments().getString(ID)!!)!!
         model.refresh()
 
         BackIdentityDetailsButton.setOnClickListener {
@@ -67,9 +95,6 @@ class IdentityDetailFragment : BaseFragment() {
         model.status().observe(viewLifecycleOwner) { st ->
             IdDetailsStatus.text = st
         }
-        model.controllers().observe(viewLifecycleOwner) {
-            IdDetailsNetwork.text = it.firstOrNull() ?: "Unknown"
-        }
         var sCount = 0
         model.services().observe(viewLifecycleOwner) { serviceList ->
             IdDetailServicesList.removeAllViews()
@@ -83,19 +108,23 @@ class IdentityDetailFragment : BaseFragment() {
         }
 
         IdOnOffSwitch.setOnCheckedChangeListener { _, state ->
-            model.setEnabled(state)
+            if (state != model.enabled().value)
+                model.setEnabled(state)
+        }
+
+        composeView.setContent {
+            if (showRouters.value) {
+                RouterDialog(model.routers().observeAsState(), showRouters)
+            }
+        }
+
+        model.routers().observe(viewLifecycleOwner) { it ->
+            val router = it.values.firstOrNull() { rt -> rt.status == RouterStatus.CONNECTED }
+            IdDetailsNetwork.text = router?.status?.name ?: RouterStatus.DISCONNECTED.name
         }
 
         IdDetailsNetwork.setOnClickListener {
-            getSystemService(requireContext(), ClipboardManager::class.java)?.apply {
-                val clip = ClipData.newPlainText("Network", IdDetailsNetwork.text.toString())
-                setPrimaryClip(clip)
-                Toast.makeText(
-                    requireContext(),
-                    IdDetailsNetwork.text.toString() + " has been copied to your clipboard",
-                    Toast.LENGTH_LONG
-                ).show()
-            }
+            showRouters.value = true
         }
 
         IdDetailForgetButton.setOnClickListener {
@@ -139,10 +168,6 @@ class IdentityDetailFragment : BaseFragment() {
                 }
         builder.create().show()
     }
-    companion object {
-        const val ID = "id"
-    }
-
     private val launcher = AuthTabIntent.registerActivityResultLauncher(this, this::onAuthResult)
     private fun onAuthResult(result: AuthTabIntent.AuthResult) {
         Log.i(this.javaClass.simpleName, "external auth completed: result[${result.resultCode}]")
@@ -164,5 +189,56 @@ class IdentityDetailFragment : BaseFragment() {
                 launch(launcher, it.url.toUri(), "ziti+auth")
             }
         }
+    }
+
+    @Composable
+    fun RouterDialog(model: State<Map<String, RouterEvent>?>, show: MutableState<Boolean> = mutableStateOf(true)) {
+        if (show.value) {
+            Dialog(
+                properties = DialogProperties(
+                    dismissOnBackPress = true,
+                    dismissOnClickOutside = true
+                ),
+                onDismissRequest = { show.value = false }) {
+                Card(modifier = dialogModifier) {
+                    Row(modifier = Modifier.fillMaxWidth().height(20.dp) ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.z),
+                            contentDescription = "Routers",
+                            modifier = Modifier.fillMaxHeight().padding(8.dp)
+                        )
+                        Text(
+                            text = "Routers",
+                            modifier = Modifier.fillMaxWidth(),
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                    Column {
+                        model.value?.forEach { (_, router) ->
+                            Row(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                                Text(router.name,
+                                    modifier = Modifier.fillMaxWidth(0.6f),
+                                    softWrap = true,
+                                    fontWeight = FontWeight.Bold)
+                                Text(
+                                    router.status.name,
+                                    textAlign = TextAlign.End,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    companion object {
+        val dialogModifier = Modifier
+            .fillMaxWidth()
+            .height(375.dp)
+            .padding(16.dp)
+        const val ID = "id"
     }
 }

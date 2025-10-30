@@ -17,6 +17,7 @@ val eventModule = SerializersModule {
         subclass(ConfigEvent::class)
         subclass(ServiceEvent::class)
         subclass(ExtJWTEvent::class)
+        subclass(RouterEvent::class)
     }
 }
 val EventsJson = Json {
@@ -69,4 +70,18 @@ data class ServiceEvent(
     override val identifier: String,
     @SerialName("added_services") val addedServices: List<Service> = emptyList(),
     @SerialName("removed_services") val removedServices: List<Service> = emptyList(),
+): Event()
+
+@Serializable
+enum class RouterStatus {
+    @SerialName("added") ADDED,
+    @SerialName("connected") CONNECTED,
+    @SerialName("disconnected") DISCONNECTED,
+    @SerialName("removed") REMOVED,
+}
+@Serializable @SerialName("RouterEvent")
+data class RouterEvent(
+    override val identifier: String,
+    val name: String,
+    val status: RouterStatus,
 ): Event()

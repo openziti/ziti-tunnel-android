@@ -28,6 +28,8 @@ import org.openziti.tunnel.Event
 import org.openziti.tunnel.ExtAuthResult
 import org.openziti.tunnel.ExtJWTEvent
 import org.openziti.tunnel.JwtSigner
+import org.openziti.tunnel.RouterEvent
+import org.openziti.tunnel.RouterStatus
 import org.openziti.tunnel.Service
 import org.openziti.tunnel.ServiceEvent
 import org.openziti.tunnel.ZitiConfig
@@ -64,6 +66,10 @@ class Identity(
 
     private val controllers = MutableLiveData(cfg.controllers.toList())
     fun controllers() = controllers
+
+    private val routers = mutableMapOf<String, RouterEvent>()
+    private val rtData = MutableLiveData<Map<String, RouterEvent>>(routers)
+    fun routers(): LiveData<Map<String, RouterEvent>> = rtData
 
     private val enabled = MutableLiveData(enable)
     fun enabled(): LiveData<Boolean> = enabled
@@ -159,36 +165,51 @@ class Identity(
         services.postValue(serviceMap.values.toList())
     }
 
-    fun processEvent(ev: Event):Unit = when (ev) {
-        is ContextEvent -> {
-            name.postValue(ev.name)
-            if (ev.status == "OK") {
-                status.postValue("Active")
-                authState.value = Authenticated
-            } else {
-                status.postValue(ev.status)
+    fun processEvent(ev: Event) {
+        Log.d(TAG, "$id received event[$ev]")
+        when (ev) {
+            is ContextEvent -> {
+                name.postValue(ev.name)
+                if (ev.status == "OK") {
+                    status.postValue("Active")
+                    authState.value = Authenticated
+                } else {
+                    status.postValue(ev.status)
+                }
+
+                if (ev.status == "ziti context is disabled") {
+                    authState.value = AuthNone
+                    routers.clear()
+                    rtData.postValue(routers)
+                }
             }
-        }
 
-        is ServiceEvent -> processServiceUpdate(ev)
+            is ServiceEvent -> processServiceUpdate(ev)
 
-        is ConfigEvent -> {
-            updateConfig(ev.config)
-            val json = Json.encodeToString(ZitiConfig.serializer(), cfg)
-            tunnel.identitiesDir.resolve(id).outputStream().use { out ->
-                out.write(json.toByteArray())
+            is ConfigEvent -> {
+                updateConfig(ev.config)
+                val json = Json.encodeToString(ZitiConfig.serializer(), cfg)
+                tunnel.identitiesDir.resolve(id).outputStream().use { out ->
+                    out.write(json.toByteArray())
+                }
             }
-        }
 
-        is ExtJWTEvent -> {
-            authState.value = AuthJWT(ev.providers)
-        }
+            is ExtJWTEvent -> {
+                authState.value = AuthJWT(ev.providers)
+            }
 
-        else -> {
-            Log.w(TAG, "unhandled event[$ev]")
-            Unit
+            is RouterEvent -> {
+                Log.i(TAG, "router event: ${ev.identifier} status=${ev.status}")
+                if (ev.status == RouterStatus.REMOVED) {
+                    routers.remove(ev.name)
+                } else {
+                    routers[ev.name] = ev
+                }
+                rtData.postValue(routers)
+            }
         }
     }
+
     companion object {
         const val TAG = "model"
         private val nameKey = stringPreferencesKey("name")

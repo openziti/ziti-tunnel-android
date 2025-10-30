@@ -284,6 +284,11 @@ static void on_event(const base_event *ev) {
             json = ext_signer_event_to_json(
                     (const ext_signer_event*)ev, MODEL_JSON_COMPACT, nullptr);
             break;
+        case TunnelEvent_RouterEvent:
+            json = router_event_to_json(
+                    (const router_event*)ev, MODEL_JSON_COMPACT, nullptr);
+            break;
+
         case TunnelEvent_Unknown:
         default:
             break;
