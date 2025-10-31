@@ -8,7 +8,7 @@ ndk = "28.2.13676358"
 ziti-tunnel-sdk = "v1.9.0"
 
 # 3rd part deps
-kotlinx-serialization-json = "1.9.0"
+kotlinx-serialization-json = "1.9.1"
 appcompat = "1.7.1"
 constraintlayout = "2.2.1"
 lifecycle-extensions = "2.2.0"
