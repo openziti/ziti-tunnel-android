@@ -13,6 +13,7 @@ import kotlinx.coroutines.channels.onFailure
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.onCompletion
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import java.util.concurrent.CompletableFuture
@@ -86,6 +87,8 @@ class Tunnel(app: Application, ): Runnable {
                 Log.w(TAG, "failed to parse event: $ev", it)
             }
         }
+    }.onCompletion { ex ->
+        Log.e(TAG, "event flow failed", ex)
     }
 
     fun routes(): StateFlow<Sequence<Route>> = routeData
