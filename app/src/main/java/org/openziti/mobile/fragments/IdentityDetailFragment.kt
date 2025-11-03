@@ -35,9 +35,9 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
 import org.openziti.mobile.LineView
 import org.openziti.mobile.R
+import org.openziti.mobile.ZitiMobileEdgeApp
 import org.openziti.mobile.databinding.IdentityBinding
 import org.openziti.mobile.model.Identity
 import org.openziti.mobile.model.TunnelModel
@@ -49,7 +49,9 @@ import org.openziti.tunnel.RouterStatus
  * A simple [Fragment] subclass.
  */
 class IdentityDetailFragment : BaseFragment() {
-    private val tunnel: TunnelModel by activityViewModels()
+    private val tunnel: TunnelModel by lazy {
+        (requireActivity().application as ZitiMobileEdgeApp).model
+    }
     val showRouters = mutableStateOf(false)
     lateinit var model: Identity
 
@@ -118,8 +120,8 @@ class IdentityDetailFragment : BaseFragment() {
             }
         }
 
-        model.routers().observe(viewLifecycleOwner) { it ->
-            val router = it.values.firstOrNull() { rt -> rt.status == RouterStatus.CONNECTED }
+        model.routers().observe(viewLifecycleOwner) {
+            val router = it.values.firstOrNull { rt -> rt.status == RouterStatus.CONNECTED }
             IdDetailsNetwork.text = router?.status?.name ?: RouterStatus.DISCONNECTED.name
         }
 

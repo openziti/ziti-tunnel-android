@@ -26,7 +26,6 @@ import android.view.animation.DecelerateInterpolator
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
-import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.os.ConfigurationCompat
 import androidx.core.os.bundleOf
@@ -75,7 +74,9 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
     var state = "startActivity"
     val version = "${BuildConfig.VERSION_NAME}(${BuildConfig.GIT_COMMIT})"
 
-    private val model: TunnelModel by viewModels { TunnelModel.Factory }
+    private val model: TunnelModel by lazy {
+        (application as ZitiMobileEdgeApp).model
+    }
 
     internal var vpn: ZitiVPNService.ZitiVPNBinder? = null
     internal val serviceConnection = object: ServiceConnection{

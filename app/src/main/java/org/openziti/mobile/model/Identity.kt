@@ -94,11 +94,12 @@ class Identity(
         }
     }
 
-    init {
+    internal fun start() {
+        Log.i(TunnelModel.TAG, "starting id[$id]")
         runCatching {
             runBlocking(Dispatchers.Main) {
-                tunnel.context().prefs.data.first().asMap()[nameKey]?.let {
-                    name.postValue(it.toString())
+                tunnel.context().prefs.data.first().asMap()[nameKey]?.toString()?.let {
+                    name.postValue(it)
                 }
                 name.observeForever(nameObserver)
             }
@@ -108,6 +109,7 @@ class Identity(
     }
 
     override fun onCleared() {
+        Log.i(TunnelModel.TAG, "onCleared id[${name().value}]")
         name.removeObserver(nameObserver)
         super.onCleared()
     }
@@ -169,7 +171,9 @@ class Identity(
         Log.d(TAG, "$id received event[$ev]")
         when (ev) {
             is ContextEvent -> {
-                name.postValue(ev.name)
+                ev.name?.let {
+                    name.postValue(it)
+                }
                 if (ev.status == "OK") {
                     status.postValue("Active")
                     authState.value = Authenticated

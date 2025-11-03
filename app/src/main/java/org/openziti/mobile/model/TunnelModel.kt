@@ -15,11 +15,8 @@ import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.CreationExtras
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
@@ -32,7 +29,6 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.jsonPrimitive
-import org.openziti.mobile.ZitiMobileEdgeApp
 import org.openziti.tunnel.Dump
 import org.openziti.tunnel.Enroll
 import org.openziti.tunnel.Event
@@ -174,12 +170,14 @@ class TunnelModel(
             }.first()
         }
         Log.i(TAG, "loading identity[$id] disabled[$disabled]")
+        val idModel = Identity(id, cfg, this, !disabled)
+        identities[id] = idModel
         val cmd = LoadIdentity(id, cfg, disabled)
         tunnel.processCmd(cmd).handleAsync { json: JsonElement? , ex: Throwable? ->
+            idModel.start()
             if (ex != null) {
                 Log.w(TAG, "failed to execute", ex)
             } else  {
-                identities[id] = Identity(id, cfg, this, !disabled)
                 identitiesData.postValue(identities.values.toList())
                 Log.i(TAG, "load result[$id]: $json")
             }
@@ -292,17 +290,5 @@ class TunnelModel(
         const val TAG = "model"
         const val DEFAULT_DNS = "100.64.0.2"
         const val DEFAULT_RANGE = "100.64.0.0/10"
-
-        val Factory = object : ViewModelProvider.Factory {
-            @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(
-                modelClass: Class<T>,
-                extras: CreationExtras
-            ): T {
-                // Get the Application object from extras
-                val application = checkNotNull(extras[APPLICATION_KEY])
-                return (application as ZitiMobileEdgeApp).model as T
-            }
-        }
     }
 }
