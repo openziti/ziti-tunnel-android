@@ -17,6 +17,7 @@ import android.os.IBinder
 import android.system.OsConstants
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -59,7 +60,8 @@ class ZitiVPNService : VpnService(), CoroutineScope {
         (application as ZitiMobileEdgeApp).model.refreshAll()
     }
 
-    private fun setUpstreamDNS(net: Network, props: LinkProperties) {
+    private fun setUpstreamDNS(net: Network) {
+        val props = connMgr.getLinkProperties(net) ?: return
         val addresses = props.linkAddresses
             .map { it.address }
             .filter { !it.isAnyLocalAddress && !it.isLinkLocalAddress }
@@ -80,40 +82,59 @@ class ZitiVPNService : VpnService(), CoroutineScope {
     }
 
     private var metered = false
+    private var currentNetwork: Network? = null
+
     private val networkMonitor = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
             connMgr.getNetworkCapabilities(network)?.let {
                 Log.d(TAG, "network available: $network, caps:$it")
-
-                val transport = when {
-                    it.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> "wifi"
-                    it.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> "cellular"
-                    else -> "unknown"
-                }
-
-                val netMetered = !it.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
-                if (netMetered != metered) {
-                    Log.i(TAG, """switching to ${if (netMetered) "" else "un"}metered network[$transport]""")
-                    metered = netMetered
-                    restartTunnel()
-                }
+                setUpstreamDNS(network)
             }
-
         }
 
         override fun onLinkPropertiesChanged(network: Network, linkProperties: LinkProperties) {
             Log.i(TAG, "link change[$network], active[${connMgr.activeNetwork}]")
-            if (network == connMgr.activeNetwork) {
-                setUpstreamDNS(network, linkProperties)
-            }
+            processNetworkChange()
         }
 
         override fun onLost(network: Network) {
             Log.i(TAG, "network: $network is lost, active[${connMgr.activeNetwork}]")
+            processNetworkChange()
         }
 
         override fun onUnavailable() {
             Log.i(TAG, "no available network")
+        }
+    }
+
+    internal fun processNetworkChange() = launch(Dispatchers.IO) {
+        if (currentNetwork == connMgr.activeNetwork) return@launch
+
+        currentNetwork = connMgr.activeNetwork
+        val network = currentNetwork
+
+        if (network == null) {
+            Log.i(TAG, "no active network")
+            return@launch
+        }
+
+        connMgr.getNetworkCapabilities(network)?.let {
+            Log.d(TAG, "network available: $network, caps:$it")
+
+            setUpstreamDNS(network)
+
+            val transport = when {
+                it.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> "wifi"
+                it.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> "cellular"
+                else -> "unknown"
+            }
+
+            val netMetered = !it.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
+            if (netMetered != metered) {
+                Log.i(TAG, """switching to ${if (netMetered) "" else "un"}metered network[$transport]""")
+                metered = netMetered
+                restartTunnel()
+            }
         }
     }
 
@@ -244,11 +265,7 @@ class ZitiVPNService : VpnService(), CoroutineScope {
 
     private fun startTunnel() {
         val tun = (application as ZitiMobileEdgeApp).tunnel
-        connMgr.activeNetwork?.let { net ->
-            connMgr.getLinkProperties(net)?.let { props ->
-                setUpstreamDNS(net, props)
-            }
-        }
+        connMgr.activeNetwork?.let { net -> setUpstreamDNS(net) }
 
         Log.i(TAG, "startTunnel()")
         // Android supports seamless transition to a new
