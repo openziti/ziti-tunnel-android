@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 NetFoundry. All rights reserved.
+ * Copyright (c) 2025 NetFoundry. All rights reserved.
  */
 
 package org.openziti.mobile.model
@@ -34,6 +34,7 @@ import org.openziti.tunnel.Service
 import org.openziti.tunnel.ServiceEvent
 import org.openziti.tunnel.ZitiConfig
 import java.net.URI
+import java.time.Clock.*
 import java.util.concurrent.CompletableFuture
 
 class Identity(
@@ -54,7 +55,7 @@ class Identity(
             userInfo ?: path?.removePrefix("/")
         } ?: id
 
-
+    internal var lastRefresh = systemUTC().instant()
     private val authState = MutableStateFlow<AuthState>(AuthNone)
     fun authState() = authState.asLiveData()
 
@@ -116,10 +117,11 @@ class Identity(
 
     fun refresh() {
         if (status.value == "Active") {
-            tunnel.refreshIdentity(id).handleAsync { _, ex ->
-                ex?.let {
-                    Log.w(TunnelModel.TAG, "failed refresh", it)
-                }
+            tunnel.refreshIdentity(id).thenAcceptAsync {
+                lastRefresh = systemUTC().instant()
+            }.exceptionallyAsync { ex ->
+                Log.w(TunnelModel.TAG, "failed refresh",ex)
+                null
             }
         }
     }

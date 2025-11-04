@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 NetFoundry. All rights reserved.
+ * Copyright (c) 2025 NetFoundry. All rights reserved.
  */
 
 package org.openziti.mobile.model
@@ -48,6 +48,8 @@ import org.openziti.tunnel.toPEM
 import java.net.URI
 import java.security.KeyStore.PrivateKeyEntry
 import java.security.cert.X509Certificate
+import java.time.Clock
+import java.time.Duration
 import java.util.concurrent.CompletableFuture
 
 class TunnelModel(
@@ -283,6 +285,15 @@ class TunnelModel(
                         it.remove(prefKey)
                 }
             }
+        }
+    }
+
+    fun refreshAll() {
+        val now = Clock.systemUTC().instant()
+        identities.values.filter {
+            Duration.between(it.lastRefresh, now) > Duration.ofMinutes(60)
+        }.forEach {
+            refreshIdentity(it.id)
         }
     }
 
