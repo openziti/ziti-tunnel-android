@@ -92,6 +92,8 @@ static void netif_read(uv_stream_t *, ssize_t len, const uv_buf_t *b) {
     if (len > 0) {
         metrics_rate_update(&NETIF.up, (long)len);
         NETIF.on_packet(b->base, len, NETIF.on_packet_ctx);
+    } else if (len < 0) {
+        ZITI_LOG(WARN, "read error: %s", uv_strerror((int)len));
     }
 }
 
@@ -106,20 +108,47 @@ jdouble JNICALL get_down_rate(JNIEnv *, jobject) {
     return down;
 }
 
+static void close_net_if() {
+    if (NETIF.if_pipe != nullptr) {
+        uv_os_fd_t old_fd = -1;
+        uv_fileno((uv_handle_t*)NETIF.if_pipe, &old_fd);
+        ZITI_LOG(INFO, "stopping android netif fd[%d]", old_fd);
+        uv_close((uv_handle_t*)NETIF.if_pipe, (uv_close_cb)free);
+        NETIF.if_pipe = nullptr;
+    }
+}
 extern int android_netif_do(netif_cmd cmd, int fd) {
     if (cmd == netif_Start) {
-        ZITI_LOG(INFO, "starting android netif");
-        auto p = (uv_pipe_t*)calloc(1, sizeof(uv_pipe_t));
-        uv_pipe_init(NETIF.loop, p, 0);
-        uv_pipe_open(p, fd);
-        NETIF.if_pipe = p;
-        uv_read_start((uv_stream_t *)p, netif_alloc, netif_read);
-    } else if(cmd == netif_Stop) {
         if (NETIF.if_pipe != nullptr) {
-            ZITI_LOG(INFO, "stopping android netif");
-            uv_close((uv_handle_t*)NETIF.if_pipe, (uv_close_cb)free);
-            NETIF.if_pipe = nullptr;
+            uv_os_fd_t old_fd = -1;
+            uv_fileno((uv_handle_t *) NETIF.if_pipe, &old_fd);
+            if (old_fd == fd) {
+                ZITI_LOG(INFO, "old_fd[%d] == fd[%d]", old_fd, fd);
+                return 0;
+            }
         }
+        ZITI_LOG(INFO, "starting android netif fd[%d]", fd);
+        auto p = (uv_pipe_t*)calloc(1, sizeof(uv_pipe_t));
+        int rc = uv_pipe_init(NETIF.loop, p, 0);
+        if (rc != 0) {
+            ZITI_LOG(WARN, "failed to init fd[%d]: %s", fd, uv_strerror(rc));
+            return rc;
+        }
+        rc = uv_pipe_open(p, fd);
+        if (rc != 0) {
+            ZITI_LOG(WARN, "failed to open pipe fd[%d]: %s", fd, uv_strerror(rc));
+            return rc;
+        }
+        close_net_if();
+
+        NETIF.if_pipe = p;
+        rc = uv_read_start((uv_stream_t *)p, netif_alloc, netif_read);
+        if (rc != 0) {
+            ZITI_LOG(WARN, "failed to start reading pipe fd[%d]: %s", fd, uv_strerror(rc));
+            return rc;
+        }
+    } else if(cmd == netif_Stop) {
+        close_net_if();
     }
 
     return 0;

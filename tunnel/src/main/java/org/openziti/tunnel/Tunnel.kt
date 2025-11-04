@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 NetFoundry. All rights reserved.
+ * Copyright (c) 2025 NetFoundry. All rights reserved.
  */
 
 package org.openziti.tunnel
@@ -135,8 +135,8 @@ class Tunnel(app: Application, ): Runnable {
     fun startNetworkInterface(fd: ParcelFileDescriptor) {
         if (active.compareAndSet(false, true)) {
             startTime = TimeSource.Monotonic.markNow()
-            startNetIf(fd.detachFd())
         }
+        startNetIf(fd.detachFd())
     }
 
     fun stopNetworkInterface() {
