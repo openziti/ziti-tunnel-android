@@ -22,6 +22,7 @@ activity-compose = "1.11.0"
 compose-bom = "2025.10.01"
 browser = "1.9.0"
 runtime-livedata = "1.9.4"
+timber = "5.0.1"
 
 # test deps
 junit = "4.13.2"
@@ -60,6 +61,7 @@ core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "core-ktx
 ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junit-version" }
 browser = { group = "androidx.browser", name = "browser", version.ref = "browser" }
 runtime-livedata = { group = "androidx.compose.runtime", name = "runtime-livedata", version.ref = "runtime-livedata" }
+timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
 
 [plugins]
 android-app = { id = "com.android.application", version.ref = "android" }
