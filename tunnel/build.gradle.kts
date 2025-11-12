@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2025 NetFoundry. All rights reserved.
+ */
+
 import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
 import com.android.build.gradle.internal.tasks.factory.dependsOn
 
@@ -69,6 +73,7 @@ kotlin {
 dependencies {
     implementation(libs.core.ktx)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.timber)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)

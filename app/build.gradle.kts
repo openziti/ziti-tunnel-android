@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2020 NetFoundry. All rights reserved.
+ * Copyright (c) 2025 NetFoundry. All rights reserved.
  */
 import org.jetbrains.kotlin.konan.properties.Properties
 import java.io.ByteArrayOutputStream
@@ -165,4 +165,5 @@ dependencies {
     implementation(libs.material3)
     implementation(libs.browser)
     implementation(libs.runtime.livedata)
+    implementation(libs.timber)
 }

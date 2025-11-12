@@ -32,12 +32,13 @@ static jstring JNICALL tlsuvVersion(JNIEnv *env, jclass /* this */);
 static jstring JNICALL zitiSdkVersion(JNIEnv *env, jclass );
 static jstring JNICALL zitiTunnelVersion(JNIEnv *env, jclass );
 static void notify_cb(uv_async_t *async);
-static void android_logger(int, const char *loc, const char *msg, size_t msglen);
 static void on_event(const base_event *);
 
+void android_logger(int, const char *loc, const char *msg, size_t msglen);
+
 struct cmd_entry {
-    netif_cmd netifCmd;
-    uv_os_fd_t netifFd;
+    void (*cmd_func)(uv_loop_t *, void *args);
+    void *cmd_args;
 
     tunnel_command cmd;
     jobject ctx;
@@ -227,8 +228,8 @@ void notify_cb(uv_async_t *a) {
         cmd_entry *cmd = TAILQ_FIRST(&cmd_queue);
         TAILQ_REMOVE(&cmd_queue, cmd, _next);
 
-        if (cmd->netifCmd != netif_None) {
-            android_netif_do(cmd->netifCmd, cmd->netifFd);
+        if (cmd->cmd_func != NULL) {
+            cmd->cmd_func(a->loop, cmd->cmd_args);
         } else {
             CTRL->process(&cmd->cmd, on_cmd_complete, cmd->ctx);
         }
@@ -332,8 +333,8 @@ int tunnel_commit(netif_handle, uv_loop_t *) {
 
 void JNICALL start_netif(JNIEnv *, jobject, jint fd) {
     auto c = (cmd_entry*)calloc(1,sizeof(cmd_entry));
-    c->netifCmd = netif_Start;
-    c->netifFd = fd;
+    c->cmd_func = android_netif_start;
+    c->cmd_args = (void*)fd;
 
     uv_mutex_lock(&cmd_queue_lock);
     TAILQ_INSERT_TAIL(&cmd_queue, c, _next);
@@ -343,25 +344,10 @@ void JNICALL start_netif(JNIEnv *, jobject, jint fd) {
 
 void JNICALL stop_netif(JNIEnv *, jobject) {
     auto c = (cmd_entry*)calloc(1,sizeof(cmd_entry));
-    c->netifCmd = netif_Stop;
+    c->cmd_func = android_netif_stop;
 
     uv_mutex_lock(&cmd_queue_lock);
     TAILQ_INSERT_TAIL(&cmd_queue, c, _next);
     uv_mutex_unlock(&cmd_queue_lock);
     uv_async_send(&notify);
-}
-
-
-static void android_logger(int level, const char *loc, const char *msg, size_t msglen) {
-    int pri = ANDROID_LOG_DEFAULT;
-    switch ((DebugLevel)level) {
-        case ERROR: pri = ANDROID_LOG_ERROR; break;
-        case WARN: pri = ANDROID_LOG_WARN; break;
-        case INFO: pri = ANDROID_LOG_INFO; break;
-        case DEBUG: pri = ANDROID_LOG_DEBUG; break;
-        case NONE: pri = ANDROID_LOG_SILENT; break;
-        case TRACE:
-        case VERBOSE: pri = ANDROID_LOG_VERBOSE; break;
-    }
-    __android_log_print(pri, loc, "%.*s", (int)msglen, msg);
 }
