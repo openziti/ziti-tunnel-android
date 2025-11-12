@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2024 NetFoundry. All rights reserved.
+ * Copyright (c) 2024 NetFoundry
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <jni.h>
@@ -28,9 +29,6 @@ static ssize_t netif_write(netif_handle, const void *b, size_t len);
 static int add_route(netif_handle, const char *string1);
 static int del_route(netif_handle, const char *string2);
 static int commit(netif_handle, uv_loop_t *pS);
-
-
-
 
 static netif_driver_t android_netif = {
         .handle = &NETIF,
@@ -132,12 +130,14 @@ void android_netif_start(uv_loop_t *loop, void *arg) {
     auto p = (uv_pipe_t*)calloc(1, sizeof(uv_pipe_t));
     int rc = uv_pipe_init(NETIF.loop, p, 0);
     if (rc != 0) {
-        ZITI_LOG(WARN, "failed to init fd[%d]: %s", fd, uv_strerror(rc));
+        free(p);
+        ZITI_LOG(ERROR, "failed to init fd[%d]: %s", fd, uv_strerror(rc));
         return;
     }
     rc = uv_pipe_open(p, fd);
     if (rc != 0) {
-        ZITI_LOG(WARN, "failed to open pipe fd[%d]: %s", fd, uv_strerror(rc));
+        uv_close((uv_handle_t *)p, (uv_close_cb)free);
+        ZITI_LOG(ERROR, "failed to open pipe fd[%d]: %s", fd, uv_strerror(rc));
         return;
     }
     close_net_if();
@@ -145,7 +145,7 @@ void android_netif_start(uv_loop_t *loop, void *arg) {
     NETIF.if_pipe = p;
     rc = uv_read_start((uv_stream_t *)p, netif_alloc, netif_read);
     if (rc != 0) {
-        ZITI_LOG(WARN, "failed to start reading pipe fd[%d]: %s", fd, uv_strerror(rc));
+        ZITI_LOG(ERROR, "failed to start reading pipe fd[%d]: %s", fd, uv_strerror(rc));
         return;
     }
 }
