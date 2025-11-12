@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 NetFoundry. All rights reserved.
+ * Copyright (c) 2025 NetFoundry. All rights reserved.
  */
 
 package org.openziti.mobile.debug
@@ -18,6 +18,8 @@ import java.net.URI
 import java.security.KeyStore.PrivateKeyEntry
 import java.security.KeyStore.TrustedCertificateEntry
 import java.security.cert.X509Certificate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.concurrent.CompletableFuture
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
@@ -163,7 +165,8 @@ sealed class DebugInfo {
             val logDir = app.externalCacheDir!!.resolve("logs")
             logDir.mkdirs()
 
-            val logFile = logDir.resolve("log.zip")
+            val label = DateTimeFormatter.ofPattern("uuuuMMdd-HHmm").format(LocalDateTime.now())
+            val logFile = logDir.resolve("feedback-${label}.zip")
             val zip = ZipOutputStream(logFile.outputStream())
             val writer = zip.writer()
 
@@ -179,6 +182,12 @@ sealed class DebugInfo {
                         }
                     writer.flush()
                 }
+            }
+
+            app.cacheDir.list { _, name -> name.endsWith(".log") }?.forEach { l ->
+                zip.putNextEntry(ZipEntry("logs/${l}"))
+                app.cacheDir.resolve(l).inputStream().use { it.copyTo(zip) }
+                writer.flush()
             }
 
             zip.finish()

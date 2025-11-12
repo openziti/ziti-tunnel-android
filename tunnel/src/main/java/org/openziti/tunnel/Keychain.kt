@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2024 NetFoundry. All rights reserved.
+ * Copyright (c) 2025 NetFoundry. All rights reserved.
  */
 
 package org.openziti.tunnel
 
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
-import android.util.Log
+import timber.log.Timber
 import java.net.URI
 import java.nio.ByteBuffer
 import java.security.KeyPairGenerator
@@ -47,13 +47,13 @@ class Keychain(val store: KeyStore) {
 
     fun loadKey(name: String): PrivateKeyEntry? {
         val k = store.getEntry(name, null)
-        return if (k is PrivateKeyEntry) k else null
+        return k as? PrivateKeyEntry
     }
 
     fun deleteKey(name: String) {
         val k = store.getEntry(name, null)
         if (k !is PrivateKeyEntry) {
-            Log.w("keystore", "entry[$name] is not a PrivateKeyEntry")
+            Timber.w("entry[$name] is not a PrivateKeyEntry")
             return
         }
         store.deleteEntry(name)

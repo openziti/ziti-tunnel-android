@@ -32,6 +32,7 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
         tunnel.cpp
         keychain.cpp
         netif.cpp
+        logging.cpp
 )
 
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE

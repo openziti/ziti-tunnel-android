@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
+import org.openziti.log.NativeLog
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.time.Duration
@@ -33,6 +34,7 @@ class Tunnel(app: Application, ): Runnable {
     private var defaultRoute = "100.64.0.0/10".toRoute()
 
     init {
+        NativeLog.setupLogging(app.cacheDir.absolutePath)
         val pm = app.packageManager
 
         val ver = pm.getPackageInfo(app.packageName, 0).versionName ?: "unknown"
