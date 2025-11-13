@@ -18,6 +18,11 @@ inputs:
     required: true
     description: signing keystore password
 
+  experimental:
+    default: 'false'
+    required: false
+    description: Build with latest/unreleased tunneler and ziti SDKs
+
 runs:
   using: "composite"
   steps:
@@ -41,6 +46,14 @@ runs:
       shell: bash
       run: |
         echo "${{ inputs.keystore }}" | base64 -d > ${{ runner.workspace }}/ziti-mobile.jks
+
+    - name: setup tunnel/ziti SDK overrides
+      if: ${{ inputs.experimental == 'true' }}
+      shell: bash
+      run: |
+        echo "tunnel.version = main" > ./local.properties
+        echo "ziti.version = nightly" >> ./local.properties
+        cat ./local.properties
 
     - name: Build Android ${{ inputs.buildType }} Bundle
       shell: bash

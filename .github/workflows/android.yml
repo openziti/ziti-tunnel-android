@@ -2,6 +2,13 @@ name: Android CI
 
 on:
   workflow_dispatch:
+    inputs:
+      nightly:
+        type: choice
+        default: 'false'
+        description: use latest tunnel and ziti SDKs
+        options: [ 'true', 'false' ]
+
   push:
     branches: [ main ]
   pull_request:
@@ -35,6 +42,7 @@ jobs:
       uses: ./.github/actions/gradle
       with:
         buildType: ${{ env.BUILD_TYPE }}
+        experimental:
         runTests: false
         keystore: ${{ secrets.RELEASE_KEYSTORE }}
         keystorePassword: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}

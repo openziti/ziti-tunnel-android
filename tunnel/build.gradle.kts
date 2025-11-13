@@ -12,20 +12,23 @@ plugins {
 }
 
 val ndk = libs.versions.ndk.get()
+val overrides = gradleLocalProperties(parent!!.projectDir, providers)
 
 val cmakeArgs = mutableListOf(
     "-DDEPS_DIR=${project.layout.buildDirectory.get()}/cmake",
-    "-Dtunnel_sdk_VERSION=${libs.versions.ziti.tunnel.sdk.get()}",
-    )
+)
 
-// use local checkouts if desired
+// use local checkouts or custom version if desired
 // set in local.properties
 // ziti.dir = /home/ziggy/work/ziti-sdk-c
-with(gradleLocalProperties(parent!!.projectDir, providers)) {
-    this["ziti.dir"]?.let { cmakeArgs.add("-DZITI_SDK_DIR=$it") }
-    this["tlsuv.dir"]?.let { cmakeArgs.add("-Dtlsuv_DIR=$it") }
-    this["tunnel.dir"]?.let { cmakeArgs.add("-Dtunnel_DIR=$it") }
+// XXX.dir takes precedence over XXX.version
+overrides["tunnel.dir"]?.let { cmakeArgs.add("-Dtunnel_DIR=$it") }
+overrides.getOrElse("tunnel.version"){ libs.versions.ziti.tunnel.sdk.get() }.let {
+    cmakeArgs.add("-Dtunnel_sdk_VERSION=$it")
 }
+overrides["ziti.dir"]?.let { cmakeArgs.add("-DZITI_SDK_DIR=$it") }
+overrides["ziti.version"]?.let{ cmakeArgs.add("-DZITI_SDK_VERSION=$it") }
+overrides["tlsuv.dir"]?.let { cmakeArgs.add("-Dtlsuv_DIR=$it") }
 
 android {
     namespace = "org.openziti.tunnel"
