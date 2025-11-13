@@ -4,6 +4,9 @@
 
 package org.openziti.mobile.debug
 
+import android.app.ActivityManager
+import android.app.ApplicationExitInfo
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.content.FileProvider
@@ -18,6 +21,7 @@ import java.net.URI
 import java.security.KeyStore.PrivateKeyEntry
 import java.security.KeyStore.TrustedCertificateEntry
 import java.security.cert.X509Certificate
+import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.CompletableFuture
@@ -130,6 +134,13 @@ sealed class DebugInfo {
     }
 
     companion object {
+        val DUMP_REASONS = setOf(
+            ApplicationExitInfo.REASON_CRASH,
+            ApplicationExitInfo.REASON_CRASH_NATIVE,
+            ApplicationExitInfo.REASON_ANR,
+            ApplicationExitInfo.REASON_INITIALIZATION_FAILURE,
+            ApplicationExitInfo.REASON_FREEZER,
+            ApplicationExitInfo.REASON_UNKNOWN)
         lateinit var zme: ZitiMobileEdgeApp
         fun init(app: ZitiMobileEdgeApp) {
             zme = app
@@ -188,6 +199,24 @@ sealed class DebugInfo {
                 zip.putNextEntry(ZipEntry("logs/${l}"))
                 app.cacheDir.resolve(l).inputStream().use { it.copyTo(zip) }
                 writer.flush()
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                val fmt = SimpleDateFormat("yyyyMMdd-HHmmss")
+                with(app.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager) {
+                    getHistoricalProcessExitReasons(null, 0, 10)
+                        .filter { it.reason in DUMP_REASONS }
+                        .forEachIndexed { idx, it ->
+                            val label = "crashdumps/crash-${fmt.format(it.timestamp)}-$idx"
+                            zip.putNextEntry(ZipEntry("$label/info"))
+                            writer.appendLine(it.toString())
+                            writer.flush()
+                            it.traceInputStream?.use { dump ->
+                                zip.putNextEntry(ZipEntry("$label/dump"))
+                                dump.copyTo(zip)
+                            }
+                        }
+                }
             }
 
             zip.finish()
