@@ -42,7 +42,7 @@ jobs:
       uses: ./.github/actions/gradle
       with:
         buildType: ${{ env.BUILD_TYPE }}
-        experimental:
+        experimental: ${{ inputs.nightly }}
         runTests: false
         keystore: ${{ secrets.RELEASE_KEYSTORE }}
         keystorePassword: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
