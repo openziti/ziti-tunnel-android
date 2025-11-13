@@ -32,7 +32,7 @@ jobs:
         uses: ./.github/actions/gradle
         with:
           buildType: Release
-          experimental: ${{ github.ref == 'refs/heads/main' && 'true' || 'false }}
+          experimental: ${{ github.ref == 'refs/heads/main' && 'true' || 'false' }}
           keystore: ${{ secrets.RELEASE_KEYSTORE }}
           keystorePassword: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
 
