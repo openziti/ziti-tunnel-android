@@ -2,6 +2,8 @@ name: Publish Release
 
 on:
   workflow_dispatch:
+  push:
+    branches: [ main ]
   release:
     types: [published]
 
@@ -30,6 +32,7 @@ jobs:
         uses: ./.github/actions/gradle
         with:
           buildType: Release
+          experimental: ${{ github.ref == 'refs/heads/main' && 'true' || 'false }}
           keystore: ${{ secrets.RELEASE_KEYSTORE }}
           keystorePassword: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
 
@@ -38,6 +41,17 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           fail_on_unmatched_files: true
+          files: |
+            app/build/outputs/bundle/release/*.aab
+            app/build/outputs/apk/release/*.apk
+
+      - name: publish experimental release
+        if: github.ref == 'refs/heads/main'
+        uses: pyTooling/Actions/releaser@main
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: experimental
+          rm: true
           files: |
             app/build/outputs/bundle/release/*.aab
             app/build/outputs/apk/release/*.apk
