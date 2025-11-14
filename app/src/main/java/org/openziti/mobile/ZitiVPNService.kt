@@ -16,23 +16,24 @@ import android.os.Binder
 import android.os.IBinder
 import android.system.OsConstants
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.openziti.mobile.model.TunnelModel
 import org.openziti.tunnel.toRoute
-import timber.log.Timber as Log
 import java.net.Inet4Address
 import java.net.Inet6Address
 import java.time.Duration
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.time.toJavaDuration
+import timber.log.Timber as Log
 
 
 class ZitiVPNService : VpnService(), CoroutineScope {
@@ -56,12 +57,16 @@ class ZitiVPNService : VpnService(), CoroutineScope {
     lateinit var monitor: Job
 
     private val netListener = ConnectivityManager.OnNetworkActiveListener {
-        connMgr.activeNetwork?.let { setUpstreamDNS(it) }
         (application as ZitiMobileEdgeApp).model.refreshAll()
     }
 
     private fun setUpstreamDNS(net: Network) {
-        val props = connMgr.getLinkProperties(net) ?: return
+        val props = connMgr.getLinkProperties(net)
+        if (props == null) {
+            Log.e("failed to get network[$net] properties")
+            return
+        }
+
         val addresses = props.linkAddresses
             .map { it.address }
             .filter { !it.isAnyLocalAddress && !it.isLinkLocalAddress }
@@ -81,25 +86,30 @@ class ZitiVPNService : VpnService(), CoroutineScope {
         model.setUpstreamDNS(upstream)
     }
 
-    private var metered = false
-    private var currentNetwork: Network? = null
+    private val networkChange = MutableStateFlow(ULong.MIN_VALUE)
+    private val metered = AtomicBoolean(false)
 
     private val networkMonitor = object : ConnectivityManager.NetworkCallback() {
-        override fun onAvailable(network: Network) {
-            connMgr.getNetworkCapabilities(network)?.let {
-                Log.d("network available: $network, caps:$it")
-                setUpstreamDNS(network)
+        override fun onAvailable(net: Network) = Log.d("network[$net] is available")
+
+        override fun onCapabilitiesChanged(net: Network, caps: NetworkCapabilities) {
+            val hasInternet = caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            val internetValid = caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+            val notVPN = caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
+            Log.d("network[$net] capabilities: internet[$hasInternet] validated[$internetValid] notVPN[$notVPN]")
+            if (hasInternet && internetValid && notVPN) {
+                networkChange.update { it.inc() }
             }
         }
 
-        override fun onLinkPropertiesChanged(network: Network, linkProperties: LinkProperties) {
+        override fun onLinkPropertiesChanged(network: Network, props: LinkProperties) {
             Log.i("link change[$network], active[${connMgr.activeNetwork}]")
-            processNetworkChange()
+            // update in case upstream DNS changes
+            networkChange.update { it.inc() }
         }
 
         override fun onLost(network: Network) {
-            Log.i("network: $network is lost, active[${connMgr.activeNetwork}]")
-            processNetworkChange()
+            Log.i("network[$network] is lost")
         }
 
         override fun onUnavailable() {
@@ -107,34 +117,26 @@ class ZitiVPNService : VpnService(), CoroutineScope {
         }
     }
 
-    internal fun processNetworkChange() = launch(Dispatchers.IO) {
-        if (currentNetwork == connMgr.activeNetwork) return@launch
-
-        currentNetwork = connMgr.activeNetwork
-        val network = currentNetwork
-
-        if (network == null) {
-            Log.i("no active network")
-            return@launch
+    internal fun processNetworkChange(network: Network) {
+        val caps = connMgr.getNetworkCapabilities(network)
+        if (caps == null) {
+            Log.e("failed to get network[$network] capabilities")
+            return
+        }
+        val transport = when {
+            caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> "wifi"
+            caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> "cellular"
+            else -> "unknown"
         }
 
-        connMgr.getNetworkCapabilities(network)?.let {
-            Log.d("network available: $network, caps:$it")
+        val netMetered = !caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
+        Log.d("network[$network] is active: transport[$transport] metered[$metered]")
 
-            setUpstreamDNS(network)
+        setUpstreamDNS(network)
 
-            val transport = when {
-                it.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> "wifi"
-                it.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> "cellular"
-                else -> "unknown"
-            }
-
-            val netMetered = !it.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
-            if (netMetered != metered) {
-                Log.i("""switching to ${if (netMetered) "" else "un"}metered network[$transport]""")
-                metered = netMetered
-                restartTunnel()
-            }
+        if (metered.getAndSet(netMetered) != netMetered) {
+            Log.i("""switching to ${if (netMetered) "" else "un"}metered network[$transport]""")
+            restartTunnel()
         }
     }
 
@@ -161,6 +163,19 @@ class ZitiVPNService : VpnService(), CoroutineScope {
                 Log.i("stopped route updates")
             }
 
+            launch {
+                Log.i("monitoring network changes")
+                networkChange.collect {
+                    connMgr.activeNetwork?.let {
+                        runCatching {
+                            processNetworkChange(it)
+                        }.onFailure { ex ->
+                            Log.w(ex, "failed to process network change")
+                        }
+                    } ?: Log.w("no active network")
+                }
+            }
+
             Log.i("command monitor started")
             tunnelState.collect { cmd ->
                 Log.i("received cmd[$cmd]")
@@ -168,9 +183,7 @@ class ZitiVPNService : VpnService(), CoroutineScope {
                     when(cmd) {
                         START -> startTunnel()
                         RESTART -> restartTunnel()
-                        STOP -> {
-                            tun.stopNetworkInterface()
-                        }
+                        STOP -> tun.stopNetworkInterface()
                         else -> Log.i("unsupported command[$cmd]")
                     }
                 }.onSuccess {
