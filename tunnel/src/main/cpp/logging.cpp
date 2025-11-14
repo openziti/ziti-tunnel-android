@@ -18,7 +18,17 @@ static char log_dir[FILENAME_MAX];
 
 static FILE *logfile;
 static char levels[] = {
-        'N', 'E', 'W', 'D', 'I', 'V', 'T'
+        'N', 'E', 'W', 'I', 'D', 'V', 'T'
+};
+
+static int log_priorities[] = {
+        ANDROID_LOG_SILENT,
+        ANDROID_LOG_ERROR,
+        ANDROID_LOG_WARN,
+        ANDROID_LOG_INFO,
+        ANDROID_LOG_DEBUG,
+        ANDROID_LOG_VERBOSE,
+        ANDROID_LOG_VERBOSE,
 };
 
 class TimeKeeper {
@@ -43,23 +53,17 @@ private:
 static TimeKeeper keeper;
 
 void android_logger(int level, const char *loc, const char *msg, size_t msglen) {
-    int pri = ANDROID_LOG_DEFAULT;
-    switch ((DebugLevel) level) {
-        case ERROR:pri = ANDROID_LOG_ERROR;break;
-        case WARN:pri = ANDROID_LOG_WARN;break;
-        case INFO:pri = ANDROID_LOG_INFO;break;
-        case DEBUG:pri = ANDROID_LOG_DEBUG;break;
-        case NONE:pri = ANDROID_LOG_SILENT;break;
-        case TRACE:
-        case VERBOSE:
-            pri = ANDROID_LOG_VERBOSE;
-            break;
-    }
+    static_assert(sizeof levels / sizeof levels[0] > TRACE, "fix log level labels");
+    static_assert(sizeof log_priorities / sizeof log_priorities[0] > TRACE, "fix log level labels");
+
+    if (level < 0) level = ERROR;
+    if (level > TRACE) level = TRACE;
+
+    int pri = log_priorities[level];
     __android_log_print(pri, loc, "%.*s", (int) msglen, msg);
 
     if (logfile != nullptr) {
-        char l = 'T';
-        if (level < sizeof levels) l = levels[level];
+        char l = levels[level];
 
         uint64_t elapsed = keeper.elapsedMillis();
         fprintf(logfile, LOG_FMT("%.*s"),
