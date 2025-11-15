@@ -5,7 +5,6 @@
 package org.openziti.mobile.model
 
 import android.content.Context
-import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -45,6 +44,8 @@ import org.openziti.tunnel.Upstream
 import org.openziti.tunnel.ZitiConfig
 import org.openziti.tunnel.ZitiID
 import org.openziti.tunnel.toPEM
+import java.io.File
+import timber.log.Timber as Log
 import java.net.URI
 import java.security.KeyStore.PrivateKeyEntry
 import java.security.cert.X509Certificate
@@ -57,13 +58,11 @@ class TunnelModel(
     val context: () -> Context
 ): ViewModel() {
     val Context.prefs: DataStore<Preferences> by preferencesDataStore("tunnel")
-    val identitiesDir = context().getDir("identities", Context.MODE_PRIVATE)
+    val identitiesDir: File = context().getDir("identities", Context.MODE_PRIVATE)
 
-    val NAMESERVER = stringPreferencesKey("nameserver")
     val zitiDNS = context().prefs.data.map {
         it[NAMESERVER] ?: "100.64.0.2"
     }
-    val RANGE = stringPreferencesKey("range")
     val zitiRange = context().prefs.data.map {
         it[RANGE] ?: "100.64.0.0/10"
     }
@@ -93,7 +92,7 @@ class TunnelModel(
         runBlocking {
             val dns = zitiDNS.first()
             val range = zitiRange.first()
-            Log.i("tunnel", "setting dns[$dns] and range[$range]")
+            Log.i("setting dns[$dns] and range[$range]")
             tunnel.setupDNS(dns, range)
             tunnel.start()
         }
@@ -102,7 +101,7 @@ class TunnelModel(
                 runCatching {
                     processEvent(ev)
                 }.onFailure {
-                    Log.e(TAG, "failed to process event[$ev]", it)
+                    Log.e(it, "failed to process event[$ev]")
                 }
             }
         }
@@ -111,7 +110,7 @@ class TunnelModel(
 
         val idFiles = identitiesDir.listFiles() ?: emptyArray()
         idFiles.forEach {
-            Log.i(TAG, "loading identity from file[$it]")
+            Log.d("loading identity from file[$it]")
             val cfg = Json.decodeFromString<ZitiConfig>(it.readText())
             configs[cfg.identifier] = cfg
         }
@@ -122,7 +121,7 @@ class TunnelModel(
 
         for (alias in aliases) {
             loadConfigFromKeyStore(alias)?.let { cfg ->
-                Log.i(TAG, "migrating identity from keychain[$alias]")
+                Log.i("migrating identity from keychain[$alias]")
                 val uri = URI(alias)
                 val id = uri.userInfo ?: uri.path.removePrefix("/")
                 val json = Json.encodeToString(ZitiConfig.serializer(), cfg)
@@ -171,26 +170,26 @@ class TunnelModel(
                 it[disabledKey(id)] ?: false
             }.first()
         }
-        Log.i(TAG, "loading identity[$id] disabled[$disabled]")
+        Log.i("loading identity[$id] disabled[$disabled]")
         val idModel = Identity(id, cfg, this, !disabled)
         identities[id] = idModel
         val cmd = LoadIdentity(id, cfg, disabled)
         tunnel.processCmd(cmd).handleAsync { json: JsonElement? , ex: Throwable? ->
             idModel.start()
             if (ex != null) {
-                Log.w(TAG, "failed to execute", ex)
+                Log.w("failed to execute", ex)
             } else  {
                 identitiesData.postValue(identities.values.toList())
-                Log.i(TAG, "load result[$id]: $json")
+                Log.d("load result[$id]: $json")
             }
         }
     }
 
     private fun processEvent(ev: Event) {
-        Log.d(TAG, "received event[$ev]")
+        Log.d("received event[$ev]")
 
         identities[ev.identifier]?.processEvent(ev)
-            ?: Log.w(TAG, "no identity for event[$ev]")
+            ?: Log.w("no identity for event[$ev]")
     }
 
     fun setUpstreamDNS(servers: List<String>): CompletableFuture<Unit> {
@@ -216,7 +215,7 @@ class TunnelModel(
 
             loadIdentity(cfg.identifier, cfg)
         }.exceptionally {
-            Log.e(TAG, "enrollment failed", it)
+            Log.e(it, "enrollment failed")
         }
         return future
     }
@@ -262,13 +261,13 @@ class TunnelModel(
 
             key?.let {
                 runCatching { Keychain.store.deleteEntry(key) }
-                    .onFailure { Log.w(TAG, "failed to remove entry", it) }
+                    .onFailure { Log.w(it, "failed to remove keystore entry") }
             }
 
             runCatching {
                 identitiesDir.resolve(id).delete()
             }.onFailure {
-                Log.w(TAG, "failed to remove config", it)
+                Log.w(it, "failed to remove config")
             }
 
             val caCerts = Keychain.store.aliases().toList().filter { it.startsWith("ziti:$id/") }
@@ -298,7 +297,9 @@ class TunnelModel(
     }
 
     companion object {
-        const val TAG = "model"
+        val NAMESERVER = stringPreferencesKey("nameserver")
+        val RANGE = stringPreferencesKey("range")
+
         const val DEFAULT_DNS = "100.64.0.2"
         const val DEFAULT_RANGE = "100.64.0.0/10"
     }

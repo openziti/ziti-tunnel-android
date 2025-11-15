@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 NetFoundry. All rights reserved.
+ * Copyright (c) 2025 NetFoundry. All rights reserved.
  */
 
 package org.openziti.mobile
@@ -9,9 +9,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
-import android.util.Log
-import android.view.OrientationEventListener
-import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
@@ -63,6 +60,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.openziti.mobile.databinding.ActivityZitiEnrollmentBinding
+import timber.log.Timber
 import java.net.URL
 
 
@@ -147,7 +145,7 @@ class ZitiEnrollmentActivity : AppCompatActivity() {
     private fun enroll(jwt: String) {
         (application as ZitiMobileEdgeApp).model.enroll(jwt)
             .handleAsync { _, ex ->
-                Log.i(TAG, "enroll result $ex")
+                Timber.i(ex, "enroll result")
                 Handler(mainLooper).post {
                     this.finish()
                     if (ex != null) {

@@ -1,11 +1,10 @@
 /*
- * Copyright (c) 2024 NetFoundry. All rights reserved.
+ * Copyright (c) 2025 NetFoundry. All rights reserved.
  */
 
 package org.openziti.mobile.fragments
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -44,6 +43,7 @@ import org.openziti.mobile.model.TunnelModel
 import org.openziti.tunnel.JwtSigner
 import org.openziti.tunnel.RouterEvent
 import org.openziti.tunnel.RouterStatus
+import timber.log.Timber
 
 /**
  * A simple [Fragment] subclass.
@@ -172,13 +172,13 @@ class IdentityDetailFragment : BaseFragment() {
     }
     private val launcher = AuthTabIntent.registerActivityResultLauncher(this, this::onAuthResult)
     private fun onAuthResult(result: AuthTabIntent.AuthResult) {
-        Log.i(this.javaClass.simpleName, "external auth completed: result[${result.resultCode}]")
+        Timber.i("external auth completed: result[${result.resultCode}]")
         val message = when (result.resultCode) {
-            AuthTabIntent.RESULT_OK -> "Received auth result."
+            AuthTabIntent.RESULT_OK -> "Authentication completed"
             // ziti auth page closes on success
-            AuthTabIntent.RESULT_CANCELED -> "AuthTab completed."
-            AuthTabIntent.RESULT_VERIFICATION_FAILED -> "Verification failed."
-            AuthTabIntent.RESULT_VERIFICATION_TIMED_OUT -> "Verification timed out."
+            AuthTabIntent.RESULT_CANCELED -> "Authentication completed"
+            AuthTabIntent.RESULT_VERIFICATION_FAILED -> "Verification failed"
+            AuthTabIntent.RESULT_VERIFICATION_TIMED_OUT -> "Verification timed out"
             else -> "Unknown result code: ${result.resultCode}"
         }
 
