@@ -93,6 +93,9 @@ class ZitiVPNService : VpnService(), CoroutineScope {
         override fun onAvailable(net: Network) = Log.d("network[$net] is available")
 
         override fun onCapabilitiesChanged(net: Network, caps: NetworkCapabilities) {
+            Log.d("network[$net] capabilities change, active[${connMgr.activeNetwork}]")
+            if (net != connMgr.activeNetwork) return
+
             val hasInternet = caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
             val internetValid = caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
             val notVPN = caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
@@ -103,18 +106,15 @@ class ZitiVPNService : VpnService(), CoroutineScope {
         }
 
         override fun onLinkPropertiesChanged(network: Network, props: LinkProperties) {
-            Log.i("link change[$network], active[${connMgr.activeNetwork}]")
-            // update in case upstream DNS changes
-            networkChange.update { it.inc() }
+            Log.d("network[$network] link change, active[${connMgr.activeNetwork}]")
+            if (network == connMgr.activeNetwork) {
+                // update in case upstream DNS changes
+                networkChange.update { it.inc() }
+            }
         }
 
-        override fun onLost(network: Network) {
-            Log.i("network[$network] is lost")
-        }
-
-        override fun onUnavailable() {
-            Log.i("no available network")
-        }
+        override fun onLost(network: Network) = Log.i("network[$network] is lost")
+        override fun onUnavailable() = Log.i("no available network")
     }
 
     internal fun processNetworkChange(network: Network) {
