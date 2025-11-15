@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 NetFoundry. All rights reserved.
+ * Copyright (c) 2025 NetFoundry. All rights reserved.
  */
 
 package org.openziti.mobile.fragments
@@ -9,7 +9,6 @@ import android.content.ClipboardManager
 import android.os.Bundle
 import android.os.Process
 import android.text.method.ScrollingMovementMethod
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -22,6 +21,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.openziti.mobile.R
 import org.openziti.mobile.databinding.LogBinding
+import timber.log.Timber
 
 /**
  * A simple [Fragment] subclass.
@@ -64,7 +64,7 @@ class LogFragment : BaseFragment() {
                 val p = Runtime.getRuntime().exec("logcat -d -t 200 --pid=${Process.myPid()}")
                 val lines = p.inputStream.bufferedReader().readText()
 
-                Log.d("ziti", "log is ${lines.length} bytes")
+                Timber.d("log is ${lines.length} bytes")
 
                 LogDetails.post {
                     LogDetails.text = lines

@@ -5,7 +5,6 @@
 package org.openziti.mobile.model
 
 import android.content.Context
-import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -36,6 +35,7 @@ import org.openziti.tunnel.ZitiConfig
 import java.net.URI
 import java.time.Clock.*
 import java.util.concurrent.CompletableFuture
+import timber.log.Timber as Log
 
 class Identity(
     val id: String,
@@ -96,7 +96,7 @@ class Identity(
     }
 
     internal fun start() {
-        Log.i(TunnelModel.TAG, "starting id[$id]")
+        Log.i("starting id[$id]")
         runCatching {
             runBlocking(Dispatchers.Main) {
                 tunnel.context().prefs.data.first().asMap()[nameKey]?.toString()?.let {
@@ -105,22 +105,24 @@ class Identity(
                 name.observeForever(nameObserver)
             }
         }.onFailure {
-            Log.w(TunnelModel.TAG, "failed to read name from prefs", it)
+            Log.w(it, "failed to read name from prefs")
         }
     }
 
     override fun onCleared() {
-        Log.i(TunnelModel.TAG, "onCleared id[${name().value}]")
+        Log.i("onCleared id[$id/${name().value}]")
         name.removeObserver(nameObserver)
         super.onCleared()
     }
 
     fun refresh() {
         if (status.value == "Active") {
+            Log.d("identity[$id/${name().value}] starting refresh ")
             tunnel.refreshIdentity(id).thenAcceptAsync {
+                Log.d("identity[$id/${name().value}] refresh completed")
                 lastRefresh = systemUTC().instant()
             }.exceptionallyAsync { ex ->
-                Log.w(TunnelModel.TAG, "failed refresh",ex)
+                Log.w(ex, "identity[$id/$name] refresh failed")
                 null
             }
         }
@@ -130,10 +132,7 @@ class Identity(
         tunnel.useJWTSigner(id, signer)
 
     fun setEnabled(on: Boolean) {
-        if (on)
-            Log.i(TunnelModel.TAG, "enabling[${name.value}]")
-        else
-            Log.i(TunnelModel.TAG, "disabling[${name.value}]")
+        Log.i("""${if (on) "en" else "dis"}abling[$id/${name.value}]""")
 
         tunnel.enableIdentity(id, on).thenAccept {
             enabled.postValue(on)
@@ -170,7 +169,7 @@ class Identity(
     }
 
     fun processEvent(ev: Event) {
-        Log.d(TAG, "$id received event[$ev]")
+        Log.d("identity[$id/${name.value}] received event[$ev]")
         when (ev) {
             is ContextEvent -> {
                 ev.name?.let {
@@ -205,7 +204,6 @@ class Identity(
             }
 
             is RouterEvent -> {
-                Log.i(TAG, "router event: ${ev.identifier} status=${ev.status}")
                 if (ev.status == RouterStatus.REMOVED) {
                     routers.remove(ev.name)
                 } else {
@@ -217,7 +215,6 @@ class Identity(
     }
 
     companion object {
-        const val TAG = "model"
         private val nameKey = stringPreferencesKey("name")
     }
 }

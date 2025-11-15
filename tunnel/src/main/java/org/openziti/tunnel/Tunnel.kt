@@ -6,7 +6,6 @@ package org.openziti.tunnel
 
 import android.app.Application
 import android.os.ParcelFileDescriptor
-import android.util.Log
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.onFailure
@@ -17,6 +16,7 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import org.openziti.log.NativeLog
+import timber.log.Timber as Log
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.time.Duration
@@ -24,8 +24,6 @@ import kotlin.time.TimeMark
 import kotlin.time.TimeSource
 
 class Tunnel(app: Application, ): Runnable {
-    val TAG = Tunnel::class.simpleName
-
     val cmdIPC: ParcelFileDescriptor
     val eventIPC: ParcelFileDescriptor
     val events = Channel<String>(capacity = 128, onBufferOverflow = BufferOverflow.DROP_OLDEST)
@@ -47,19 +45,19 @@ class Tunnel(app: Application, ): Runnable {
     }
 
     fun onEvent(json: String) {
-        Log.i(TAG, "event: $json")
+        Log.d("event: $json")
         events.trySend(json).onFailure {
-            Log.w(TAG, "failed to queue event$json", it)
+            Log.w(it, "failed to queue event[$json]")
         }
     }
 
     fun onResponse(json: String, f: CompletableFuture<TunnelResult>) {
-        Log.i(TAG, "resp = $json")
+        Log.d("resp = $json")
         try {
             val resp = Json.decodeFromString<TunnelResult>(json)
             f.complete(resp)
         } catch (ex: Throwable) {
-            Log.w(TAG, "failed to parse result[$json]", ex)
+            Log.w(ex, "failed to parse result[$json]")
             f.completeExceptionally(ex)
         }
     }
@@ -67,10 +65,10 @@ class Tunnel(app: Application, ): Runnable {
     inline fun <reified C: TunnelCommand> processCmd(cmd: C): CompletableFuture<JsonElement?> =
         CompletableFuture<TunnelResult>().apply {
             val data = cmd.toJson()
-            Log.d(TAG, "cmd[${cmd.id}] = ${cmd.cmd.name}:$data")
+            Log.d("cmd[${cmd.id}] = ${cmd.cmd.name}:$data")
             executeCommand(cmd.cmd.name, data, this)
         }.thenApply {
-            Log.d(TAG, "result[${cmd.id}] = ${cmd.cmd.name}:$it")
+            Log.d("result[${cmd.id}] = ${cmd.cmd.name}:$it")
             if (!it.success) throw Exception(it.error)
             it.data
         }
@@ -86,11 +84,11 @@ class Tunnel(app: Application, ): Runnable {
             runCatching {
                 emit(EventsJson.decodeFromString<Event>(ev))
             }.onFailure {
-                Log.w(TAG, "failed to parse event: $ev", it)
+                Log.w(it, "failed to parse event: $ev")
             }
         }
     }.onCompletion { ex ->
-        Log.e(TAG, "event flow failed", ex)
+        Log.e(ex, "event flow failed")
     }
 
     fun routes(): StateFlow<Sequence<Route>> = routeData
@@ -112,7 +110,6 @@ class Tunnel(app: Application, ): Runnable {
     }
 
     companion object {
-        private val TAG = Tunnel::class.simpleName
         // Used to load the 'tunnel' library on application startup.
         init {
             System.loadLibrary("tunnel")
