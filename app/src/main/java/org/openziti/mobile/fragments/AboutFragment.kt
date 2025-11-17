@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2024 NetFoundry. All rights reserved.
+ * Copyright (c) 2025 NetFoundry. All rights reserved.
  */
 
 
 package org.openziti.mobile.fragments
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -12,10 +15,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.transition.TransitionInflater
 import org.openziti.mobile.BuildConfig
-import org.openziti.mobile.R
 import org.openziti.mobile.databinding.AboutBinding
+import org.openziti.tunnel.Tunnel
 
 /**
  * A simple [Fragment] subclass.
@@ -24,6 +26,10 @@ import org.openziti.mobile.databinding.AboutBinding
  */
 class AboutFragment : BaseFragment() {
     private var _binding: AboutBinding? = null
+
+    private val clipBoard by lazy {
+        requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -47,6 +53,18 @@ class AboutFragment : BaseFragment() {
         }
 
         b.Version.text = "${BuildConfig.VERSION_NAME}(${BuildConfig.GIT_COMMIT})"
+        b.Version.setOnLongClickListener {
+            val text =
+                """Version:         ${BuildConfig.VERSION_NAME}(${BuildConfig.GIT_COMMIT})
+                  |ziti-tunnel-sdk: ${Tunnel.zitiTunnelVersion()}
+                  |ziti-sdk:        ${Tunnel.zitiSdkVersion()}
+                  |tlsuv:           ${Tunnel.tlsuvVersion()}
+            """.trimMargin()
+            clipBoard.setPrimaryClip(
+                ClipData.newPlainText("Versin Info", text)
+            )
+            true
+        }
         return b.root
     }
 
