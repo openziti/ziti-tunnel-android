@@ -19,7 +19,7 @@ fun getCommitHash() = runCatching {
 
 fun getVersionName() = runCatching {
     providers.exec {
-        commandLine("git", "describe", "--tags", "--dirty")
+        commandLine("git", "describe", "--tags", "--match", "v*", "--dirty")
     }.standardOutput.asText.get().trim()
 }.getOrElse{ "0.0.0-local" }
 
