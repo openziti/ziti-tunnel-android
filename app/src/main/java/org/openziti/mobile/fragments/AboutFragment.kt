@@ -61,7 +61,7 @@ class AboutFragment : BaseFragment() {
                   |tlsuv:           ${Tunnel.tlsuvVersion()}
             """.trimMargin()
             clipBoard.setPrimaryClip(
-                ClipData.newPlainText("Versin Info", text)
+                ClipData.newPlainText("Version Info", text)
             )
             true
         }
