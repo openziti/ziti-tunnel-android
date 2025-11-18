@@ -165,3 +165,10 @@ JNIEXPORT void JNICALL
 Java_org_openziti_log_NativeLog_startNewFile(JNIEnv *env, jclass clazz) {
     createLogFile();
 }
+extern "C"
+JNIEXPORT void JNICALL
+Java_org_openziti_log_NativeLog_flush(JNIEnv *env, jclass clazz) {
+    if (logfile) {
+        fflush(logfile);
+    }
+}

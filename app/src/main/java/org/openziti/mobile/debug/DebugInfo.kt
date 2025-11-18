@@ -11,6 +11,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.Debug
 import androidx.core.content.FileProvider
+import org.openziti.log.NativeLog
 import org.openziti.mobile.R
 import org.openziti.mobile.ZitiMobileEdgeApp
 import org.openziti.tunnel.Keychain
@@ -208,10 +209,14 @@ sealed class DebugInfo {
                     writer.flush()
                 }
             }
-
+            NativeLog.flush()
             app.cacheDir.list { _, name -> name.endsWith(".log") }?.forEach { l ->
-                zip.putNextEntry(ZipEntry("logs/${l}"))
-                app.cacheDir.resolve(l).inputStream().use { it.copyTo(zip) }
+                val file = app.cacheDir.resolve(l)
+                zip.putNextEntry(
+                    ZipEntry("logs/${l}").apply {
+                        time = file.lastModified()
+                    })
+                file.inputStream().use { it.copyTo(zip) }
                 writer.flush()
             }
 
@@ -221,12 +226,20 @@ sealed class DebugInfo {
                     getHistoricalProcessExitReasons(null, 0, 10)
                         .filter { it.reason in DUMP_REASONS }
                         .forEachIndexed { idx, it ->
-                            val label = "crashdumps/crash-${fmt.format(it.timestamp)}-$idx"
-                            zip.putNextEntry(ZipEntry("$label/info"))
+                            val label = "crashdumps/$idx-crash-${fmt.format(it.timestamp)}"
+                            zip.putNextEntry(
+                                ZipEntry("$label/info").apply {
+                                    time = it.timestamp
+                                }
+                            )
                             writer.appendLine(it.toString())
                             writer.flush()
                             it.traceInputStream?.use { dump ->
-                                zip.putNextEntry(ZipEntry("$label/dump"))
+                                zip.putNextEntry(
+                                    ZipEntry("$label/dump").apply { dump
+                                        time = it.timestamp
+                                    }
+                                )
                                 dump.copyTo(zip)
                             }
                         }

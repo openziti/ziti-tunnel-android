@@ -58,5 +58,8 @@ object NativeLog: Timber.DebugTree() {
     external fun setupLogging0(dir: String)
 
     @JvmStatic
+    external fun flush()
+
+    @JvmStatic
     external fun startNewFile()
 }
