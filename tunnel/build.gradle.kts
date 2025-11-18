@@ -15,6 +15,7 @@ val ndk = libs.versions.ndk.get()
 val overrides = gradleLocalProperties(parent!!.projectDir, providers)
 
 val cmakeArgs = mutableListOf(
+    "-DANDROID_STL=c++_shared",
     "-DDEPS_DIR=${project.layout.buildDirectory.get()}/cmake",
 )
 
@@ -29,6 +30,12 @@ overrides.getOrElse("tunnel.version"){ libs.versions.ziti.tunnel.sdk.get() }.let
 overrides["ziti.dir"]?.let { cmakeArgs.add("-DZITI_SDK_DIR=$it") }
 overrides["ziti.version"]?.let{ cmakeArgs.add("-DZITI_SDK_VERSION=$it") }
 overrides["tlsuv.dir"]?.let { cmakeArgs.add("-Dtlsuv_DIR=$it") }
+
+val sanitizer = overrides["sanitize"]
+when (sanitizer) {
+    "hwasan" -> cmakeArgs.add("-DSANITIZE=$sanitizer")
+    else -> logger.warn("Sanitizer[{}] is not supported", sanitizer)
+}
 
 android {
     namespace = "org.openziti.tunnel"
@@ -56,6 +63,23 @@ android {
                 "proguard-rules.pro"
             )
         }
+
+        debug {
+            isMinifyEnabled = false
+            packaging{
+                jniLibs {
+                    useLegacyPackaging = true
+                }
+            }
+
+            ndk {
+                isJniDebuggable = true
+                if (sanitizer == "hwasan") { // HWASAN only work on arm 64
+                    abiFilters.clear()
+                    abiFilters.add("arm64-v8a")
+                }
+            }
+        }
     }
     externalNativeBuild {
         cmake {
@@ -63,10 +87,6 @@ android {
             version = properties["cmake.version"].toString()
         }
     }
-//    compileOptions {
-//        sourceCompatibility = JavaVersion.VERSION_1_8
-//        targetCompatibility = JavaVersion.VERSION_1_8
-//    }
 }
 
 kotlin {

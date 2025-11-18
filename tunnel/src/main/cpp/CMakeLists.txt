@@ -35,6 +35,21 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
         logging.cpp
 )
 
+if (SANITIZE)
+    get_filename_component(HINT_PATH ${ANDROID_C_COMPILER} DIRECTORY)
+    set(ARCH_STR ${CMAKE_ANDROID_ARCH})
+    message(NOTICE "SANITIZE = ${SANITIZE}")
+    message(NOTICE "HINT_PATH = ${HINT_PATH}")
+    message(NOTICE "ARCH_STR = ${ARCH_STR}")
+
+    if (${SANITIZE} STREQUAL "hwasan")
+        target_compile_options(${CMAKE_PROJECT_NAME} PUBLIC -fsanitize=hwaddress -fno-omit-frame-pointer)
+        target_link_options(${CMAKE_PROJECT_NAME} PUBLIC -fsanitize=hwaddress)
+    else()
+        message(WARNING "sanitizer ${SANITIZE} not supported")
+    endif ()
+endif (SANITIZE)
+
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
         ZITI_LOG_MODULE="${PROJECT_NAME}"
 )
