@@ -35,7 +35,16 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
         logging.cpp
 )
 
-if (SANITIZE)
+if (${SANITIZE} STREQUAL "hwasan")
+    if (NOT ${CMAKE_ANDROID_ARCH} STREQUAL "arm64")
+        message(WARNING "sanitizer[${SANITIZE}] not supported on ${CMAKE_ANDROID_ARCH}")
+        set(do_not_sanitize ON)
+    endif ()
+endif()
+
+message(NOTICE "do_not_sanitize = ${do_not_sanitize}")
+
+if (SANITIZE AND NOT do_not_sanitize)
     get_filename_component(HINT_PATH ${ANDROID_C_COMPILER} DIRECTORY)
     set(ARCH_STR ${CMAKE_ANDROID_ARCH})
     message(NOTICE "SANITIZE = ${SANITIZE}")
@@ -48,7 +57,7 @@ if (SANITIZE)
     else()
         message(WARNING "sanitizer ${SANITIZE} not supported")
     endif ()
-endif (SANITIZE)
+endif (SANITIZE AND NOT do_not_sanitize)
 
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
         ZITI_LOG_MODULE="${PROJECT_NAME}"
