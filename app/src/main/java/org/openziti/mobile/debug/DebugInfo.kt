@@ -9,7 +9,9 @@ import android.app.ApplicationExitInfo
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.os.Debug
 import androidx.core.content.FileProvider
+import org.openziti.log.NativeLog
 import org.openziti.mobile.R
 import org.openziti.mobile.ZitiMobileEdgeApp
 import org.openziti.tunnel.Keychain
@@ -36,13 +38,13 @@ sealed class DebugInfo {
         override val names = listOf("App Info")
         override fun dump(name: String, output: Writer) = output.apply {
             val pkgInfo = zme.packageManager.getPackageInfo(zme.packageName, 0)
-            output.appendLine("App:             ${zme.packageName}")
-            output.appendLine("App Version:     ${pkgInfo.versionName}(${pkgInfo.longVersionCode})")
-            output.appendLine("Device:          ${Build.MODEL} (${Build.MANUFACTURER})")
-            output.appendLine("Android Version: ${Build.VERSION.RELEASE}")
-            output.appendLine("Android-SDK:     ${Build.VERSION.SDK_INT}")
-            output.appendLine("Ziti Tunnel SDK: ${Tunnel.zitiTunnelVersion()}")
-            output.appendLine("Ziti SDK:        ${Tunnel.zitiSdkVersion()}")
+            appendLine("App:             ${zme.packageName}")
+            appendLine("App Version:     ${pkgInfo.versionName}(${pkgInfo.longVersionCode})")
+            appendLine("Device:          ${Build.MODEL} (${Build.MANUFACTURER})")
+            appendLine("Android Version: ${Build.VERSION.RELEASE}")
+            appendLine("Android-SDK:     ${Build.VERSION.SDK_INT}")
+            appendLine("Ziti Tunnel SDK: ${Tunnel.zitiTunnelVersion()}")
+            appendLine("Ziti SDK:        ${Tunnel.zitiSdkVersion()}")
         }
     }
 
@@ -54,11 +56,11 @@ sealed class DebugInfo {
             val err = CompletableFuture.supplyAsync { logcat.errorStream.bufferedReader().readText() }
             val logrc = CompletableFuture.supplyAsync { logcat.waitFor() }
 
-            output.appendLine("logcat result: ${logrc.get()}")
-            output.write(log.get())
-            output.appendLine()
-            output.appendLine("logcat ERROR:")
-            output.appendLine(err.get())
+            appendLine("logcat result: ${logrc.get()}")
+            write(log.get())
+            appendLine()
+            appendLine("logcat ERROR:")
+            appendLine(err.get())
         }
     }
 
@@ -69,10 +71,10 @@ sealed class DebugInfo {
             val keyStore = Keychain.store
             val ids = keyStore.aliases().toList().filter { it.startsWith("ziti://") }
             for (id in ids) {
-                output.appendLine("==== $id ===")
+                appendLine("==== $id ===")
                 val entry = keyStore.getEntry(id, null)
                 if (entry !is PrivateKeyEntry) {
-                    output.appendLine("Unexpected Entry: $entry")
+                    appendLine("Unexpected Entry: $entry")
                     continue
                 }
 
@@ -80,35 +82,47 @@ sealed class DebugInfo {
                 val zitiId = uri.userInfo ?: uri.path.removePrefix("/")
                 entry.certificateChain.mapIndexed { idx, c ->
                     if (c is X509Certificate) {
-                        output.appendLine("""
+                        appendLine("""
                                 |[$idx]: Sub: ${c.subjectDN}
                                 |        Iss: ${c.issuerDN}
                                 |        Exp: ${c.notAfter}
                                 |""".trimMargin()
                         )
                     } else {
-                        output.appendLine("[$idx] $c")
+                        appendLine("[$idx] $c")
                     }
                 }
 
-                output.appendLine("CA Bundle ========")
+                appendLine("CA Bundle ========")
                 val caAliases = keyStore.aliases().toList().filter { it.startsWith("ziti:$zitiId/") }
                 val caCerts = caAliases.map {
                     keyStore.getEntry(it, null)
                 }.filterIsInstance<TrustedCertificateEntry>().map { it.trustedCertificate }
                 caCerts.forEachIndexed { idx, c ->
                     if (c is X509Certificate) {
-                        output.appendLine("""
+                        appendLine("""
                             |[$idx]: Sub: ${c.subjectDN}
                             |        Iss: ${c.issuerDN}
                             |        Exp: ${c.notAfter}
                             |""".trimMargin()
                         )
                     } else {
-                        output.appendLine("$c")
+                        appendLine("$c")
                     }
                 }
-                output.appendLine()
+                appendLine()
+            }
+        }
+    }
+
+    data object MemoryInfo: DebugInfo() {
+        override val names: Iterable<String> = listOf("Memory")
+        override fun dump(name: String, output: Writer) = output.apply {
+            val info = Debug.MemoryInfo()
+            Debug.getNativeHeapAllocatedSize()
+            Debug.getMemoryInfo(info)
+            info.memoryStats.forEach { (k, v) ->
+                appendLine("$k -> $v")
             }
         }
     }
@@ -147,6 +161,7 @@ sealed class DebugInfo {
         }
         val providers = listOf(
             AppInfoProvider,
+            MemoryInfo,
             LogCatProvider,
             KeystoreInfo,
             ZitiDumpInfo,
@@ -194,10 +209,14 @@ sealed class DebugInfo {
                     writer.flush()
                 }
             }
-
+            NativeLog.flush()
             app.cacheDir.list { _, name -> name.endsWith(".log") }?.forEach { l ->
-                zip.putNextEntry(ZipEntry("logs/${l}"))
-                app.cacheDir.resolve(l).inputStream().use { it.copyTo(zip) }
+                val file = app.cacheDir.resolve(l)
+                zip.putNextEntry(
+                    ZipEntry("logs/${l}").apply {
+                        time = file.lastModified()
+                    })
+                file.inputStream().use { it.copyTo(zip) }
                 writer.flush()
             }
 
@@ -207,12 +226,20 @@ sealed class DebugInfo {
                     getHistoricalProcessExitReasons(null, 0, 10)
                         .filter { it.reason in DUMP_REASONS }
                         .forEachIndexed { idx, it ->
-                            val label = "crashdumps/crash-${fmt.format(it.timestamp)}-$idx"
-                            zip.putNextEntry(ZipEntry("$label/info"))
+                            val label = "crashdumps/$idx-crash-${fmt.format(it.timestamp)}"
+                            zip.putNextEntry(
+                                ZipEntry("$label/info").apply {
+                                    time = it.timestamp
+                                }
+                            )
                             writer.appendLine(it.toString())
                             writer.flush()
                             it.traceInputStream?.use { dump ->
-                                zip.putNextEntry(ZipEntry("$label/dump"))
+                                zip.putNextEntry(
+                                    ZipEntry("$label/dump").apply { dump
+                                        time = it.timestamp
+                                    }
+                                )
                                 dump.copyTo(zip)
                             }
                         }
