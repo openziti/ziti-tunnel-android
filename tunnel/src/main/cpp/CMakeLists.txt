@@ -35,8 +35,8 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
         logging.cpp
 )
 
-if (${SANITIZE} STREQUAL "hwasan")
-    if (NOT ${CMAKE_ANDROID_ARCH} STREQUAL "arm64")
+if (SANITIZE STREQUAL "hwasan")
+    if (NOT (CMAKE_ANDROID_ARCH STREQUAL "arm64"))
         message(WARNING "sanitizer[${SANITIZE}] not supported on ${CMAKE_ANDROID_ARCH}")
         set(do_not_sanitize ON)
     endif ()
