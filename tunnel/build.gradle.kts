@@ -38,6 +38,7 @@ overrides["tlsuv.dir"]?.resolve()?.let { cmakeArgs.add("-Dtlsuv_DIR=$it") }
 val sanitizer = overrides["sanitize"]
 when (sanitizer) {
     "hwasan" -> cmakeArgs.add("-DSANITIZE=$sanitizer")
+    null -> logger.debug("Sanitizer is not set")
     else -> logger.warn("Sanitizer[{}] is not supported", sanitizer)
 }
 
