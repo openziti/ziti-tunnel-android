@@ -31,9 +31,9 @@ overrides["tunnel.dir"]?.resolve()?.let { cmakeArgs.add("-Dtunnel_DIR=$it") }
 overrides.getOrElse("tunnel.version"){ libs.versions.ziti.tunnel.sdk.get() }.let {
     cmakeArgs.add("-Dtunnel_sdk_VERSION=$it")
 }
-overrides["ziti.dir"]?.resolve().let { cmakeArgs.add("-DZITI_SDK_DIR=$it") }
+overrides["ziti.dir"]?.resolve()?.let { cmakeArgs.add("-DZITI_SDK_DIR=$it") }
 overrides["ziti.version"]?.let{ cmakeArgs.add("-DZITI_SDK_VERSION=$it") }
-overrides["tlsuv.dir"]?.resolve().let { cmakeArgs.add("-Dtlsuv_DIR=$it") }
+overrides["tlsuv.dir"]?.resolve()?.let { cmakeArgs.add("-Dtlsuv_DIR=$it") }
 
 val sanitizer = overrides["sanitize"]
 when (sanitizer) {
