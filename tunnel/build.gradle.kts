@@ -11,29 +11,34 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+val rootDir = parent!!.projectDir
 val ndk = libs.versions.ndk.get()
-val overrides = gradleLocalProperties(parent!!.projectDir, providers)
+val overrides = gradleLocalProperties(rootDir, providers)
 
 val cmakeArgs = mutableListOf(
     "-DANDROID_STL=c++_shared",
     "-DDEPS_DIR=${project.layout.buildDirectory.get()}/cmake",
 )
 
+private fun Any.resolve(): String  {
+    return rootDir.resolve(this.toString()).absolutePath
+}
 // use local checkouts or custom version if desired
 // set in local.properties
 // ziti.dir = /home/ziggy/work/ziti-sdk-c
 // XXX.dir takes precedence over XXX.version
-overrides["tunnel.dir"]?.let { cmakeArgs.add("-Dtunnel_DIR=$it") }
+overrides["tunnel.dir"]?.resolve()?.let { cmakeArgs.add("-Dtunnel_DIR=$it") }
 overrides.getOrElse("tunnel.version"){ libs.versions.ziti.tunnel.sdk.get() }.let {
     cmakeArgs.add("-Dtunnel_sdk_VERSION=$it")
 }
-overrides["ziti.dir"]?.let { cmakeArgs.add("-DZITI_SDK_DIR=$it") }
+overrides["ziti.dir"]?.resolve()?.let { cmakeArgs.add("-DZITI_SDK_DIR=$it") }
 overrides["ziti.version"]?.let{ cmakeArgs.add("-DZITI_SDK_VERSION=$it") }
-overrides["tlsuv.dir"]?.let { cmakeArgs.add("-Dtlsuv_DIR=$it") }
+overrides["tlsuv.dir"]?.resolve()?.let { cmakeArgs.add("-Dtlsuv_DIR=$it") }
 
 val sanitizer = overrides["sanitize"]
 when (sanitizer) {
     "hwasan" -> cmakeArgs.add("-DSANITIZE=$sanitizer")
+    null -> logger.debug("Sanitizer is not set")
     else -> logger.warn("Sanitizer[{}] is not supported", sanitizer)
 }
 
