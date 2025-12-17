@@ -69,6 +69,9 @@ void android_logger(int level, const char *loc, const char *msg, size_t msglen) 
         fprintf(logfile, LOG_FMT("%.*s"),
                 elapsed / 1000, elapsed % 1000,
                 l, loc, (int) msglen, msg);
+        if (level < INFO) {
+            fflush(logfile);
+        }
     }
 }
 
@@ -97,23 +100,21 @@ JNIEXPORT void JNICALL
 Java_org_openziti_log_NativeLog_setLogLevel(JNIEnv *env, jclass clazz, jint level) {
 }
 
+static void log_finish() {
+    if (logfile != nullptr) {
+        fflush(logfile);
+    }
+}
+
 extern "C"
 JNIEXPORT void JNICALL
 Java_org_openziti_log_NativeLog_setupLogging0(JNIEnv *env, jclass thiz, jstring dir) {
-    char path[FILENAME_MAX];
-    time_t now = {};
-    tm t = {};
-
-    time(&now);
-    gmtime_r(&now, &t);
-
     const char *dir_str = env->GetStringUTFChars(dir, nullptr);
     snprintf(log_dir, sizeof(log_dir), "%s", dir_str);
     env->ReleaseStringUTFChars(dir, dir_str);
-    snprintf(path, sizeof(path), "%s/ziti-%4d%02d%02d-%02d%02d.log",
-             dir_str, t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, t.tm_hour, t.tm_min);
 
-    logfile = fopen(path, "a");
+    atexit(log_finish);
+    createLogFile();
 }
 
 extern "C"
