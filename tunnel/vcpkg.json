@@ -10,6 +10,7 @@
     "llhttp",
     "libsodium",
     "protobuf-c",
+    "stc",
     "json-c"
   ],
   "overrides": []
