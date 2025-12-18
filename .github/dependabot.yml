@@ -13,7 +13,7 @@ updates:
           - "androidx.*"
       kotlin:
         patterns:
-          - "org.jetbrains.kotlin.*"
+          - "org.jetbrains.kotlin*"
           - "org.jetbrains.kotlinx.*"
       others:
         patterns:
