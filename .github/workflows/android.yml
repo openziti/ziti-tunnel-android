@@ -25,7 +25,7 @@ jobs:
       - build-deps
     steps:
     - run: env
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         fetch-depth: '0'
 
@@ -47,12 +47,12 @@ jobs:
         keystore: ${{ secrets.RELEASE_KEYSTORE }}
         keystorePassword: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v6
       with:
         name: ziti-mobile-edge-${{ env.BUILD_TYPE }}.aab
         path: app/build/outputs/bundle/*/*.aab
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v6
       with:
         name: ziti-mobile-edge-${{ env.BUILD_TYPE }}.apk
         path: app/build/outputs/apk/*/*.apk
