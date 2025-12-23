@@ -121,8 +121,10 @@ class Identity(
             tunnel.refreshIdentity(id).thenAcceptAsync {
                 Log.d("identity[$id/${name().value}] refresh completed")
                 lastRefresh = systemUTC().instant()
-            }.exceptionallyAsync { ex ->
-                Log.w(ex, "identity[$id/$name] refresh failed")
+            }.handleAsync { _, ex ->
+                ex?.let {
+                    Log.w(ex, "identity[$id/$name] refresh failed")
+                }
                 null
             }
         }
@@ -132,7 +134,7 @@ class Identity(
         tunnel.useJWTSigner(id, signer)
 
     fun setEnabled(on: Boolean) {
-        Log.i("""${if (on) "en" else "dis"}abling[$id/${name.value}]""")
+        Log.i("""${if (on) "enabling" else "disabling"}[$id/${name.value}]""")
 
         tunnel.enableIdentity(id, on).thenAccept {
             enabled.postValue(on)
