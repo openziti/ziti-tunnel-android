@@ -47,7 +47,7 @@ jobs:
 
       - name: publish experimental release
         if: github.ref == 'refs/heads/main'
-        uses: pyTooling/Actions/releaser@v6.7.0
+        uses: pyTooling/Actions/releaser@v7.1.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: experimental
