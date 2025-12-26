@@ -24,6 +24,7 @@ import java.security.KeyStore.PrivateKeyEntry
 import java.security.KeyStore.TrustedCertificateEntry
 import java.security.cert.X509Certificate
 import java.text.SimpleDateFormat
+import java.time.Instant
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.CompletableFuture
@@ -148,13 +149,6 @@ sealed class DebugInfo {
     }
 
     companion object {
-        val DUMP_REASONS = setOf(
-            ApplicationExitInfo.REASON_CRASH,
-            ApplicationExitInfo.REASON_CRASH_NATIVE,
-            ApplicationExitInfo.REASON_ANR,
-            ApplicationExitInfo.REASON_INITIALIZATION_FAILURE,
-            ApplicationExitInfo.REASON_FREEZER,
-            ApplicationExitInfo.REASON_UNKNOWN)
         lateinit var zme: ZitiMobileEdgeApp
         fun init(app: ZitiMobileEdgeApp) {
             zme = app
@@ -221,12 +215,12 @@ sealed class DebugInfo {
             }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                val fmt = SimpleDateFormat("yyyyMMdd-HHmmss")
+                val fmt = DateTimeFormatter.ISO_INSTANT
                 with(app.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager) {
                     getHistoricalProcessExitReasons(null, 0, 10)
-                        .filter { it.reason in DUMP_REASONS }
                         .forEachIndexed { idx, it ->
-                            val label = "crashdumps/$idx-crash-${fmt.format(it.timestamp)}"
+                            val ts = Instant.ofEpochMilli(it.timestamp)
+                            val label = "crashdumps/$idx-crash-${fmt.format(ts)}"
                             zip.putNextEntry(
                                 ZipEntry("$label/info").apply {
                                     time = it.timestamp
