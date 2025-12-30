@@ -4,8 +4,13 @@
 
 package org.openziti.mobile
 
+import android.Manifest.permission.FOREGROUND_SERVICE_SYSTEM_EXEMPTED
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.net.ConnectivityManager
 import android.net.LinkProperties
 import android.net.Network
@@ -13,8 +18,10 @@ import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.net.VpnService
 import android.os.Binder
+import android.os.Build
 import android.os.IBinder
 import android.system.OsConstants
+import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -140,6 +147,11 @@ class ZitiVPNService : VpnService(), CoroutineScope {
         }
     }
 
+    override fun onTimeout(startId: Int, fgsType: Int) {
+        super.onTimeout(startId, fgsType)
+        Log.i("onTimeout($startId, $fgsType)")
+    }
+
     override fun onCreate() {
         Log.i("onCreate()")
         ZitiMobileEdgeApp.vpnService = this
@@ -152,6 +164,10 @@ class ZitiVPNService : VpnService(), CoroutineScope {
             .build()
         connMgr.registerNetworkCallback(netReq, networkMonitor)
         connMgr.addDefaultNetworkActiveListener(netListener)
+
+        runCatching { markForeground() }.onFailure { it
+            Log.w(it, "failed to mark service foreground")
+        }
 
         monitor = launch {
             launch {
@@ -189,13 +205,13 @@ class ZitiVPNService : VpnService(), CoroutineScope {
                 }.onSuccess {
                     Log.i("tunnel $cmd success")
                 }.onFailure {
-                    Log.w("exception during tunnel $cmd", it)
+                    Log.w(it, "exception during tunnel $cmd")
                 }
             }
         }
 
         monitor.invokeOnCompletion {
-            Log.i("monitor stopped", it)
+            Log.i(it, "monitor stopped")
         }
     }
 
@@ -216,15 +232,13 @@ class ZitiVPNService : VpnService(), CoroutineScope {
         Log.i("monitor=$monitor")
         val action = intent?.action
         when (action) {
-            SERVICE_INTERFACE,
-            START -> tunnelState.value = "start"
+            STOP -> {
+                tunnelState.value = STOP
+                return START_NOT_STICKY
+            }
 
-            RESTART -> tunnelState.value = "restart"
-
-            STOP -> tunnelState.value = "stop"
-
-            else -> Log.wtf("what is your intent? $intent")
-
+            RESTART -> tunnelState.value = RESTART
+            else -> tunnelState.value = START
         }
         return START_STICKY
     }
@@ -244,7 +258,9 @@ class ZitiVPNService : VpnService(), CoroutineScope {
             allowFamily(OsConstants.AF_INET)
             allowFamily(OsConstants.AF_INET6)
             allowBypass()
-            setMetered(metered)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                setMetered(metered)
+            }
 
             val range = runBlocking { model.zitiRange.first().toRoute() }
             val size = if (range.address is Inet6Address) 128 else 32
@@ -256,7 +272,7 @@ class ZitiVPNService : VpnService(), CoroutineScope {
                 route.runCatching {
                     addRoute(route.address, route.bits)
                 }.onFailure {
-                    Log.e("invalid route[$route]", it)
+                    Log.e(it, "invalid route[$route]")
                 }
             }
             setUnderlyingNetworks(null)
@@ -302,4 +318,36 @@ class ZitiVPNService : VpnService(), CoroutineScope {
         fun isVPNActive() = tun.isActive()
         fun getUptime(): Duration = tun.getUptime().toJavaDuration()
     }
+
+    private fun markForeground() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            startForeground(1, createNotification())
+        } else {
+            startForeground(1, createNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_SYSTEM_EXEMPTED)
+        }
+    }
+
+    private fun createNotification(): Notification {
+        val channelId = "Ziti Mobile Edge"
+        val channel = NotificationChannel(
+            channelId,
+            "Firewall Status",
+            NotificationManager.IMPORTANCE_DEFAULT
+        )
+        val manager = getSystemService(NotificationManager::class.java)
+        manager.createNotificationChannel(channel)
+
+        val pendingIntent = PendingIntent.getActivity(
+            this, 0, Intent(this, ZitiMobileEdgeActivity::class.java),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        return NotificationCompat.Builder(this, channelId)
+            .setContentTitle("Ziti Mobile Edge")
+            .setContentText("Ziti is active")
+            .setSmallIcon(R.drawable.z)
+            .setContentIntent(pendingIntent)
+            .build()
+    }
+
 }
