@@ -5,7 +5,6 @@
 package org.openziti.mobile.debug
 
 import android.app.ActivityManager
-import android.app.ApplicationExitInfo
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -23,7 +22,6 @@ import java.net.URI
 import java.security.KeyStore.PrivateKeyEntry
 import java.security.KeyStore.TrustedCertificateEntry
 import java.security.cert.X509Certificate
-import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -31,7 +29,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
-sealed class DebugInfo {
+sealed class DebugInfo(val wrap: Boolean = false) {
     abstract val names: Iterable<String>
     abstract fun dump(name: String, output: Writer = StringWriter()): Writer
 
@@ -128,7 +126,31 @@ sealed class DebugInfo {
         }
     }
 
-    data object ZitiDumpInfo: DebugInfo() {
+    data object ExitInfo: DebugInfo(wrap = true) {
+        override val names = listOf("Last Exit")
+        override fun dump(name: String, output: Writer) = output.apply {
+            with(zme.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    getHistoricalProcessExitReasons(null, 0, 1).firstOrNull()?.let {
+                        val ts = Instant.ofEpochMilli(it.timestamp)
+                        appendLine("last exit: $ts")
+                        appendLine()
+                        appendLine("pid         = ${it.pid}")
+                        appendLine("reason      = ${it.reason}")
+                        appendLine("status      = ${it.status}")
+                        appendLine("description = ${it.description}")
+                        appendLine()
+                        appendLine(it.toString())
+
+                    }
+                } else {
+                    appendLine("not supported on Android ${Build.VERSION.SDK_INT}")
+                }
+            }
+        }
+    }
+
+    data object ZitiDumpInfo: DebugInfo(wrap = true) {
         override val names: Iterable<String>
             get() =
                 zme.model.identities().value?.map{it.zitiID} ?: emptyList()
@@ -145,7 +167,6 @@ sealed class DebugInfo {
                 it.printStackTrace(PrintWriter(output))
             }
         }
-
     }
 
     companion object {
@@ -155,6 +176,7 @@ sealed class DebugInfo {
         }
         val providers = listOf(
             AppInfoProvider,
+            ExitInfo,
             MemoryInfo,
             LogCatProvider,
             KeystoreInfo,
@@ -220,7 +242,7 @@ sealed class DebugInfo {
                     getHistoricalProcessExitReasons(null, 0, 10)
                         .forEachIndexed { idx, it ->
                             val ts = Instant.ofEpochMilli(it.timestamp)
-                            val label = "crashdumps/$idx-crash-${fmt.format(ts)}"
+                            val label = "terminations/$idx-exit-${fmt.format(ts)}"
                             zip.putNextEntry(
                                 ZipEntry("$label/info").apply {
                                     time = it.timestamp

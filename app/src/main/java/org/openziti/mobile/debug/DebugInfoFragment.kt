@@ -4,7 +4,10 @@
 
 package org.openziti.mobile.debug
 
+import android.graphics.text.LineBreaker
+import android.os.Build
 import android.os.Bundle
+import android.text.method.ScrollingMovementMethod
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -25,6 +28,7 @@ class DebugInfoFragment : Fragment() {
     // onDestroyView.
     private val binding get() = _binding!!
 
+    private var wrap = false
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -32,6 +36,7 @@ class DebugInfoFragment : Fragment() {
         val dia = activity as DebugInfoActivity
         arguments?.getString(SECTION_ARG)?.let { name ->
             val info = dia.getSectionProvider(name)
+            wrap = info?.wrap ?: false
             pageViewModel.setText(info?.dump(name)?.toString() ?: "nothing to see")
         }
     }
@@ -45,7 +50,16 @@ class DebugInfoFragment : Fragment() {
         val root = binding.root
 
         val textView: TextView = binding.sectionLabel
-        textView.setHorizontallyScrolling(true)
+        textView.movementMethod = ScrollingMovementMethod()
+        textView.setHorizontallyScrolling(!wrap)
+        textView.scrollIndicators = View.SCROLL_INDICATOR_BOTTOM or View.SCROLL_INDICATOR_RIGHT
+        textView.setLines(100)
+        if (wrap) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                textView.breakStrategy = LineBreaker.BREAK_STRATEGY_SIMPLE
+            }
+        }
+
         pageViewModel.text.observe(viewLifecycleOwner, { textView.text = it })
         return root
     }
