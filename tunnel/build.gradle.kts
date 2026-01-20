@@ -7,7 +7,6 @@ import com.android.build.gradle.internal.tasks.factory.dependsOn
 
 plugins {
     alias(libs.plugins.android.lib)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
 }
 
@@ -115,7 +114,7 @@ val buildNative = tasks.register("build-native-dependencies") {}
 tasks.named("preBuild").dependsOn(buildNative)
 
 if (!hasProperty("skipDependentBuild")) {
-    val ndkRoot = android.ndkDirectory.absolutePath
+    val ndkRoot = androidComponents.sdkComponents.ndkDirectory.get()
     println("using NDK: $ndkRoot")
     presets.forEach { triplet ->
         val task = tasks.register<Exec>("build-native-deps-${triplet}") {

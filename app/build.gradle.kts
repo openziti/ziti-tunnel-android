@@ -3,11 +3,9 @@
  * Copyright (c) 2025 NetFoundry. All rights reserved.
  */
 import org.jetbrains.kotlin.konan.properties.Properties
-import java.io.ByteArrayOutputStream
 
 plugins {
     alias(libs.plugins.android.app)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 }
 
@@ -108,7 +106,9 @@ android {
         getByName("release") {
             isMinifyEnabled = false
             proguardFiles(
-                getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
             signingConfig = signingConfigs.getByName("release")
         }
     }
