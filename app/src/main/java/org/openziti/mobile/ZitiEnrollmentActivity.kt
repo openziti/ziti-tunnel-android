@@ -231,7 +231,7 @@ fun EnrollmentCard(imageId: Int, textId: Int, onClick: () -> Unit) {
     Card(
         modifier = Modifier.padding(4.dp),
         colors = CardDefaults.cardColors(
-            containerColor = colorResource(R.color.cardview_light_background)
+            containerColor = colorResource(androidx.cardview.R.color.cardview_light_background)
         ),
         border = BorderStroke(1.dp, Color.Black),
         onClick = onClick
