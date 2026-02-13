@@ -1,7 +1,7 @@
 [versions]
 # plugins
 android = "9.0.0"
-kotlin = "2.3.0"
+kotlin = "2.3.10"
 ndk = "28.2.13676358"
 
 # ziti projects
