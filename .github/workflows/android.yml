@@ -47,12 +47,12 @@ jobs:
         keystore: ${{ secrets.RELEASE_KEYSTORE }}
         keystorePassword: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
 
-    - uses: actions/upload-artifact@v6
+    - uses: actions/upload-artifact@v7
       with:
         name: ziti-mobile-edge-${{ env.BUILD_TYPE }}.aab
         path: app/build/outputs/bundle/*/*.aab
 
-    - uses: actions/upload-artifact@v6
+    - uses: actions/upload-artifact@v7
       with:
         name: ziti-mobile-edge-${{ env.BUILD_TYPE }}.apk
         path: app/build/outputs/apk/*/*.apk
