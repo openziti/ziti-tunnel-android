@@ -14,11 +14,8 @@ import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -45,13 +42,13 @@ import org.openziti.tunnel.ZitiConfig
 import org.openziti.tunnel.ZitiID
 import org.openziti.tunnel.toPEM
 import java.io.File
-import timber.log.Timber as Log
 import java.net.URI
 import java.security.KeyStore.PrivateKeyEntry
 import java.security.cert.X509Certificate
 import java.time.Clock
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
+import timber.log.Timber as Log
 
 class TunnelModel(
     val tunnel: Tunnel,
@@ -73,14 +70,6 @@ class TunnelModel(
             settings[RANGE] = range ?: DEFAULT_RANGE
         }
     }
-
-    data class NetworkStats(val up: Double, val down: Double)
-    fun stats() = flow {
-        while (true) {
-            emit(NetworkStats(tunnel.getUpRate(), tunnel.getDownRate()))
-            delay(1_000)
-        }
-    }.asLiveData()
 
     fun identities(): LiveData<List<Identity>> = identitiesData
     private val identitiesData = MutableLiveData<List<Identity>>()
@@ -177,7 +166,7 @@ class TunnelModel(
         tunnel.processCmd(cmd).handleAsync { json: JsonElement? , ex: Throwable? ->
             idModel.start()
             if (ex != null) {
-                Log.w("failed to execute", ex)
+                Log.w(ex, "failed to execute")
             } else  {
                 identitiesData.postValue(identities.values.toList())
                 Log.d("load result[$id]: $json")

@@ -7,12 +7,10 @@ package org.openziti.mobile
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.SharedPreferences
 import android.content.res.Resources
-import android.net.Uri
 import android.net.VpnService
 import android.os.Build
 import android.os.Bundle
@@ -23,11 +21,9 @@ import android.os.VibratorManager
 import android.view.View
 import android.view.WindowManager
 import android.view.animation.DecelerateInterpolator
-import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.os.ConfigurationCompat
 import androidx.core.os.bundleOf
 import androidx.fragment.app.add
 import androidx.fragment.app.commit
@@ -39,6 +35,7 @@ import org.openziti.mobile.fragments.IdentityDetailFragment
 import org.openziti.mobile.model.TunnelModel
 import java.util.Timer
 import java.util.TimerTask
+import androidx.core.net.toUri
 
 class ZitiMobileEdgeActivity : AppCompatActivity() {
 
@@ -61,10 +58,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
     private val HamburgerLabel by lazy { binding.HamburgerLabel }
     private val IdentityListing by lazy { binding.IdentityListing }
     private val StateButton by lazy { binding.StateButton }
-    private val DownloadSpeed by lazy { binding.DownloadSpeed }
-    private val DownloadMbps by lazy { binding.DownloadMbps }
-    private val UploadMbps by lazy { binding.UploadMbps }
-    private val UploadSpeed by lazy { binding.UploadSpeed }
     private val TimeConnected by lazy { binding.TimeConnected }
     private val MainLogo by lazy { binding.MainLogo }
 
@@ -93,7 +86,7 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
 
     fun launchUrl(url:String) {
         val openURL = Intent(Intent.ACTION_VIEW)
-        openURL.data = Uri.parse(url)
+        openURL.data = url.toUri()
         startActivity(openURL)
     }
 
@@ -165,10 +158,10 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
         })
 
         val vb = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vbm = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+            val vbm = getSystemService(VIBRATOR_MANAGER_SERVICE) as VibratorManager
             vbm.defaultVibrator
         } else {
-            getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+            getSystemService(VIBRATOR_SERVICE) as Vibrator
         }
 
         val vpnPrepare = registerForActivityResult(StartActivityForResult()) {
@@ -283,7 +276,7 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
         }
 
 
-        prefs = getSharedPreferences("ziti-vpn", Context.MODE_PRIVATE)
+        prefs = getSharedPreferences("ziti-vpn", MODE_PRIVATE)
     }
 
     override fun onPause() {
@@ -293,15 +286,11 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        bindService(Intent(applicationContext, ZitiVPNService::class.java), serviceConnection, Context.BIND_AUTO_CREATE)
+        bindService(Intent(applicationContext, ZitiVPNService::class.java), serviceConnection,
+            BIND_AUTO_CREATE
+        )
 
         updateTunnelState()
-
-        model.stats().observe(this) {
-            setSpeed(it.down, DownloadSpeed, DownloadMbps)
-            setSpeed(it.up, UploadSpeed, UploadMbps)
-        }
-
     }
 
     private fun updateTunnelState() {
@@ -312,32 +301,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
     private fun updateConnectedView(on: Boolean) {
         OnButton.visibility = if (on) View.VISIBLE else View.GONE
         OffButton.visibility = if (on) View.GONE else View.VISIBLE
-    }
-
-    val MB = 1024 * 1024
-    val KB = 1024
-
-    fun setSpeed(rate: Double, speed: TextView, label: TextView) {
-        val r: Double
-        val l: String
-        when {
-            rate * 8 > MB -> {
-                r = (rate * 8) / (1024 * 1024)
-                l = "Mbps"
-            }
-            rate * 8 > KB -> {
-                r = (rate * 8) / KB
-                l = "Kbps"
-            }
-            else -> {
-                r = rate * 8
-                l = "bps"
-            }
-        }
-
-        speed.text = String.format(
-            ConfigurationCompat.getLocales(resources.configuration)[0], "%.1f", r)
-        label.text = l
     }
 
     private fun stopZitiVPN() {

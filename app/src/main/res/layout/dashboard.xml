@@ -401,109 +401,12 @@
                         app:layout_constraintTop_toTopOf="parent" />
                 </androidx.constraintlayout.widget.ConstraintLayout>
 
-                <LinearLayout
-                    android:id="@+id/LabelArea"
-                    android:layout_width="match_parent"
-                    android:layout_height="20dp"
-                    android:layout_weight=".1"
-                    android:gravity="center_horizontal|center_vertical"
-                    android:orientation="horizontal"
-                    android:visibility="visible">
-
-                    <TextView
-                        android:id="@+id/DownloadSpeedLabel"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="8dp"
-                        android:text="@string/download"
-                        android:textColor="@color/colorTitle" />
-
-                    <ImageView
-                        android:id="@+id/DownIcon"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:background="@drawable/down"
-                        android:contentDescription="@string/download"
-                        tools:srcCompat="@drawable/down" />
-
-                    <TextView
-                        android:id="@+id/UploadSpeedLabel"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:layout_marginEnd="8dp"
-                        android:text="@string/upload"
-                        android:textColor="@color/colorTitle" />
-
-                    <ImageView
-                        android:id="@+id/UpIcon"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:contentDescription="@string/upload"
-                        app:srcCompat="@drawable/up" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/CountArea"
-                    android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:layout_weight=".15"
-                    android:gravity="center_horizontal"
-                    android:orientation="horizontal"
-                    android:visibility="visible">
-
-                    <TextView
-                        android:id="@+id/DownloadSpeed"
-                        android:layout_width="wrap_content"
-                        android:layout_height="match_parent"
-                        android:layout_marginEnd="10dp"
-                        android:text="@string/defults"
-                        android:textColor="@color/download"
-                        android:textSize="60sp"
-                        android:autoSizeTextType="uniform"
-                        tools:text="@string/defults" />
-
-                    <TextView
-                        android:id="@+id/UploadSpeed"
-                        android:layout_width="wrap_content"
-                        android:layout_height="match_parent"
-                        android:layout_marginStart="10dp"
-                        android:text="@string/defults"
-                        android:textColor="@color/upload"
-                        android:autoSizeTextType="uniform"
-                        android:textSize="60sp" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/CountLabelArea"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center_horizontal"
-                    android:layout_weight=".05"
-                    android:weightSum="2"
-                    android:orientation="horizontal"
-                    android:visibility="visible">
-
-                    <TextView
-                        android:id="@+id/DownloadMbps"
-                        android:layout_width="wrap_content"
-                        android:layout_height="match_parent"
-                        android:text="@string/speed"
-                        android:layout_marginEnd="10dp"
-                        android:textColor="@color/subTitle" />
-                    <TextView
-                        android:id="@+id/UploadMbps"
-                        android:layout_width="wrap_content"
-                        android:layout_height="match_parent"
-                        android:text="@string/speed"
-                        android:layout_marginStart="10dp"
-                        android:textColor="@color/subTitle" />
-                </LinearLayout>
                 <ScrollView
                     android:layout_width="fill_parent"
-                    android:layout_height="0dp"
-                    android:contentDescription="@string/identities"
-                    android:layout_weight=".5">
+                    android:layout_height="wrap_content"
+                    android:layout_weight=".5"
+                    android:contentDescription="@string/identities">
+
                     <LinearLayout
                         android:id="@+id/IdentityListing"
                         android:layout_width="match_parent"
