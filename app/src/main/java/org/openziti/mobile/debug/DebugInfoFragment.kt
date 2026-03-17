@@ -53,7 +53,6 @@ class DebugInfoFragment : Fragment() {
         textView.movementMethod = ScrollingMovementMethod()
         textView.setHorizontallyScrolling(!wrap)
         textView.scrollIndicators = View.SCROLL_INDICATOR_BOTTOM or View.SCROLL_INDICATOR_RIGHT
-        textView.setLines(100)
         if (wrap) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 textView.breakStrategy = LineBreaker.BREAK_STRATEGY_SIMPLE
