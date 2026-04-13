@@ -1,6 +1,6 @@
 [versions]
 # plugins
-android = "9.1.0"
+android = "9.1.1"
 kotlin = "2.3.20"
 ndk = "28.2.13676358"
 
