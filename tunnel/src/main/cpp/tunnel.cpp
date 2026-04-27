@@ -134,7 +134,7 @@ void init_tunnel(JNIEnv *env, jobject self, jstring app, jstring ver) {
     uv_pipe_init(loop, &event_pipe, 0);
 
     tunneler_sdk_options tunneler_opts = {
-            .netif_driver = android_netif_driver(),
+            .l3_netif_driver = android_netif_driver(),
             .ziti_dial = ziti_sdk_c_dial,
             .ziti_close = ziti_sdk_c_close,
             .ziti_close_write = ziti_sdk_c_close_write,
@@ -334,7 +334,7 @@ int tunnel_commit(netif_handle, uv_loop_t *) {
 void JNICALL start_netif(JNIEnv *, jobject, jint fd) {
     auto c = (cmd_entry*)calloc(1,sizeof(cmd_entry));
     c->cmd_func = android_netif_start;
-    c->cmd_args = (void*)fd;
+    c->cmd_args = (void*)(uintptr_t)fd;
 
     uv_mutex_lock(&cmd_queue_lock);
     TAILQ_INSERT_TAIL(&cmd_queue, c, _next);
