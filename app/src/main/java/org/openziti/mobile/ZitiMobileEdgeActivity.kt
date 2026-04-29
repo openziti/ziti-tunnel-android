@@ -24,18 +24,21 @@ import android.view.animation.DecelerateInterpolator
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.net.toUri
 import androidx.core.os.bundleOf
 import androidx.fragment.app.add
 import androidx.fragment.app.commit
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.openziti.mobile.databinding.DashboardBinding
 import org.openziti.mobile.debug.DebugInfo
 import org.openziti.mobile.fragments.AboutFragment
 import org.openziti.mobile.fragments.AdvancedFragment
 import org.openziti.mobile.fragments.IdentityDetailFragment
 import org.openziti.mobile.model.TunnelModel
-import java.util.Timer
-import java.util.TimerTask
-import androidx.core.net.toUri
 
 class ZitiMobileEdgeActivity : AppCompatActivity() {
 
@@ -191,17 +194,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
             TurnOff()
         }
 
-        val timer = Timer()
-        val task = object: TimerTask() {
-            override fun run() {
-                val uptime = vpn?.getUptime()?.format() ?: ""
-                TimeConnected.post {
-                    TimeConnected.text = uptime
-                }
-            }
-        }
-        timer.schedule(task, 0, 1000)
-
         // Menu Button Actions
         DashboardButton.setOnClickListener {
             toggleMenu()
@@ -277,11 +269,31 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
 
 
         prefs = getSharedPreferences("ziti-vpn", MODE_PRIVATE)
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                while (true) {
+                    updateConnectedTime()
+                    delay(1000)
+                }
+            }
+        }
+    }
+
+    private fun updateConnectedTime() {
+        val uptime = vpn?.getUptime()?.format() ?: ""
+        TimeConnected.post {
+            TimeConnected.text = uptime
+        }
     }
 
     override fun onPause() {
-        super.onPause()
         unbindService(serviceConnection)
+        super.onPause()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
     }
 
     override fun onResume() {
