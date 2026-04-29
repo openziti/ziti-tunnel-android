@@ -242,7 +242,7 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
             for (ctx in contextList) {
                 seen += ctx.id
                 if (identityViews[ctx.id] == null) {
-                    val identityitem = IdentityItemView(this).apply { setModel(ctx) }
+                    val identityitem = IdentityItemView(this, ctx)
                     identityitem.setOnClickListener {
                         supportFragmentManager.commit {
                             add<IdentityDetailFragment>(R.id.fragment_container_view, "identity",

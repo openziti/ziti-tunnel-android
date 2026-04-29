@@ -20,36 +20,33 @@ import timber.log.Timber as Log
 /**
  * TODO: document your custom view class.
  */
-class IdentityItemView(context: Context) : RelativeLayout(context) {
+@SuppressLint("ViewConstructor")
+class IdentityItemView(context: Context, model: Identity) : RelativeLayout(context) {
 
-    private lateinit var ctxModel: Identity
+    private var ctxModel: Identity = model
     private val owner = context as AppCompatActivity
-    private val binding: IdentityitemBinding
+    private val binding: IdentityitemBinding =
+        IdentityitemBinding.inflate(LayoutInflater.from(context), this, true)
     private val offline: Drawable
     private val bubble: Drawable
 
     init {
-        binding = IdentityitemBinding.inflate(LayoutInflater.from(context), this, true)
         binding.IdToggleSwitch.isSaveEnabled = false
 
         offline = ResourcesCompat.getDrawable(context.resources, R.drawable.offline, null)!!
         bubble = ResourcesCompat.getDrawable(context.resources, R.drawable.bubble, null)!!
     }
 
-    @SuppressLint("DefaultLocale")
-    fun setModel(ztx: Identity) {
-        ctxModel = ztx
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        Log.d("wiring up ${ctxModel.name.value}")
+
         val enabled = ctxModel.enabled().value ?: false
         binding.IdToggleSwitch.isChecked = enabled
         binding.IdToggleSwitch.setOnCheckedChangeListener { _, state ->
             ctxModel.setEnabled(state)
         }
 
-    }
-
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
-        Log.d("wiring up ${ctxModel.name.value}")
         ctxModel.controllers().observe(owner, controllerObserver)
         ctxModel.name().observe(owner, nameObserver)
         ctxModel.authState().observe(owner, authObserver)
