@@ -8,7 +8,6 @@ import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.os.Handler
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
@@ -53,11 +52,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.lifecycleScope
 import com.google.zxing.BarcodeFormat
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import org.openziti.mobile.databinding.ActivityZitiEnrollmentBinding
 import timber.log.Timber
@@ -94,7 +94,7 @@ class ZitiEnrollmentActivity : AppCompatActivity() {
         }
 
         val jwtLauncher = registerForActivityResult(StartActivityForResult()) {
-            if (it.resultCode == Activity.RESULT_OK) {
+            if (it.resultCode == RESULT_OK) {
                 it.data?.data?.let {uri ->
                     enroll(uri)
                 }
@@ -143,23 +143,23 @@ class ZitiEnrollmentActivity : AppCompatActivity() {
     }
 
     private fun enroll(jwt: String) {
-        (application as ZitiMobileEdgeApp).model.enroll(jwt)
-            .handleAsync { _, ex ->
-                Timber.i(ex, "enroll result")
-                Handler(mainLooper).post {
-                    this.finish()
-                    if (ex != null) {
-                        Toast.makeText(this, ex.localizedMessage, Toast.LENGTH_LONG).show()
-                    } else {
-                        Toast.makeText(this, "enrolled!", Toast.LENGTH_LONG).show()
-                    }
-                }
+        val resultFuture = (application as ZitiMobileEdgeApp).model.enroll(jwt)
 
+        lifecycleScope.launch {
+            runCatching {
+                resultFuture.await()
+            }.onSuccess { _ ->
+                finish()
+                Toast.makeText(this@ZitiEnrollmentActivity, "enrolled!", Toast.LENGTH_LONG).show()
+            }.onFailure { ex ->
+                Timber.tag(TAG).e(ex, "enrollment failed")
+                Toast.makeText(this@ZitiEnrollmentActivity, ex.localizedMessage, Toast.LENGTH_LONG).show()
             }
+        }
     }
 
     private fun enroll(jwtUri: Uri) {
-        CoroutineScope(Dispatchers.IO).launch {
+        lifecycleScope.launch(Dispatchers.IO) {
             application.contentResolver.openInputStream(jwtUri)?.reader()?.use {
                 enroll(it.readText())
             }
