@@ -13,15 +13,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.core.content.ContextCompat.getSystemService
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import androidx.transition.TransitionInflater
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
-import org.openziti.mobile.R
 import org.openziti.mobile.databinding.LogBinding
 import timber.log.Timber
+import java.util.concurrent.CompletableFuture
 
 /**
  * A simple [Fragment] subclass.
@@ -45,7 +43,7 @@ class LogFragment : BaseFragment() {
             }
 
             CopyLogButton.setOnClickListener {
-                val clipboard = getSystemService(requireContext(), ClipboardManager::class.java)
+                val clipboard = requireContext().getSystemService(ClipboardManager::class.java)
                 clipboard?.let {
                     val clip = ClipData.newPlainText("Logs", LogDetails.text.toString())
 
@@ -60,15 +58,26 @@ class LogFragment : BaseFragment() {
 
 
             LogDetails.movementMethod = ScrollingMovementMethod()
-            viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+            val f = CompletableFuture.supplyAsync {
                 val p = Runtime.getRuntime().exec("logcat -d -t 200 --pid=${Process.myPid()}")
-                val lines = p.inputStream.bufferedReader().readText()
-
-                Timber.d("log is ${lines.length} bytes")
-
-                LogDetails.post {
-                    LogDetails.text = lines
+                try {
+                    p.inputStream.bufferedReader().use {
+                        it.readText()
+                    }
+                } finally {
+                    p.destroy()
                 }
+            }
+            viewLifecycleOwner.lifecycleScope.launch {
+                runCatching { f.await() }
+                    .onSuccess {
+                        Timber.d("log is ${it?.length} bytes")
+                        LogDetails.text = it ?: "<empty log>"
+                    }
+                    .onFailure {
+                        Timber.e(it, "failed to get logcat")
+                        LogDetails.text = it.localizedMessage ?: "$it"
+                    }
             }
 
         }
@@ -77,6 +86,6 @@ class LogFragment : BaseFragment() {
     }
 
     companion object {
-            val LOG_TITLE = "log_title"
+            const val LOG_TITLE = "log_title"
     }
 }

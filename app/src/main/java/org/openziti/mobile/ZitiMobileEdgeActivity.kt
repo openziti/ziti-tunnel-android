@@ -24,18 +24,20 @@ import android.view.animation.DecelerateInterpolator
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.os.bundleOf
+import androidx.core.net.toUri
 import androidx.fragment.app.add
 import androidx.fragment.app.commit
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.openziti.mobile.databinding.DashboardBinding
 import org.openziti.mobile.debug.DebugInfo
 import org.openziti.mobile.fragments.AboutFragment
 import org.openziti.mobile.fragments.AdvancedFragment
 import org.openziti.mobile.fragments.IdentityDetailFragment
 import org.openziti.mobile.model.TunnelModel
-import java.util.Timer
-import java.util.TimerTask
-import androidx.core.net.toUri
 
 class ZitiMobileEdgeActivity : AppCompatActivity() {
 
@@ -92,6 +94,8 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
 
     private var duration = 300
 
+    private val identityViews = mutableMapOf<String, IdentityItemView>()
+
     fun getScreenWidth(): Int {
         return Resources.getSystem().displayMetrics.widthPixels
     }
@@ -102,7 +106,7 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
 
     private fun toggleMenu() {
         val posTo = getScreenWidth()-(getScreenWidth()/3)
-        var animatorSet = AnimatorSet()
+        val animatorSet = AnimatorSet()
         var scaleY = ObjectAnimator.ofFloat(binding.MainArea, "scaleY", .9f, 1.0f).setDuration(duration.toLong())
         var scaleX = ObjectAnimator.ofFloat(binding.MainArea, "scaleX", .9f, 1.0f).setDuration(duration.toLong())
         var fader = ObjectAnimator.ofFloat(FrameArea, "alpha", 1f, 0f).setDuration(duration.toLong())
@@ -191,17 +195,6 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
             TurnOff()
         }
 
-        val timer = Timer()
-        val task = object: TimerTask() {
-            override fun run() {
-                val uptime = vpn?.getUptime()?.format() ?: ""
-                TimeConnected.post {
-                    TimeConnected.text = uptime
-                }
-            }
-        }
-        timer.schedule(task, 0, 1000)
-
         // Menu Button Actions
         DashboardButton.setOnClickListener {
             toggleMenu()
@@ -245,31 +238,36 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
         }
 
         model.identities().observe(this) { contextList ->
-            binding.IdentityListing.removeAllViews()
-            var index = 0
+            val seen = mutableSetOf<String>()
             for (ctx in contextList) {
-
-                val identityitem = IdentityItemView(this).apply { setModel(ctx) }
-
-                identityitem.setOnClickListener {
-                    supportFragmentManager.commit {
-                        add<IdentityDetailFragment>(R.id.fragment_container_view, "identity",
-                            bundleOf(IdentityDetailFragment.ID to ctx.id))
-                        addToBackStack("identity")
+                seen += ctx.id
+                if (identityViews[ctx.id] == null) {
+                    val identityitem = IdentityItemView(this, ctx)
+                    identityitem.setOnClickListener {
+                        supportFragmentManager.commit {
+                            add<IdentityDetailFragment>(R.id.fragment_container_view, "identity",
+                                Bundle(1).apply{
+                                    putString(IdentityDetailFragment.ID, ctx.id)
+                                }
+                            )
+                            addToBackStack("identity")
+                        }
                     }
-
+                    identityViews[ctx.id] = identityitem
+                    IdentityListing.addView(identityitem)
                 }
-                IdentityListing.addView(identityitem)
-                index++
             }
-            //IdentityCount.text = index.toString()
-            if (index == 0) {
+            (identityViews.keys - seen).forEach { id ->
+                identityViews.remove(id)?.let {
+                    IdentityListing.removeView(it)
+                }
+            }
+
+            if (contextList.isEmpty()) {
                 TurnOff()
-                //OffButton.getBackground().setAlpha(45)
                 OffButton.isClickable = false
                 StateButton.imageAlpha = 144
             } else {
-                //OffButton.getBackground().setAlpha(100)
                 OffButton.isClickable = true
                 StateButton.imageAlpha = 255
             }
@@ -277,11 +275,31 @@ class ZitiMobileEdgeActivity : AppCompatActivity() {
 
 
         prefs = getSharedPreferences("ziti-vpn", MODE_PRIVATE)
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                while (true) {
+                    updateConnectedTime()
+                    delay(1000)
+                }
+            }
+        }
+    }
+
+    private fun updateConnectedTime() {
+        val uptime = vpn?.getUptime()?.format() ?: ""
+        TimeConnected.post {
+            TimeConnected.text = uptime
+        }
     }
 
     override fun onPause() {
-        super.onPause()
         unbindService(serviceConnection)
+        super.onPause()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
     }
 
     override fun onResume() {
