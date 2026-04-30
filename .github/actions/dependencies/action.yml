@@ -15,4 +15,4 @@ runs:
     - name: build ${{ inputs.target }}
       shell: bash
       run: |
-        cmake --preset ${{ inputs.target }} ./tunnel
+        cmake -DVCPKG_INSTALL_OPTIONS="--debug" --preset ${{ inputs.target }} ./tunnel
