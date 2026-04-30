@@ -52,7 +52,7 @@ runs:
       shell: bash
       run: |
         echo "tunnel.version = main" > ./local.properties
-        echo "ziti.version = nightly" >> ./local.properties
+        echo "ziti.version = main" >> ./local.properties
         cat ./local.properties
 
     - name: Build Android ${{ inputs.buildType }} Bundle
