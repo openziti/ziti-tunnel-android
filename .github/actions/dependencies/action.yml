@@ -12,6 +12,8 @@ runs:
     - name: install contemporary cmake
       uses: lukka/get-cmake@v4.3.2
     - uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgJsonGlob: ./tunnel/vcpkg.json
     - name: build ${{ inputs.target }}
       shell: bash
       run: |
