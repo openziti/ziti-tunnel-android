@@ -73,13 +73,13 @@ android {
         }
     }
 
-    compileSdk = 36
+    compileSdk = 37
     ndkVersion = libs.versions.ndk.get()
 
     defaultConfig {
         applicationId = "org.openziti.mobile"
         minSdk = 28
-        targetSdk = 36
+        targetSdk = 37
         versionCode = getVersionCode()
         versionName = "${project.version}"
 
