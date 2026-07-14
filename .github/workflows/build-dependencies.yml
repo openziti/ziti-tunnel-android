@@ -17,7 +17,7 @@ jobs:
           - x64-android
           - x86-android
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: '0'
       - name: setup build
@@ -34,7 +34,7 @@ jobs:
 
       - name: Cache ${{ matrix.target }} dependencies
         id: cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ${{ env.CI_CACHE }}
           key: dep-${{ matrix.target }}-${{ hashFiles('./tunnel/vcpkg.json') }}
