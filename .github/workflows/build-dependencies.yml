@@ -17,6 +17,11 @@ jobs:
           - x64-android
           - x86-android
     steps:
+      - name: install build deps
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: autoconf autoconf-archive automake libtool
+
       - uses: actions/checkout@v7
         with:
           fetch-depth: '0'
