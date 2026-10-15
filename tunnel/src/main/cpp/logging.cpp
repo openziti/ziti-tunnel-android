@@ -5,6 +5,7 @@
  */
 #include <inttypes.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <android/log.h>
 #include <jni.h>

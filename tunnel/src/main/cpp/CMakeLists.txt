@@ -68,6 +68,12 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
         log
 )
 
+# NDK r30 clang expands the bionic `errno` macro inside lwip's
+# `#include LWIP_ERRNO_INCLUDE` (<errno.h> generated via macro), producing
+# fatal error: '(*__errno()).h' file not found. Force lwip to include
+# <errno.h> directly (see LWIP_ERRNO_STDINCLUDE in lwip/errno.h).
+add_compile_definitions(LWIP_ERRNO_STDINCLUDE)
+
 if (tunnel_DIR)
     add_subdirectory(${tunnel_DIR} ${CMAKE_CURRENT_BINARY_DIR}/tunnel-sdk)
 else (tunnel_DIR)
