@@ -1,8 +1,8 @@
 {
   "name": "ziti-native-deps",
   "version-semver": "1.0.0",
-  "description": "only used to build dependencies using baseline tag 2026.06.24",
-  "builtin-baseline": "cd61e1e26a038e82d6550a3ebbe0fbbfe7da78e3",
+  "description": "only used to build dependencies using baseline commit 20ceb8adbf (master, 2026-10-15)",
+  "builtin-baseline": "20ceb8adbf0504d4b0d5e4058a32f9d4fc896391",
   "dependencies": [
     "libuv",
     "openssl",
