@@ -47,11 +47,36 @@ jobs:
 
       - name: publish experimental release
         if: github.ref == 'refs/heads/main'
-        uses: pyTooling/Actions/releaser@v9.1.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          tag: experimental
-          rm: true
-          files: |
-            app/build/outputs/bundle/release/*.aab
-            app/build/outputs/apk/release/*.apk
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: experimental
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          files=(app/build/outputs/bundle/release/*.aab app/build/outputs/apk/release/*.apk)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::no release artifacts found"
+            exit 1
+          fi
+
+          # point the rolling tag at the commit that was just built, creating it if needed
+          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${TAG}" > /dev/null 2>&1; then
+            gh api -X PATCH "repos/${GITHUB_REPOSITORY}/git/refs/tags/${TAG}" -f sha="${GITHUB_SHA}" -F force=true > /dev/null
+          else
+            gh api -X POST "repos/${GITHUB_REPOSITORY}/git/refs" -f ref="refs/tags/${TAG}" -f sha="${GITHUB_SHA}" > /dev/null
+          fi
+
+          if gh release view "${TAG}" > /dev/null 2>&1; then
+            gh release edit "${TAG}" --prerelease
+          else
+            gh release create "${TAG}" --verify-tag --prerelease --title "${TAG}" --notes ""
+          fi
+
+          gh release upload "${TAG}" "${files[@]}" --clobber
+
+          # drop assets left over from earlier builds
+          keep=$(printf '%s\n' "${files[@]##*/}")
+          gh release view "${TAG}" --json assets --jq '.assets[].name' | while read -r name; do
+            grep -qxF -- "${name}" <<< "${keep}" || gh release delete-asset "${TAG}" "${name}" --yes
+          done
