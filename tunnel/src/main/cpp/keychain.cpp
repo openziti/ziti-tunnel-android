@@ -225,7 +225,7 @@ void android_free_key(keychain_key_t k) {
 extern "C"
 JNIEXPORT jboolean JNICALL
 Java_org_openziti_tunnel_Keychain_testNativeKey(JNIEnv *env, jclass, jstring name) {
-    auto tls = default_tls_context(nullptr, 0);
+    auto tls = default_tls_context();
     std::unique_ptr<tls_context, std::function<void(tls_context * )>> p(
             tls, [](tls_context *t) { t->free_ctx(t); }
     );

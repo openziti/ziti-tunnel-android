@@ -5,7 +5,7 @@ kotlin = "2.4.21"
 ndk = "30.0.16248370"
 
 # ziti projects
-ziti-tunnel-sdk = "v1.19.1"
+ziti-tunnel-sdk = "v1.20.0"
 
 # 3rd part deps
 kotlinx-serialization-json = "1.12.0"
