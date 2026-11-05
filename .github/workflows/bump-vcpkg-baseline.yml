@@ -1,0 +1,30 @@
+name: Bump vcpkg baseline
+
+on:
+  schedule:
+    - cron: '43 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: bump-vcpkg-baseline
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - uses: ./.github/actions/bump-vcpkg-baseline
+        with:
+          manifest-dir: tunnel
+          # the four Android ABIs plan the same dependencies, so one of them stands for all
+          triplets: arm64-android
+          approve-ci: true
