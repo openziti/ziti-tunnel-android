@@ -12,9 +12,8 @@ inputs:
   triplets:
     description: >
       Space-separated vcpkg triplets whose dependencies are compared. Use one per platform that has its own
-      dependencies. A x64-mingw triplet gets its compiler installed, any other cross triplet needs its toolchain
-      on the runner (an android triplet uses the NDK in ANDROID_NDK_HOME, which Ubuntu runners provide).
-      Windows MSVC triplets cannot be planned on Linux.
+      dependencies. A cross triplet needs its toolchain on the runner; an android triplet uses the NDK in
+      ANDROID_NDK_HOME, which Ubuntu runners provide.
     default: x64-linux
   features:
     description: Space-separated vcpkg.json features to include when comparing
@@ -44,19 +43,8 @@ runs:
   steps:
     - name: get vcpkg
       shell: bash
-      env:
-        TRIPLETS: ${{ inputs.triplets }}
       run: |
         set -euo pipefail
-
-        case "${TRIPLETS}" in
-          *x64-mingw*)
-            if ! command -v x86_64-w64-mingw32-g++ > /dev/null; then
-              sudo apt-get update
-              sudo apt-get install -y --no-install-recommends g++-mingw-w64-x86-64
-            fi
-            ;;
-        esac
 
         git clone --quiet --filter=blob:none https://github.com/microsoft/vcpkg.git "${RUNNER_TEMP}/vcpkg"
         "${RUNNER_TEMP}/vcpkg/bootstrap-vcpkg.sh" -disableMetrics
