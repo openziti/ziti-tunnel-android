@@ -1,8 +1,8 @@
 {
   "name": "ziti-native-deps",
   "version-semver": "1.0.0",
-  "description": "only used to build dependencies using vcpkg baseline: 2026.10.14 (20ceb8a)",
-  "builtin-baseline": "20ceb8adbf0504d4b0d5e4058a32f9d4fc896391",
+  "description": "only used to build dependencies using vcpkg baseline: 2026.11.05 (7cadacb)",
+  "builtin-baseline": "7cadacb197daf6300a5a55b0432eb2215246ba28",
   "dependencies": [
     "libuv",
     "openssl",
