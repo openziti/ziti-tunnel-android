@@ -4,6 +4,9 @@
 
 import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
 import com.android.build.gradle.internal.tasks.factory.dependsOn
+import org.gradle.process.ExecOperations
+import java.io.ByteArrayOutputStream
+import javax.inject.Inject
 
 plugins {
     alias(libs.plugins.android.lib)
@@ -13,6 +16,28 @@ plugins {
 val rootDir = parent!!.projectDir
 val ndk = libs.versions.ndk.get()
 val overrides = gradleLocalProperties(rootDir, providers)
+
+// version of the cmake on PATH, null if there is none (a ValueSource: the configuration cache notices a new cmake,
+// and a failure to start the process is ours to handle, not a failed build)
+abstract class PathCMakeVersion : ValueSource<String, ValueSourceParameters.None> {
+    @get:Inject
+    abstract val exec: ExecOperations
+
+    override fun obtain(): String? = runCatching {
+        val out = ByteArrayOutputStream()
+        exec.exec {
+            commandLine("cmake", "--version")
+            standardOutput = out
+        }
+        Regex("""cmake version (\S+)""").find(out.toString())?.groupValues?.get(1)
+    }.getOrNull()
+}
+
+// AGP only accepts the exact version of a cmake it can find, and the dependency build below runs the cmake on PATH:
+// use that one, so the installed cmake is the single place that says which version builds the native code.
+// -Pcmake.version=<version> overrides it.
+val cmakeVersion: String? = providers.gradleProperty("cmake.version").orElse(providers.of(PathCMakeVersion::class){}).orNull
+logger.info("native build uses cmake[{}]", cmakeVersion ?: "default")
 
 val cmakeArgs = mutableListOf(
     "-DANDROID_STL=c++_shared",
@@ -88,7 +113,7 @@ android {
     externalNativeBuild {
         cmake {
             path("src/main/cpp/CMakeLists.txt")
-            version = properties["cmake.version"].toString()
+            cmakeVersion?.let { version = it }
         }
     }
 }
