@@ -198,6 +198,13 @@ static void cmd_data(uv_stream_t *s, ssize_t len, const uv_buf_t *buf) {
         tunnel_command cmd{};
         tunnel_command_from_json(&cmd, json);
         CTRL->process(&cmd, cmd_done, nullptr);
+        free_tunnel_command(&cmd);
+        json_object_put(json);
+    }
+
+    // after a parse error the tokener keeps its error state and partial stack until reset
+    if (json_tokener_get_error(tokener) != json_tokener_continue) {
+        json_tokener_reset(tokener);
     }
 }
 
