@@ -236,6 +236,19 @@ sealed class DebugInfo(val wrap: Boolean = false) {
                 writer.flush()
             }
 
+            // Java heap dump, so leaks can be diagnosed from a bundle. Adds about 10 MB compressed and pauses the app briefly.
+            val hprof = logDir.resolve("heap-${label}.hprof")
+            runCatching {
+                Debug.dumpHprofData(hprof.path)
+                zip.putNextEntry(ZipEntry("heap.hprof").apply { time = hprof.lastModified() })
+                hprof.inputStream().use { it.copyTo(zip) }
+            }.onFailure {
+                zip.putNextEntry(ZipEntry("heap.hprof.error"))
+                writer.appendLine("heap dump failed: $it")
+                writer.flush()
+            }
+            hprof.delete()
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 val fmt = DateTimeFormatter.ISO_INSTANT
                 with(app.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager) {

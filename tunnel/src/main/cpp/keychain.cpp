@@ -59,6 +59,33 @@ static bool checkException(JNIEnv *env) {
     return false;
 }
 
+// Releases a JNI local reference when it goes out of scope.
+//
+// The keychain callbacks run on the native-tunnel thread, whose native run() never returns to Java,
+// so local references created here are never freed automatically. Each one pins its Java object and
+// grows the thread's local reference table until it is deleted explicitly. Holding every local
+// reference in a LocalRef releases it on all paths, including early returns.
+template<typename T>
+class LocalRef {
+public:
+    LocalRef(JNIEnv *env, T ref) : env(env), ref(ref) {}
+
+    ~LocalRef() {
+        // DeleteLocalRef is safe to call with a pending exception
+        if (ref != nullptr) env->DeleteLocalRef(ref);
+    }
+
+    LocalRef(const LocalRef &) = delete;
+
+    LocalRef &operator=(const LocalRef &) = delete;
+
+    T get() const { return ref; }
+
+private:
+    JNIEnv *env;
+    T ref;
+};
+
 extern "C"
 JNIEXPORT void JNICALL
 Java_org_openziti_tunnel_Keychain_registerKeychain(JNIEnv *env, jclass clazz, jobject chain) {
@@ -84,29 +111,25 @@ int android_gen_key(keychain_key_t *pk, enum keychain_key_type type, const char 
     JNIEnv *env;
     android_keychain.vm->GetEnv((void **) &env, JNI_VERSION_1_6);
 
-    jstring t;
+    const char *type_name;
     if (type == keychain_key_rsa) {
-        t = env->NewStringUTF("RSA");
+        type_name = "RSA";
     } else if (type == keychain_key_ec) {
-        t = env->NewStringUTF("EC");
+        type_name = "EC";
     } else {
         return -1;
     }
 
-    jstring n = env->NewStringUTF(name);
-    jobject key = env->CallObjectMethod(android_keychain.store, methods.genKey, n, t);
-    if (checkException(env)) {
+    LocalRef<jstring> t(env, env->NewStringUTF(type_name));
+    LocalRef<jstring> n(env, env->NewStringUTF(name));
+    LocalRef<jobject> key(env, env->CallObjectMethod(android_keychain.store, methods.genKey,
+                                                     n.get(), t.get()));
+    if (checkException(env) || key.get() == nullptr) {
         return -1;
     }
-    env->DeleteLocalRef(n);
-    env->DeleteLocalRef(t);
 
-    if (key != nullptr) {
-        *pk = env->NewGlobalRef(key);
-        return 0;
-    }
-
-    return -1;
+    *pk = env->NewGlobalRef(key.get());
+    return 0;
 }
 
 int android_load_key(keychain_key_t *k, const char *name) {
@@ -115,14 +138,15 @@ int android_load_key(keychain_key_t *k, const char *name) {
     JNIEnv *env;
     android_keychain.vm->GetEnv((void **) &env, JNI_VERSION_1_6);
 
-    jobject key = env->CallObjectMethod(android_keychain.store, methods.loadKey,
-                                        env->NewStringUTF(name));
+    LocalRef<jstring> n(env, env->NewStringUTF(name));
+    LocalRef<jobject> key(env, env->CallObjectMethod(android_keychain.store, methods.loadKey,
+                                                     n.get()));
 
-    if (checkException(env) || key == nullptr) {
+    if (checkException(env) || key.get() == nullptr) {
         return -1;
     }
 
-    *k = env->NewGlobalRef(key);
+    *k = env->NewGlobalRef(key.get());
     return 0;
 }
 
@@ -134,14 +158,14 @@ int android_rem_key(const char *name) {
     JNIEnv *env;
     android_keychain.vm->GetEnv((void **) &env, JNI_VERSION_1_6);
 
-    jstring n = env->NewStringUTF(name);
+    LocalRef<jstring> n(env, env->NewStringUTF(name));
 
-    env->CallObjectMethod(android_keychain.store, methods.delKey, n);
+    // Keychain.deleteKey returns void
+    env->CallVoidMethod(android_keychain.store, methods.delKey, n.get());
     if (checkException(env)) {
         return -1;
     }
 
-    env->DeleteLocalRef(n);
     return 0;
 }
 
@@ -168,20 +192,21 @@ int android_key_public(keychain_key_t k, char *buf, size_t *len) {
     auto key = (jobject) k;
     JNIEnv *env;
     android_keychain.vm->GetEnv((void **) &env, JNI_VERSION_1_6);
-    auto b = (jbyteArray) env->CallObjectMethod(android_keychain.store, methods.keyPub, key);
+    LocalRef<jbyteArray> b(env, (jbyteArray) env->CallObjectMethod(android_keychain.store,
+                                                                    methods.keyPub, key));
 
-    if (checkException(env)) {
+    if (checkException(env) || b.get() == nullptr) {
         return -1;
     }
 
-    auto size = env->GetArrayLength(b);
+    auto size = env->GetArrayLength(b.get());
     if (size > *len) {
         return -1;
     }
-    auto bytes = env->GetByteArrayElements(b, nullptr);
+    auto bytes = env->GetByteArrayElements(b.get(), nullptr);
     memcpy(buf, bytes, size);
     *len = size;
-    env->ReleaseByteArrayElements(b, bytes, JNI_ABORT);
+    env->ReleaseByteArrayElements(b.get(), bytes, JNI_ABORT);
 
     return 0;
 }
@@ -196,18 +221,18 @@ int android_key_sign(keychain_key_t k, const uint8_t *data, size_t datalen,
     JNIEnv *env;
     android_keychain.vm->GetEnv((void **) &env, JNI_VERSION_1_6);
 
-    auto d = env->NewDirectByteBuffer((void *) data, datalen);
-    auto s = (jbyteArray) env->CallObjectMethod(android_keychain.store, methods.sign, key, d);
-    if (checkException(env) || s == nullptr) {
-        env->DeleteLocalRef(d);
+    LocalRef<jobject> d(env, env->NewDirectByteBuffer((void *) data, datalen));
+    LocalRef<jbyteArray> s(env, (jbyteArray) env->CallObjectMethod(android_keychain.store,
+                                                                   methods.sign, key, d.get()));
+    if (checkException(env) || s.get() == nullptr) {
         return -1;
     }
 
-    jsize size = env->GetArrayLength(s);
+    jsize size = env->GetArrayLength(s.get());
     *siglen = size;
-    auto bytes = env->GetByteArrayElements(s, nullptr);
+    auto bytes = env->GetByteArrayElements(s.get(), nullptr);
     memcpy(sig, bytes, size);
-    env->ReleaseByteArrayElements(s, bytes, JNI_ABORT);
+    env->ReleaseByteArrayElements(s.get(), bytes, JNI_ABORT);
     return 0;
 }
 
@@ -230,11 +255,17 @@ Java_org_openziti_tunnel_Keychain_testNativeKey(JNIEnv *env, jclass, jstring nam
             tls, [](tls_context *t) { t->free_ctx(t); }
     );
 
-    tlsuv_private_key_t key;
-    jboolean name_copy;
-    int rc = tls->load_keychain_key(&key, env->GetStringUTFChars(name, &name_copy));
-    if (rc == 0) {
-        auto pub = key->pubkey(key);
+    tlsuv_private_key_t key = nullptr;
+    auto key_name = env->GetStringUTFChars(name, nullptr);
+    int rc = tls->load_keychain_key(&key, key_name);
+    env->ReleaseStringUTFChars(name, key_name);
+    if (rc != 0) {
+        return false;
+    }
+
+    auto pub = key->pubkey(key);
+    if (pub != nullptr) {
+        pub->free(pub);
     }
 
     const char *msg = "this is a message";
@@ -242,5 +273,6 @@ Java_org_openziti_tunnel_Keychain_testNativeKey(JNIEnv *env, jclass, jstring nam
     size_t siglen = sizeof(sig);
     key->sign(key, hash_SHA256, msg, strlen(msg), sig, &siglen);
 
+    key->free(key);
     return true;
 }
