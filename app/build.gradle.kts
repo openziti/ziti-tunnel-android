@@ -132,6 +132,22 @@ android {
             }
         }
     }
+
+    // Diagnostic, off by default: -PmallocDebug packages a wrap.sh into the debug build that turns on bionic malloc
+    // debug backtraces, so `dumpsys meminfo --unreachable` prints where each unreachable block was allocated.
+    // It slows the app down noticeably. wrap.sh is only run from extracted native libraries (legacy packaging).
+    if (providers.gradleProperty("mallocDebug").isPresent) {
+        sourceSets {
+            getByName("debug") {
+                resources.srcDir("src/mallocDebug/resources")
+            }
+        }
+        packaging {
+            jniLibs {
+                useLegacyPackaging = true
+            }
+        }
+    }
 }
 
 kotlin {
