@@ -20,4 +20,5 @@ dependencyResolutionManagement {
 include(":tunnel")
 include(":app")
 project(":app").name = "ziti-mobile-edge"
+include(":integ")
 

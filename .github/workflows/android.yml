@@ -8,6 +8,10 @@ on:
         default: 'false'
         description: use latest tunnel and ziti SDKs
         options: [ 'true', 'false' ]
+      ziti_version:
+        type: string
+        default: 'stable'
+        description: ziti version for the integration tests ('stable', or a tag or tag-regex like 'v1.6')
 
   push:
     branches: [ main ]
@@ -22,6 +26,15 @@ concurrency:
 jobs:
   build-deps:
     uses: ./.github/workflows/build-dependencies.yml
+  integration:
+    needs:
+      - build-deps
+    permissions:
+      contents: read
+      checks: write
+    uses: ./.github/workflows/integration-test.yml
+    with:
+      ziti_version: ${{ inputs.ziti_version || 'stable' }}
   build:
     env:
       BUILD_TYPE: ${{ secrets.RELEASE_KEYSTORE == '' && 'Debug' || 'Release' }}
