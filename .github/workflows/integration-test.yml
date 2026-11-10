@@ -73,7 +73,7 @@ jobs:
           detailed_summary: 'true'
           report_paths: integ/build/test-results/integrationTest/TEST-*.xml
 
-      # logs only: the session directory also holds the throwaway network's keys and database
+      # logs and results only: the session directory also holds the throwaway network's keys and database
       - name: upload logs
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
@@ -85,4 +85,5 @@ jobs:
             integ/build/integ/**/ziti-version.txt
             integ/build/integ/**/instrument.txt
             integ/build/integ/**/logcat.txt
+            integ/build/test-results/integrationTest/TEST-*.xml
             integ/build/reports/tests/integrationTest/**
