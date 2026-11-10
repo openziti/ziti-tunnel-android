@@ -1,0 +1,89 @@
+name: Integration tests
+
+# Runs :integ:integrationTest on an emulator against a real `ziti edge quickstart` network.
+# Called from android.yml after build-deps, whose dependencies-* artifacts it consumes.
+on:
+  workflow_call:
+    inputs:
+      ziti_version:
+        type: string
+        required: false
+        default: 'stable'
+        description: ziti CLI/network version to test against ('stable', or a tag or tag-regex, see openziti/ziti/setup-cli)
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  integration:
+    name: integration[ziti ${{ inputs.ziti_version }}]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: '0'
+
+      - uses: openziti/ziti/setup-cli@main
+        id: ziti
+        with:
+          version: ${{ inputs.ziti_version }}
+
+      - name: install contemporary cmake
+        uses: lukka/get-cmake@v4.3.2
+
+      - name: set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          java-version: 21
+          distribution: temurin
+          cache: gradle
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: dependencies-*
+          merge-multiple: true
+          path: tunnel/build/cmake/
+
+      - name: enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: integration tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          disable-animations: true
+          script: ./gradlew -PskipDependentBuild :integ:integrationTest
+
+      - name: test summary
+        if: ${{ !cancelled() }}
+        # informational: a pull request from a fork gets a read-only token and cannot write checks,
+        # while a failing test already fails the Gradle step above
+        continue-on-error: true
+        uses: mikepenz/action-junit-report@v6
+        with:
+          job_summary_text: 'Integration test results for ziti ${{ steps.ziti.outputs.version }}'
+          detailed_summary: 'true'
+          report_paths: integ/build/test-results/integrationTest/TEST-*.xml
+
+      # logs and results only: the session directory also holds the throwaway network's keys and database
+      - name: upload logs
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: integration-logs-ziti-${{ steps.ziti.outputs.version }}
+          if-no-files-found: warn
+          path: |
+            integ/build/integ/**/qs.log
+            integ/build/integ/**/ziti-version.txt
+            integ/build/integ/**/instrument.txt
+            integ/build/integ/**/logcat.txt
+            integ/build/test-results/integrationTest/TEST-*.xml
+            integ/build/reports/tests/integrationTest/**

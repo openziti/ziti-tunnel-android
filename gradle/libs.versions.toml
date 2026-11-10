@@ -29,6 +29,8 @@ junit = "4.13.2"
 espresso-core = "3.7.0"
 core-ktx-version = "1.19.1"
 junit-version = "1.3.0"
+# host-side integration test harness (:integ)
+junit-jupiter = "6.1.3"
 
 [libraries]
 datastore-core = { module = "androidx.datastore:datastore-core", version.ref = "datastore" }
@@ -39,6 +41,9 @@ appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat"
 constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintlayout" }
 espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espresso-core" }
 junit = { module = "junit:junit", version.ref = "junit" }
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit-jupiter" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 lifecycle-extensions = { module = "androidx.lifecycle:lifecycle-extensions", version.ref = "lifecycle-extensions" }
 material = { module = "com.google.android.material:material", version.ref = "material" }
 kotlin = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlin" }
@@ -67,6 +72,7 @@ timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "tim
 android-app = { id = "com.android.application", version.ref = "android" }
 android-lib = { id = "com.android.library", version.ref = "android" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 

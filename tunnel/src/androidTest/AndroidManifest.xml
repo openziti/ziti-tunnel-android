@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (c) 2026 NetFoundry. All rights reserved.
+  -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- The integration tests reach a ziti controller on the host (through adb reverse). The :tunnel library does not
+         declare INTERNET itself (the app does), and without it every socket fails with "operation not permitted". -->
+    <uses-permission android:name="android.permission.INTERNET" />
+</manifest>
