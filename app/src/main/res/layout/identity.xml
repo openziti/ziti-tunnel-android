@@ -175,6 +175,37 @@
             </TextView>
         </LinearLayout>
 
+        <LinearLayout
+            android:id="@+id/RecoveryCodesRow"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="@color/background">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="22dp"
+                android:lineHeight="22dp"
+                android:paddingLeft="18dp"
+                android:text="@string/recovery_codes"
+                android:textColor="@color/title"
+                android:textSize="18sp" />
+            <TextView
+                android:textAlignment="gravity"
+                android:gravity="right"
+                android:textColor="@color/title"
+                android:paddingRight="18dp"
+                android:layout_gravity="center"
+                android:layout_marginStart="20dp"
+                android:text="@string/recovery_codes_action"
+                android:background="@android:color/transparent"
+                android:layout_width="match_parent"
+                android:layout_height="22dp" />
+        </LinearLayout>
+
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
