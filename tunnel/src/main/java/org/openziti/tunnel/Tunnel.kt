@@ -45,19 +45,19 @@ class Tunnel(app: Application, ): Runnable {
     }
 
     fun onEvent(json: String) {
-        Log.d("event: $json")
+        Log.d("event: ${json.redactMfaSecrets()}")
         events.trySend(json).onFailure {
-            Log.w(it, "failed to queue event[$json]")
+            Log.w(it, "failed to queue event[${json.redactMfaSecrets()}]")
         }
     }
 
     fun onResponse(json: String, f: CompletableFuture<TunnelResult>) {
-        Log.d("resp = $json")
+        Log.d("resp = ${json.redactMfaSecrets()}")
         try {
             val resp = Json.decodeFromString<TunnelResult>(json)
             f.complete(resp)
         } catch (ex: Throwable) {
-            Log.w(ex, "failed to parse result[$json]")
+            Log.w(ex, "failed to parse result[${json.redactMfaSecrets()}]")
             f.completeExceptionally(ex)
         }
     }
@@ -65,10 +65,10 @@ class Tunnel(app: Application, ): Runnable {
     inline fun <reified C: TunnelCommand> processCmd(cmd: C): CompletableFuture<JsonElement?> =
         CompletableFuture<TunnelResult>().apply {
             val data = cmd.toJson()
-            Log.d("cmd[${cmd.id}] = ${cmd.cmd.name}:$data")
+            Log.d("cmd[${cmd.id}] = ${cmd.cmd.name}:${if (cmd.sensitive) "<redacted>" else data}")
             executeCommand(cmd.cmd.name, data, this)
         }.thenApply {
-            Log.d("result[${cmd.id}] = ${cmd.cmd.name}:$it")
+            Log.d("result[${cmd.id}] = ${cmd.cmd.name}:${if (cmd.sensitive) "<redacted>" else it}")
             if (!it.success) throw Exception(it.error)
             it.data
         }
@@ -84,7 +84,7 @@ class Tunnel(app: Application, ): Runnable {
             runCatching {
                 emit(EventsJson.decodeFromString<Event>(ev))
             }.onFailure {
-                Log.w(it, "failed to parse event: $ev")
+                Log.w(it, "failed to parse event: ${ev.redactMfaSecrets()}")
             }
         }
     }.onCompletion { ex ->

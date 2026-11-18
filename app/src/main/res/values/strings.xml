@@ -84,4 +84,28 @@
     <string name="ext_login">Ext Login</string>
     <string name="disabled">disabled</string>
 
+    <string name="totp_setup_status">TOTP Setup</string>
+    <string name="totp_login_status">TOTP Login</string>
+    <string name="recovery_codes">Recovery codes</string>
+    <string name="recovery_codes_action">View</string>
+    <string name="totp_setup_title">Set up TOTP</string>
+    <string name="totp_setup_message">Scan this QR code with an authenticator app, or open it on this device. Then enter the code the app shows.</string>
+    <string name="totp_open_authenticator">Open in authenticator app</string>
+    <string name="totp_no_authenticator">No authenticator app found. Copy the secret instead.</string>
+    <string name="totp_secret">Secret</string>
+    <string name="totp_secret_copy">Copy secret</string>
+    <string name="totp_qr_description">TOTP enrollment QR code</string>
+    <string name="totp_code_title">Enter TOTP code</string>
+    <string name="totp_code_label">Code</string>
+    <string name="totp_code_accepted">Code accepted</string>
+    <string name="totp_submit">Submit</string>
+    <string name="totp_verify">Verify</string>
+    <string name="totp_failed">Request failed</string>
+    <string name="totp_recovery_auth_message">Enter a current code to view your recovery codes or to generate new ones. New codes replace the old ones.</string>
+    <string name="totp_recovery_view">View</string>
+    <string name="totp_recovery_new">New codes</string>
+    <string name="totp_recovery_message">Keep these somewhere safe. You can use one in place of a TOTP code if you lose your authenticator.</string>
+    <string name="totp_recovery_none">No recovery codes available.</string>
+    <string name="totp_copied">Copied</string>
+
 </resources>

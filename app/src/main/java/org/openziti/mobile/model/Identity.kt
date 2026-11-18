@@ -27,6 +27,11 @@ import org.openziti.tunnel.Event
 import org.openziti.tunnel.ExtAuthResult
 import org.openziti.tunnel.ExtJWTEvent
 import org.openziti.tunnel.JwtSigner
+import org.openziti.tunnel.MFAEvent
+import org.openziti.tunnel.MFAStatusEvent
+import org.openziti.tunnel.MfaEnrollment
+import org.openziti.tunnel.MfaOperation
+import org.openziti.tunnel.MfaRecoveryCodes
 import org.openziti.tunnel.RouterEvent
 import org.openziti.tunnel.RouterStatus
 import org.openziti.tunnel.Service
@@ -49,6 +54,10 @@ class Identity(
     data object AuthNone: AuthState("Initial")
     data object Authenticated: AuthState("Authenticated")
     data class AuthJWT(val providers: List<JwtSigner>): AuthState("Login with JWT")
+    /** the auth policy requires a TOTP authenticator to be set up before login can complete */
+    data object EnrollTOTP: AuthState("Set up TOTP")
+    /** login needs a TOTP code */
+    data object AuthTOTP: AuthState("Enter TOTP code")
 
     val zitiID: String =
         with(URI(id)){
@@ -133,6 +142,24 @@ class Identity(
     fun useJWTSigner(signer: String?): CompletableFuture<ExtAuthResult> =
         tunnel.useJWTSigner(id, signer)
 
+    // enrollment stays open on the controller until verified, keep it so the dialog can be reopened
+    @Volatile private var pendingEnrollment: MfaEnrollment? = null
+
+    fun enrollMFA(): CompletableFuture<MfaEnrollment> =
+        pendingEnrollment?.let { CompletableFuture.completedFuture(it) }
+            ?: tunnel.enableMFA(id).thenApply { it.also { e -> pendingEnrollment = e } }
+
+    fun verifyMFA(code: String): CompletableFuture<Unit> =
+        tunnel.verifyMFA(id, code).thenApply { pendingEnrollment = null }
+
+    fun submitMFA(code: String): CompletableFuture<Unit> = tunnel.submitMFA(id, code)
+
+    fun recoveryCodes(code: String): CompletableFuture<MfaRecoveryCodes> =
+        tunnel.getMFACodes(id, code)
+
+    fun generateRecoveryCodes(code: String): CompletableFuture<MfaRecoveryCodes> =
+        tunnel.generateMFACodes(id, code)
+
     fun setEnabled(on: Boolean) {
         Log.i("""${if (on) "enabling" else "disabling"}[$id/${name.value}]""")
 
@@ -203,6 +230,21 @@ class Identity(
 
             is ExtJWTEvent -> {
                 authState.value = AuthJWT(ev.providers)
+            }
+
+            is MFAEvent -> when (ev.operation) {
+                MfaOperation.ENROLLMENT_REQUIRED -> authState.value = EnrollTOTP
+                MfaOperation.AUTH_CHALLENGE -> authState.value = AuthTOTP
+                else -> Log.i("identity[$id/${name.value}] ignoring MFA operation[${ev.operation}]")
+            }
+
+            is MFAStatusEvent -> {
+                // on success the SDK moves on with its own event (another challenge, or ContextEvent OK);
+                // a failure leaves the prompt up so the code can be retried
+                if (ev.success && (ev.operation == MfaOperation.AUTH_STATUS ||
+                            ev.operation == MfaOperation.ENROLLMENT_VERIFICATION)) {
+                    authState.value = AuthNone
+                }
             }
 
             is RouterEvent -> {

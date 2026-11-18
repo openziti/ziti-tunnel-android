@@ -11,7 +11,16 @@ import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
 import kotlin.experimental.and
 
-fun String.toCerts() = this.byteInputStream().use {
+private val mfaSecrets = Regex(
+    """"(provisioning_url|ProvisioningUrl)"\s*:\s*"(?:[^"\\]|\\.)*"|"(recovery_codes|RecoveryCodes)"\s*:\s*\[[^]]*]"""
+)
+
+/** Hides TOTP secrets and recovery codes in event and result JSON so it can be logged. */
+fun String.redactMfaSecrets() = mfaSecrets.replace(this) { m ->
+    """"${m.groupValues[1].ifEmpty { m.groupValues[2] }}":"<redacted>""""
+}
+
+fun String.toCerts() =this.byteInputStream().use {
     val cf = CertificateFactory.getInstance("X.509")
     cf.generateCertificates(it).map { c -> c as X509Certificate }.toTypedArray()
 }
