@@ -15,6 +15,7 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import java.net.URI
+import java.net.URLDecoder
 import java.util.concurrent.atomic.AtomicLong
 
 enum class CMD {
@@ -59,9 +60,13 @@ enum class CMD {
         URI(controller).host.replace(".", "_")
 }
 
+/**
+ * @param sensitive the command or its result carries secrets (codes, keys) and must not be logged
+ */
 @Serializable sealed class TunnelCommand(
     @Transient val cmd: CMD = CMD.Status,
-    @Transient val id: Long = counter.incrementAndGet()) {
+    @Transient val id: Long = counter.incrementAndGet(),
+    @Transient val sensitive: Boolean = false) {
     companion object {
         val counter = AtomicLong(0)
     }
@@ -91,6 +96,51 @@ enum class CMD {
 @Serializable data class ExtAuthResult(
     val identifier: String,
     val url: String,
+)
+
+@Serializable data class EnableMFA(
+    @SerialName("Identifier") val identifier: String,
+): TunnelCommand(CMD.EnableMFA, sensitive = true)
+
+@Serializable data class VerifyMFA(
+    @SerialName("Identifier") val identifier: String,
+    @SerialName("Code") val code: String,
+): TunnelCommand(CMD.VerifyMFA, sensitive = true)
+
+@Serializable data class SubmitMFA(
+    @SerialName("Identifier") val identifier: String,
+    @SerialName("Code") val code: String,
+): TunnelCommand(CMD.SubmitMFA, sensitive = true)
+
+@Serializable data class GetMFACodes(
+    @SerialName("Identifier") val identifier: String,
+    @SerialName("Code") val code: String,
+): TunnelCommand(CMD.GetMFACodes, sensitive = true)
+
+@Serializable data class GenerateMFACodes(
+    @SerialName("Identifier") val identifier: String,
+    @SerialName("Code") val code: String,
+): TunnelCommand(CMD.GenerateMFACodes, sensitive = true)
+
+/** Result of [EnableMFA]. [provisioningUrl] is an `otpauth://` URL. */
+@Serializable data class MfaEnrollment(
+    @SerialName("Identifier") val identifier: String,
+    @SerialName("IsVerified") val isVerified: Boolean = false,
+    @SerialName("ProvisioningUrl") val provisioningUrl: String,
+    @SerialName("RecoveryCodes") val recoveryCodes: List<String>? = null,
+) {
+    /** The shared TOTP secret, for authenticators that cannot take the provisioning URL. */
+    val secret: String?
+        get() = provisioningUrl.substringAfter('?', "").split('&')
+            .firstOrNull { it.startsWith("secret=") }
+            ?.substringAfter('=')
+            ?.let { URLDecoder.decode(it, "UTF-8") }
+}
+
+/** Result of [GetMFACodes] and [GenerateMFACodes]. */
+@Serializable data class MfaRecoveryCodes(
+    @SerialName("Identifier") val identifier: String,
+    @SerialName("RecoveryCodes") val recoveryCodes: List<String>? = null,
 )
 
 @Serializable data class Dump(
@@ -155,3 +205,6 @@ data class SetUpstreamDNS(
 )
 
 inline fun <reified C: TunnelCommand> C.toJson() = Json.encodeToString(this)
+
+/** For decoding command results; tolerates fields added by newer SDKs. */
+val ResultJson = Json { ignoreUnknownKeys = true }

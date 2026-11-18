@@ -24,18 +24,26 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.decodeFromJsonElement
 import org.openziti.tunnel.Dump
 import org.openziti.tunnel.DumpResult
+import org.openziti.tunnel.EnableMFA
 import org.openziti.tunnel.Enroll
 import org.openziti.tunnel.Event
 import org.openziti.tunnel.ExtAuthResult
 import org.openziti.tunnel.ExternalAuth
+import org.openziti.tunnel.GenerateMFACodes
+import org.openziti.tunnel.GetMFACodes
 import org.openziti.tunnel.Keychain
 import org.openziti.tunnel.LoadIdentity
+import org.openziti.tunnel.MfaEnrollment
+import org.openziti.tunnel.MfaRecoveryCodes
 import org.openziti.tunnel.OnOffCommand
 import org.openziti.tunnel.RefreshIdentity
 import org.openziti.tunnel.RemoveIdentity
+import org.openziti.tunnel.ResultJson
 import org.openziti.tunnel.SetUpstreamDNS
+import org.openziti.tunnel.SubmitMFA
 import org.openziti.tunnel.Tunnel
 import org.openziti.tunnel.Upstream
+import org.openziti.tunnel.VerifyMFA
 import org.openziti.tunnel.ZitiConfig
 import org.openziti.tunnel.ZitiID
 import org.openziti.tunnel.toPEM
@@ -220,6 +228,27 @@ class TunnelModel(
     internal fun useJWTSigner(id: String, signer: String?) =
         tunnel.processCmd(ExternalAuth(id, signer)).thenApply {
             Json.decodeFromJsonElement<ExtAuthResult>(it!!)
+        }
+
+    internal fun enableMFA(id: String): CompletableFuture<MfaEnrollment> =
+        tunnel.processCmd(EnableMFA(id)).thenApply {
+            ResultJson.decodeFromJsonElement<MfaEnrollment>(it!!)
+        }
+
+    internal fun verifyMFA(id: String, code: String): CompletableFuture<Unit> =
+        tunnel.processCmd(VerifyMFA(id, code)).thenApply {}
+
+    internal fun submitMFA(id: String, code: String): CompletableFuture<Unit> =
+        tunnel.processCmd(SubmitMFA(id, code)).thenApply {}
+
+    internal fun getMFACodes(id: String, code: String): CompletableFuture<MfaRecoveryCodes> =
+        tunnel.processCmd(GetMFACodes(id, code)).thenApply {
+            ResultJson.decodeFromJsonElement<MfaRecoveryCodes>(it!!)
+        }
+
+    internal fun generateMFACodes(id: String, code: String): CompletableFuture<MfaRecoveryCodes> =
+        tunnel.processCmd(GenerateMFACodes(id, code)).thenApply {
+            ResultJson.decodeFromJsonElement<MfaRecoveryCodes>(it!!)
         }
 
     internal fun enableIdentity(id: String, on: Boolean): CompletableFuture<Unit> {

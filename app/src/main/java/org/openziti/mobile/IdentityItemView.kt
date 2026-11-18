@@ -95,6 +95,18 @@ class IdentityItemView(context: Context, model: Identity) : RelativeLayout(conte
                 binding.ServicesStatus.text = context.getString(R.string.ext_login)
                 binding.ServiceCount.text = ""
             }
+
+            Identity.EnrollTOTP -> {
+                binding.ServiceCountBubble.setImageDrawable(offline)
+                binding.ServicesStatus.text = context.getString(R.string.totp_setup_status)
+                binding.ServiceCount.text = ""
+            }
+
+            Identity.AuthTOTP -> {
+                binding.ServiceCountBubble.setImageDrawable(offline)
+                binding.ServicesStatus.text = context.getString(R.string.totp_login_status)
+                binding.ServiceCount.text = ""
+            }
         }
     }
 

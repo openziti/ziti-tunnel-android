@@ -27,6 +27,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -44,6 +45,7 @@ import org.openziti.tunnel.JwtSigner
 import org.openziti.tunnel.RouterEvent
 import org.openziti.tunnel.RouterStatus
 import timber.log.Timber
+import java.util.concurrent.CompletableFuture
 
 /**
  * A simple [Fragment] subclass.
@@ -53,6 +55,9 @@ class IdentityDetailFragment : BaseFragment() {
         (requireActivity().application as ZitiMobileEdgeApp).model
     }
     val showRouters = mutableStateOf(false)
+    private val totpDialog = mutableStateOf<TotpDialog?>(null)
+    private val totpBusy = mutableStateOf(false)
+    private val totpError = mutableStateOf<String?>(null)
     lateinit var model: Identity
 
     override fun onResume() {
@@ -92,7 +97,17 @@ class IdentityDetailFragment : BaseFragment() {
                     }
                 }
             }
+            else if (authState is Identity.AuthTOTP) {
+                AuthenticationStatus.setOnClickListener { showTotp(TotpDialog.Submit) }
+            }
+            else if (authState is Identity.EnrollTOTP) {
+                AuthenticationStatus.setOnClickListener { startTotpEnrollment() }
+            }
             else AuthenticationStatus.setOnClickListener(null)
+        }
+
+        RecoveryCodesRow.setOnClickListener {
+            showTotp(TotpDialog.RecoveryAuth)
         }
         model.status().observe(viewLifecycleOwner) { st ->
             IdDetailsStatus.text = st
@@ -118,6 +133,7 @@ class IdentityDetailFragment : BaseFragment() {
             if (showRouters.value) {
                 RouterDialog(model.routers().observeAsState(), showRouters)
             }
+            totpDialog.value?.let { TotpDialogHost(it) }
         }
 
         model.routers().observe(viewLifecycleOwner) {
@@ -134,6 +150,59 @@ class IdentityDetailFragment : BaseFragment() {
         }
 
     }.root
+
+    private fun showTotp(dialog: TotpDialog) {
+        totpBusy.value = false
+        totpError.value = null
+        totpDialog.value = dialog
+    }
+
+    private fun closeTotp() {
+        totpDialog.value = null
+        totpBusy.value = false
+        totpError.value = null
+    }
+
+    // command futures complete on the native tunnel thread
+    private fun onUi(block: () -> Unit) {
+        activity?.runOnUiThread(block)
+    }
+
+    private fun toast(message: String) {
+        context?.let { Toast.makeText(it, message, Toast.LENGTH_LONG).show() }
+    }
+
+    /** Runs a TOTP command for the open dialog: shows progress, and the failure reason if it fails. */
+    private fun <T> runTotp(call: () -> CompletableFuture<T>, onSuccess: (T) -> Unit) {
+        val fallback = getString(R.string.totp_failed)
+        totpBusy.value = true
+        totpError.value = null
+        call().whenComplete { result, ex ->
+            onUi {
+                totpBusy.value = false
+                if (ex != null) {
+                    val reason = ex.cause?.message ?: ex.message ?: fallback
+                    Timber.w("TOTP request failed: $reason")
+                    totpError.value = reason
+                } else {
+                    onSuccess(result)
+                }
+            }
+        }
+    }
+
+    private fun startTotpEnrollment() {
+        val fallback = getString(R.string.totp_failed)
+        model.enrollMFA().whenComplete { enrollment, ex ->
+            onUi {
+                if (ex != null) {
+                    toast(ex.cause?.message ?: ex.message ?: fallback)
+                } else {
+                    showTotp(TotpDialog.Enroll(enrollment))
+                }
+            }
+        }
+    }
 
     private fun forgetIdentity(model: Identity) {
         val builder = AlertDialog.Builder(requireContext())
@@ -190,6 +259,68 @@ class IdentityDetailFragment : BaseFragment() {
             AuthTabIntent.Builder().build().apply {
                 launch(launcher, it.url.toUri(), "ziti+auth")
             }
+        }
+    }
+
+    @Composable
+    private fun TotpDialogHost(dialog: TotpDialog) {
+        val busy = totpBusy.value
+        val error = totpError.value
+        when (dialog) {
+            is TotpDialog.Submit -> {
+                val accepted = stringResource(R.string.totp_code_accepted)
+                CodeDialog(
+                    title = stringResource(R.string.totp_code_title),
+                    actions = listOf(CodeAction(stringResource(R.string.totp_submit)) { code ->
+                        runTotp({ model.submitMFA(code) }) {
+                            closeTotp()
+                            toast(accepted)
+                        }
+                    }),
+                    busy = busy,
+                    error = error,
+                    onDismiss = ::closeTotp,
+                )
+            }
+
+            is TotpDialog.Enroll -> CodeDialog(
+                title = stringResource(R.string.totp_setup_title),
+                actions = listOf(CodeAction(stringResource(R.string.totp_verify)) { code ->
+                    runTotp({ model.verifyMFA(code) }) {
+                        // the recovery codes are only handed out with the enrollment
+                        val codes = dialog.enrollment.recoveryCodes.orEmpty()
+                        if (codes.isEmpty()) closeTotp() else showTotp(TotpDialog.RecoveryCodes(codes))
+                    }
+                }),
+                busy = busy,
+                error = error,
+                onDismiss = ::closeTotp,
+            ) {
+                EnrollmentContent(dialog.enrollment)
+            }
+
+            is TotpDialog.RecoveryAuth -> CodeDialog(
+                title = stringResource(R.string.recovery_codes),
+                actions = listOf(
+                    CodeAction(stringResource(R.string.totp_recovery_view)) { code ->
+                        runTotp({ model.recoveryCodes(code) }) {
+                            showTotp(TotpDialog.RecoveryCodes(it.recoveryCodes.orEmpty()))
+                        }
+                    },
+                    CodeAction(stringResource(R.string.totp_recovery_new)) { code ->
+                        runTotp({ model.generateRecoveryCodes(code) }) {
+                            showTotp(TotpDialog.RecoveryCodes(it.recoveryCodes.orEmpty()))
+                        }
+                    },
+                ),
+                busy = busy,
+                error = error,
+                onDismiss = ::closeTotp,
+            ) {
+                Text(stringResource(R.string.totp_recovery_auth_message))
+            }
+
+            is TotpDialog.RecoveryCodes -> RecoveryCodesDialog(dialog.codes, onDismiss = ::closeTotp)
         }
     }
 
