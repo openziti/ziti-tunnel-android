@@ -33,7 +33,7 @@ jobs:
           version: ${{ inputs.ziti_version }}
 
       - name: install contemporary cmake
-        uses: lukka/get-cmake@v4.4.5
+        uses: lukka/get-cmake@v4.5.0
 
       - name: set up JDK 21
         uses: actions/setup-java@v6
