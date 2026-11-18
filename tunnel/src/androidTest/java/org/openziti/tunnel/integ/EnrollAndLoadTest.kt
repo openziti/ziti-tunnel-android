@@ -14,11 +14,15 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.openziti.log.NativeLog
 import org.openziti.tunnel.ContextEvent
+import org.openziti.tunnel.Dump
+import org.openziti.tunnel.DumpResult
 import org.openziti.tunnel.Enroll
 import org.openziti.tunnel.Keychain
 import org.openziti.tunnel.LoadIdentity
@@ -30,7 +34,8 @@ import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.seconds
 
 /**
- * Enrolls a fresh identity against the quickstart controller and expects it to authenticate and see its service.
+ * Enrolls a fresh identity against the quickstart controller and expects it to authenticate, see its service and
+ * return a dump of itself.
  * Driven by `:integ:integrationTest`, which passes the one-time enrollment JWT (`jwt`) and the service name (`service`).
  */
 @RunWith(AndroidJUnit4::class)
@@ -86,5 +91,11 @@ class EnrollAndLoadTest {
                     "(authenticated=$authenticated, serviceSeen=$serviceSeen); events seen: $seen"
             )
         }
+
+        // the feedback bundle reads this dump: it must come back in the shape DumpResult expects
+        val dump = DumpResult.from(tunnel.processCmd(Dump(config.identifier)).get(30, TimeUnit.SECONDS)!!)
+        val text = dump.dumps[config.identifier]
+        assertNotNull("no dump for ${config.identifier} in $dump", text)
+        assertTrue("unexpected dump of ${config.identifier}: $text", text!!.contains("Config Source"))
     }
 }

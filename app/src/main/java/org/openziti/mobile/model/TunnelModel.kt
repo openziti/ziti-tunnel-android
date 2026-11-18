@@ -21,11 +21,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.decodeFromJsonElement
-import kotlinx.serialization.json.jsonPrimitive
 import org.openziti.tunnel.Dump
+import org.openziti.tunnel.DumpResult
 import org.openziti.tunnel.Enroll
 import org.openziti.tunnel.Event
 import org.openziti.tunnel.ExtAuthResult
@@ -211,11 +209,9 @@ class TunnelModel(
 
     fun dumpIdentity(id: String): CompletableFuture<String> =
         tunnel.processCmd(Dump(id)).thenApply { json ->
-            if (json is JsonObject && json[id] is JsonPrimitive) {
-                json[id]?.jsonPrimitive?.content
-            } else {
-                json?.toString() ?: "no data"
-            }
+            json?.let { runCatching { DumpResult.from(it).dumps[id] }.getOrNull() }
+                ?: json?.toString()
+                ?: "no data"
         }
 
     internal fun refreshIdentity(id: String) =

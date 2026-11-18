@@ -97,6 +97,21 @@ enum class CMD {
     @SerialName("Identifier") val identifier: String
 ): TunnelCommand(CMD.ZitiDump)
 
+/**
+ * Data of a [Dump] response (tunnel SDK >= 1.22.1): [dumps] holds the text dump of each identity by identifier.
+ * [files] lists what the tunneler also wrote to disk, which it only does on Windows.
+ */
+@Serializable data class DumpResult(
+    @SerialName("Files") val files: List<String> = emptyList(),
+    @SerialName("Dumps") val dumps: Map<String, String> = emptyMap(),
+) {
+    companion object {
+        private val json = Json { ignoreUnknownKeys = true }
+
+        fun from(data: JsonElement): DumpResult = json.decodeFromJsonElement(serializer(), data)
+    }
+}
+
 @Serializable data class Upstream(
     val host: String,
     val port: Int = 53
